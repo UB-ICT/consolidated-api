@@ -26,6 +26,7 @@ class UserSeeder extends Seeder
             'domain'=>'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 1,
+            'sender_id' => 1,
         ]);
 
          User::create([
@@ -40,7 +41,7 @@ class UserSeeder extends Seeder
             'domain'=>'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 2,
-
+            'sender_id' => 1,
         ]);
         
         User::create([
@@ -55,6 +56,7 @@ class UserSeeder extends Seeder
             'domain'=>'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 3,
+            'sender_id' => 1,
         ]);
         
         User::create([
@@ -69,6 +71,7 @@ class UserSeeder extends Seeder
             'domain'=>'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 4,
+            'sender_id' => 1,
         ]);
     }
 }

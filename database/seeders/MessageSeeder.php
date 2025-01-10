@@ -15,63 +15,67 @@ class MessageSeeder extends Seeder
     {
         //
         Message::create([
-            // 'message_category_id' => 1, // Replace with actual category ID
-            'user' => 'James Faber', // Replace with actual sender ID
-            // 'topic' => 'Message 1',
-            'text' => 'This is message 1 content.',
+            'user' => 'James Faber',
+            'message_category_id' => 1,
+            'sender_id' => 1,
             'sender' => 'own',
-            'timestamp' => now(),
-
-            // // 'location' => 'Location 1',
-            // 'date_sent' => now(),
-            // 'is_archive' => false,
-            // 'is_deleted' => false,
-            // 'is_forwarded' => false,
-            // 'type' => 'email',
-        ]);
-
-        Message::create([
-             // 'message_category_id' => 1, // Replace with actual category ID
-             'user' => 'david', // Replace with actual sender ID
-             // 'topic' => 'Message 1',
-             'text' => 'This is message 1 content.',
-             'sender' => 'own',
-             'timestamp' => now(),
-
-                // // 'location' => 'Location 1',
-             // 'date_sent' => now(),
-             // 'is_archive' => false,
-             // 'is_deleted' => false,
-             // 'is_forwarded' => false,
-             // 'type' => 'email',
-        ]);
-
-        Message::create([
-            // 'message_category_id' => 3, // Replace with actual category ID
-            'user' => 'dwight', // Replace with actual sender ID
-            // 'topic' => 'Message 3',
+            'topic' => 'Topic 1',
+            'images' => 'image1.jpg',
             'text' => 'This is message 1 content.',
-             'sender' => 'own',
-             'timestamp' => now(),
-
-            // 'is_archive' => false,
-            // 'is_deleted' => false,
-            // 'is_forwarded' => false,
-            // 'type' => 'notification',
+            'location' => 'Location 1',
+            'date_sent' => now(),
+            'is_archive' => false,
+            'is_deleted' => false,
+            'is_forwarded' => false,
+            'type' => 'email',
         ]);
 
         Message::create([
-           // 'message_category_id' => 3, // Replace with actual category ID
-           'user' => 'Beverly', // Replace with actual sender ID
-           // 'topic' => 'Message 3',
-           'text' => 'This is message 1 content.',
+            'user' => 'Shanell Leslie',
+            'message_category_id' => 2,
+            'sender_id' => 1,
             'sender' => 'own',
-            'timestamp' => now(),
+            'topic' => 'Topic 1',
+            'images' => 'image1.jpg',
+            'text' => 'This is message 1 content.',
+            'location' => 'Location 2',
+            'date_sent' => now(),
+            'is_archive' => false,
+            'is_deleted' => false,
+            'is_forwarded' => false,
+            'type' => 'email',
+        ]);
 
-            // 'is_archive' => false,
-           // 'is_deleted' => false,
-           // 'is_forwarded' => false,
-           // 'type' => 'notification',
+        Message::create([
+            'user' => 'Steve Castillo',
+            'message_category_id' => 3,
+            'sender_id' => 3,
+            'sender' => 'own',
+            'topic' => 'Topic 3',
+            'images' => 'image3.jpg',
+            'text' => 'This is message 3 content.',
+            'location' => 'Location 3',
+            'date_sent' => now(),
+            'is_archive' => false,
+            'is_deleted' => false,
+            'is_forwarded' => false,
+            'type' => 'sms',
+        ]);
+
+        Message::create([
+            'user' => 'Daren Brown',
+            'message_category_id' => 4,
+            'sender_id' => 4,
+            'sender' => 'own',
+            'topic' => 'Message 4',
+            'images' => 'image4.jpg',
+            'text' => 'This is message 4 content.',
+            'location' => 'Location 4',
+            'date_sent' => now(),
+            'is_archive' => false,
+            'is_deleted' => false,
+            'is_forwarded' => false,
+            'type' => 'notification',
         ]);
     }
 }

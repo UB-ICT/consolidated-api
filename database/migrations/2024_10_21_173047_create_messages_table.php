@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,19 +12,19 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->string('user')->nullable(); // Optional user field (sender's name, string format)
-            // $table->foreignId('sender_id')->constrained('users')->nullable(); //unlink  the user until a login is implemented in the application
+            $table->string('user')->nullable(); // Optional sender's name
+            $table->foreignId('message_category_id')->nullable()->constrained('message_categories'); // Reference message_categories table
+            $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete(); // Reference users table with cascading null on delete
             $table->string('sender')->nullable();
-            // $table->string('topic')->nullable();
-            // $table->string('images')->nullable(); //check if we should change it to string
+            $table->string('topic')->nullable();
+            $table->string('images')->nullable(); // Keep it string for now
             $table->text('text')->nullable();
-            // $table->string('location')->nullable();;
-            // $table->dateTime('date_sent')->nullable();
-            // $table->boolean('is_archive')->nullable(); //That is allowed to have a null value. This make it optional
-            // $table->boolean('is_deleted')->nullable();//That is allowed to have a null value. This make it optional
-            // $table->boolean('is_forwarded')->nullable();//That is allowed to have a null value. This make it optional
-            // $table->enum('type', ['email', 'sms', 'notification'])->nullable();
-            $table->timestamp('timestamp')->nullable(); // Use a proper timestamp column
+            $table->string('location')->nullable();
+            $table->dateTime('date_sent')->nullable();
+            $table->boolean('is_archive')->default(false); // Default to false
+            $table->boolean('is_deleted')->default(false); // Default to false
+            $table->boolean('is_forwarded')->default(false); // Default to false
+            $table->enum('type', ['email', 'sms', 'notification'])->nullable();
         });
     }
 

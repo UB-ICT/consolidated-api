@@ -9,20 +9,19 @@ class Message extends Model
 {
     use HasFactory;
     protected $fillable = [
-        // 'message_category_id',
-        // 'sender_id',
-        // 'topic',
         'user',
-        'text',
+        'sender_id',
         'sender',
-        'timestamp', 
-        // Include custom fields here     
-        // 'location',
-        // 'date_sent',
-        // 'is_archive',
-        // 'is_deleted',
-        // 'is_forwarded',
-        // 'type',
+        'topic',
+        'images',
+        'text',
+        'location',
+        'date_sent',
+        'is_archive',
+        'is_deleted',
+        'is_forwarded',
+        'type',
+        // 'message_category_id',
     ];
     public $timestamps = false;
 
@@ -39,7 +38,7 @@ class Message extends Model
 
     public function messageCategory()
     {
-        return $this->belongsTo(MessageCategory::class , 'messageCategory_id');
+        return $this->belongsTo(MessageCategory::class, 'messageCategory_id');
     }
 
     public function department()
