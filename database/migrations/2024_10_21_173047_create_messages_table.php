@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->string('sender')->nullable();
             $table->string('topic')->nullable();
             $table->string('images')->nullable(); // Keep it string for now
-            $table->text('text')->nullable();
+            $table->text('message')->nullable();
             $table->string('location')->nullable();
             $table->dateTime('date_sent')->nullable();
             $table->boolean('is_archive')->default(false); // Default to false

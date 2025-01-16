@@ -29,13 +29,12 @@ class User extends Authenticatable implements LdapAuthenticatable
         'work_email',
         'phone_no',
         'organization',
+        'picture',
         'device_token',
         'user_status_id',
         'role_id',
         'menu_id',
-        'picture',
         'sender_id'
-
     ];
     public $timestamps = false;
 
@@ -75,21 +74,6 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $this->hasOne(UserCampus::class, 'user_id');
     }
 
-    //Defined a relationship with the Device model that stats a user only have one device
-    // public function device()
-    // {
-    //     return $this->hasOne(Device::class);
-    // }
-
-    //Define a relationship with the Message model for sent messages
-    //that a user can send many messages
-    // public function sentMessages()
-    // {
-    //     return $this->hasMany(Message::class, 'sender_id');
-    // }
-
-    // Define a relationship with the Message model for received messages 
-    //and this states that a user can receive many messages
     public function receivedMessages()
     {
         return $this->hasMany(Message::class, 'recipient_id');

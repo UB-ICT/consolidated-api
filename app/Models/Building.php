@@ -9,7 +9,9 @@ class Building extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name', 'building_location', 'campus_id'
+        'name',
+        'building_location',
+        'campus_id'
     ];
     public $timestamps = false;
     public function campus()

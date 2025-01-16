@@ -15,19 +15,20 @@ class MessageResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'=>$this->id,
-            // 'messageCategoryId'=>$this->message_category_id,
-            'sender'=>$this->sender,
-            'user'=>$this->user,
-            // 'topic'=>$this->topic,
-            'text'=>$this->text,
-            'timestamp'=>$this->timestamp,
-            // 'location'=>$this->location,
-            // 'dateSent'=>$this->date_sent,
-            // 'isArchive'=>$this->is_archive,
-            // 'isDeleted'=>$this->is_deleted,
-            // 'isForwarded'=>$this->is_forwarded,
-            // 'type'=>$this->type,
+            'id' => $this->id,
+            'user' => $this->user,
+            'messageCategoryId' => $this->message_category_id,
+            'senderId' => $this->sender_id,
+            'sender' => $this->sender,
+            'topic' => $this->topic,
+            'images' => $this->images,
+            'message' => $this->message,
+            'location' => $this->location,
+            'dateSent' => $this->date_sent,
+            'isArchive' => $this->is_archive,
+            'isDeleted' => $this->is_deleted,
+            'isForwarded' => $this->is_forwarded,
+            'type' => $this->type,
         ];
     }
 }

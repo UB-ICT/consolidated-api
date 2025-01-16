@@ -10,18 +10,20 @@ class Message extends Model
     use HasFactory;
     protected $fillable = [
         'user',
+        'message_category_id',
         'sender_id',
-        'sender',
         'topic',
-        'images',
-        'text',
+        'message',
         'location',
         'date_sent',
+        'sender',
+        'images',
         'is_archive',
         'is_deleted',
         'is_forwarded',
         'type',
-        // 'message_category_id',
+        'incident_type_id',
+        
     ];
     public $timestamps = false;
 

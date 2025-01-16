@@ -7,6 +7,56 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Public Safety API
+Flow Diagram Description
+
+1. User Creation and Role Assignment
+    - A user is created in the user table.
+
+    - The role_id field in the user table links the user to a specific role.
+    
+    - Based on the role, access_right defines what the user can do.
+
+
+2. User and Campus Association
+
+    - The user is assigned to one or more campuses via the user_campus table.
+
+    - Each user can have a primary_campus for identification.
+
+
+3. Menu and Role Access
+
+    - Roles are linked to menus via the menu_role table, defining what menus are accessible to each role.
+
+    - sub_menu links additional functionality to specific menus.
+
+4. Message Flow
+
+    - A user (identified by sender_id) sends a message.
+
+    - The recipient table tracks which users receive the message.
+
+    - The message_category table categorizes the message for filtering or prioritization.
+
+5. Incident Reporting
+
+    - A user uploads an incident_report tied to a specific campus and optionally a building.
+    
+    - The incident_file table stores file attachments related to the report.
+
+    - The report status is tracked via the incident_status table.
+
+    - The type of the incident is categorized using the incident_type table.
+
+6. Departments and Members
+
+    - Departments are created in the department table.
+
+    - Users are associated with departments through the department_member composite table.
+
+
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

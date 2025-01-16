@@ -17,8 +17,7 @@ class Campus extends Model
      * @var array
      */
     protected $fillable = [
-        'campus', 
-        // 'location'
+        'campus',
     ];
     public $timestamps = false;
 
