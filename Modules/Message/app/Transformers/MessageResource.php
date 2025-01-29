@@ -1,0 +1,34 @@
+<?php
+
+namespace Modules\Message\Transformers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class MessageResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'user' => $this->user,
+            'messageCategoryId' => $this->message_category_id,
+            'senderId' => $this->sender_id,
+            'sender' => $this->sender,
+            'topic' => $this->topic,
+            'images' => $this->images,
+            'message' => $this->message,
+            'location' => $this->location,
+            'dateSent' => $this->date_sent,
+            'isArchive' => $this->is_archive,
+            'isDeleted' => $this->is_deleted,
+            'isForwarded' => $this->is_forwarded,
+            'type' => $this->type,
+        ];
+    }
+}

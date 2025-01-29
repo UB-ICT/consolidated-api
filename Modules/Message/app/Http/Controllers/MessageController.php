@@ -1,0 +1,89 @@
+<?php
+
+namespace Modules\Message\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Modules\Message\Models\Message;
+use Modules\Message\Http\Requests\StoreMessageRequest;
+use Modules\Message\Http\Requests\UpdateMessageRequest;
+use Modules\Message\Transformers\MessageResource;
+use Modules\Message\Transformers\MessageCollection;
+
+
+class MessageController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $query = Message::query();
+
+        if ($request->has('type')) {
+            $query->where('type', $request->type);
+        }
+    
+        if ($request->has('date_sent')) {
+            $query->whereDate('date_sent', $request->date_sent);
+        }
+
+        return new MessageCollection(Message::paginate());
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreMessageRequest $request)
+    {
+        return new MessageResource(Message::create($request->all()));
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Message $message)
+    {
+        return new MessageResource($message);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Message $message)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateMessageRequest $request, Message $message)
+    {
+        $message->update($request->all());
+        return new MessageResource($message);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Message $message)
+    {
+        $message->delete();
+        return response()->json(['message' => 'message deleted successfully'], 200);
+    }
+
+    public function getTotalMessage(Message $message)
+    {
+        $message = Message::count();
+        return response()->json(['total' => $message]);
+    }
+}
