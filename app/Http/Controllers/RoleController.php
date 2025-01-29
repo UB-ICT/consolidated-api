@@ -7,6 +7,9 @@ use App\Http\Resources\RoleCollection;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\Request;
+
 
 class RoleController extends Controller
 {
@@ -67,5 +70,24 @@ class RoleController extends Controller
         $role->delete();
         return response()->json(['message' => 'role deleted successfully'], 200);
 
+    }
+
+
+    // The assignRoleToUser function in the RoleController is responsible for assigning a role to a specific user in your Laravel application
+    public function assignRoleToUser(Request $request)
+    {
+
+        //user_id and role_id are required fields and exist in the users and roles table respectively
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        //Find the user by the user_id and assign the role_id to the user
+        $user = User::find($validatedData['user_id']);
+        $user->role_id = $validatedData['role_id'];
+        $user->save();
+
+        return response()->json(['message' => 'Role assigned to user successfully', 'user' => $user]);
     }
 }

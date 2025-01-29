@@ -12,8 +12,12 @@ use Modules\Message\Http\Controllers\MessageController;
  * routes are loaded by the RouteServiceProvider within a group which
  * is assigned the "api" middleware group. Enjoy building your API!
  *
-*/
+ */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('message', MessageController::class)->names('message');
+
+
+
+Route::middleware(['auth:sanctum'])->prefix('v1/publicSafety/')->group(function () {
+    Route::apiResource('messages', MessageController::class)->names('message');
+    Route::get('totalMessages', [MessageController::class, 'getTotalMessage']);
 });

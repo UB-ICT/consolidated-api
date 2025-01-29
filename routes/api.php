@@ -9,7 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserCampusController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\MessageCategoryController;
-use App\Http\Controllers\MessageController;
+// use App\Http\Controllers\MessageController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IncidentStatusController;
@@ -38,7 +38,7 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::apiResource('messageCategories', MessageCategoryController::class);
     Route::apiResource('userCampuses', UserCampusController::class);
     Route::apiResource('buildings', BuildingController::class);
-    Route::apiResource('messages', MessageController::class);
+    // Route::apiResource('messages', MessageController::class);
     Route::apiResource('incidentFiles', IncidentFileController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
@@ -51,13 +51,15 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::get('menus', [MenuController::class, 'getMenus']);
     Route::apiResource('menuRoles', MenuRoleController::class);
     Route::apiResource('subMenus', SubMenuController::class);
-    Route::get('/logout', [AuthController::class, 'logout']);
+    // Route::get('/logout', [AuthController::class, 'logout']);
 
     Route::get('/getUsers', [UserController::class, 'getUsers']);
     Route::get('v1/publicSafety/usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('v1/publicSafety/incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('v1/publicSafety/incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
-    Route::get('v1/publicSafety/totalMessages', [MessageController::class, 'getTotalMessage']);
+
+    Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
+
 });
 
 
