@@ -53,10 +53,10 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::apiResource('subMenus', SubMenuController::class);
     // Route::get('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/getUsers', [UserController::class, 'getUsers']);
-    Route::get('v1/publicSafety/usersTotal', [UserController::class, 'getTotalUsers']);
-    Route::get('v1/publicSafety/incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
-    Route::get('v1/publicSafety/incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
+    Route::get('getUsers', [UserController::class, 'getUsers']);
+    Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
+    Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
+    Route::get('incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
 
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
 
@@ -64,8 +64,8 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
 
 
 
-Route::get('v1/publicSafety/usersSearch', [UserController::class, 'usersSearch']);
-Route::post('v1/publicSafety/loginOrCreate', [UserController::class, 'loginOrCreate']);
+// Route::get('v1/publicSafety/usersSearch', [UserController::class, 'usersSearch']);
+// Route::post('v1/publicSafety/loginOrCreate', [UserController::class, 'loginOrCreate']);
 
 
 

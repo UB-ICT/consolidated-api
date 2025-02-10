@@ -17,9 +17,9 @@ class IncidentFile extends Model
 
 
     
-    public function incidentReport()
+    public function incidentFile()
     {
-        return $this->belongsTo(IncidentReport::class, 'incident_file_id');
+        return $this->belongsTo(IncidentReport::class);
     }
 
     public function message()

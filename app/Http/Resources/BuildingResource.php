@@ -17,7 +17,7 @@ class BuildingResource extends JsonResource
         return [
             'id'=>$this->id,
             'name'=>$this->name,
-            'buildingLocation'=>$this->building_location,
+            'location'=>$this->location,
             'campusId'=>$this->campus_id
             ];
     }

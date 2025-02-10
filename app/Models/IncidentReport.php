@@ -53,8 +53,8 @@ class IncidentReport extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function incidentFile()
+    public function incidentReport()
     {
-        return $this->hasOne(IncidentFile::class, 'incident_file_id');
+        return $this->hasMany(IncidentFile::class);
     }
 }

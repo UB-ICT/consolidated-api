@@ -26,13 +26,13 @@ class UpdateBuildingRequest extends FormRequest
         return [
             //
             'name'=>['required'],
-            'buildingLocation'=>['required'],
+            'location'=>['required'],
             'campusId'=>['required']
         ];
     } else {
         return [
             'name'=>['sometimes', 'required'],
-            'buildingLocation'=>['sometimes', 'required'],
+            'location'=>['sometimes', 'required'],
             'campusId'=>['sometimes', 'required']
         ];
     }
@@ -41,7 +41,6 @@ class UpdateBuildingRequest extends FormRequest
 
     protected function prepareForValidation() {
         $this->merge([
-            'building_location'=>$this->buildingLocation,
             'campus_id'=>$this->campusId 
         ]);
     }

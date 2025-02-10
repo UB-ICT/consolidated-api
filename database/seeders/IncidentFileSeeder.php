@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\IncidentFile;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Modules\Message\Models\Message;
 
 class IncidentFileSeeder extends Seeder
 {
@@ -13,9 +14,12 @@ class IncidentFileSeeder extends Seeder
      */
     public function run(): void
     {
-        IncidentFile::create(['path' => 'path/to/file1', 'comment' => 'Comment for file 1', 'message_id' => 1,]);
-        IncidentFile::create(['path' => 'path/to/file2', 'comment' => 'Comment for file 2', 'message_id' => 2,]);
-        IncidentFile::create(['path' => 'path/to/file3', 'comment' => 'Comment for file 3', 'message_id' => 3,]);
-        IncidentFile::create(['path' => 'path/to/file4', 'comment' => 'Comment for file 4', 'message_id' => 4,]);
+
+        $messsageId = Message::all()->pluck('id')->toArray();
+
+        IncidentFile::create(['path' => 'path/to/file1', 'comment' => 'Comment for file 1', 'message_id' => $messsageId[0],]);
+        IncidentFile::create(['path' => 'path/to/file2', 'comment' => 'Comment for file 2', 'message_id' =>$messsageId[1],]);
+        IncidentFile::create(['path' => 'path/to/file3', 'comment' => 'Comment for file 3', 'message_id' => $messsageId[2],]);
+        IncidentFile::create(['path' => 'path/to/file4', 'comment' => 'Comment for file 4', 'message_id' => $messsageId[2],]);
     }
 }

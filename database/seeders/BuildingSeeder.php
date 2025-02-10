@@ -14,10 +14,10 @@ class BuildingSeeder extends Seeder
     public function run(): void
     {
         //
-        Building::create(['name'=> 'jaguar', 'building_location'=>'this is location', 'campus_id'=> 1]);
-        Building::create(['name'=> 'Scarlet Macaw', 'building_location'=>'this is location', 'campus_id'=> 2]);
-        Building::create(['name'=> 'Jabaroo', 'building_location'=>'this is location', 'campus_id'=> 3]);
-        Building::create(['name'=> 'kinkajou', 'building_location'=>'this is location', 'campus_id'=> 2]);
+        Building::create(['name'=> 'jaguar', 'location'=>'this is location', 'campus_id'=> 1]);
+        Building::create(['name'=> 'Scarlet Macaw', 'location'=>'this is location', 'campus_id'=> 2]);
+        Building::create(['name'=> 'Jabaroo', 'location'=>'this is location', 'campus_id'=> 3]);
+        Building::create(['name'=> 'kinkajou', 'location'=>'this is location', 'campus_id'=> 2]);
 
     }
 }

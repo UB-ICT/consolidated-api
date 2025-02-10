@@ -24,14 +24,13 @@ class StoreBuildingRequest extends FormRequest
         return [
             //
             'name'=>['required'],
-            'buildingLocation'=>['required'],
+            'location'=>['required'],
             'campusId'=>['required']
         ];
     }
 
     protected function prepareForValidation() {
         $this->merge([
-            'building_location'=>$this->buildingLocation,
             'campus_id'=>$this->campusId 
         ]);
     }

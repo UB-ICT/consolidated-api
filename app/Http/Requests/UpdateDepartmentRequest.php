@@ -26,22 +26,19 @@ class UpdateDepartmentRequest extends FormRequest
         $method = $this->method();
         if($method == 'PUT') {
             return [
-                'name'=>['required'],
-                'messageId'=>['required'],
+                'departments'=>['required'],
             ];
         }
         else {
             return [
-                'name'=>['sometimes','required'],
-                'messageId'=>['sometimes','required'],
+                'departments'=>['sometimes','required'],
             ];
         }
     }
 
     protected function prepareForValidation() {
         $this->merge([
-            'name'=>$this->name,
-            'message_id'=>$this->messageId
+            'departments'=>$this->departments,
         ]);
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('buildings', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('building_location');
+            $table->string('location');
             $table->foreignId('campus_id')->constrained('campuses');
         });
     }

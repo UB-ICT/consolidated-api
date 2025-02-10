@@ -24,15 +24,13 @@ class StoreDepartmentRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'=>['required'],
-            'messageId'=>['required'],
+            'departments'=>['required'],
         ];
     }
 
     protected function prepareForValidation() {
         $this->merge([
-            'name'=>$this->name,
-            'message_id'=>$this->messageId
+            'departments'=>$this->departments,
         ]);
     }
 };

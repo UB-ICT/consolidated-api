@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('path');
             $table->text('comment')->nullable();
             $table->foreignId('message_id')->constrained('messages');
+            // $table->foreignId('incident_report_id')->constrained('incident_reports');
             $table->timestamps();
         });
     }

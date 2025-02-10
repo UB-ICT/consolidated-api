@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->dateTime('date_sent')->nullable();
             $table->boolean('is_archive')->default(false); // Default to false
             $table->boolean('is_deleted')->default(false); // Default to false
-            $table->boolean('is_forwarded')->default(false); // Default to false
+            $table->boolean('is_forwarded')->default(false); // Default to false 
             $table->enum('type', ['email', 'sms', 'notification'])->nullable();
         });
     }

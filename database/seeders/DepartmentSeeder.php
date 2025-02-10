@@ -14,10 +14,10 @@ class DepartmentSeeder extends Seeder
      */
     public function run()
     {
-        Department::create(['name'=> 'ICT', 'message_id'=> 1]);
-        Department::create(['name'=> 'Quality Insurance', 'message_id'=> 2]);
-        Department::create(['name'=> 'Student Affairs', 'message_id'=> 3]);
-        Department::create(['name'=> 'Payroll', 'message_id'=> 1]);
+        Department::create(['departments' => 'ICT']);
+        Department::create(['departments' => 'Quality Insurance']);
+        Department::create(['departments' => 'Student Affairs']);
+        Department::create(['departments' => 'Payroll']);
 
     }
 }

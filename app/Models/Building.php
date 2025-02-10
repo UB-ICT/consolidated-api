@@ -10,7 +10,7 @@ class Building extends Model
     use HasFactory;
     protected $fillable = [
         'name',
-        'building_location',
+        'location',
         'campus_id'
     ];
     public $timestamps = false;

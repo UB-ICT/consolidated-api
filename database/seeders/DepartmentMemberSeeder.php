@@ -16,4 +16,8 @@ class DepartmentMemberSeeder extends Seeder
     {
         DepartmentMember::create(['department_id' => 1, 'user_id'=>1]);
     }
+
+
+    
 }
+

@@ -9,8 +9,7 @@ class Department extends Model
 {
     use HasFactory;
     protected $fillable = [
-       'name',
-       'message_id',
+       'departments',
     ];
     public $timestamps = false;
 
