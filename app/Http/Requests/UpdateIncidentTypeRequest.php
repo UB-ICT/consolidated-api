@@ -26,13 +26,13 @@ class UpdateIncidentTypeRequest extends FormRequest
         $method = $this->method();
         if ($method == 'PUT') {
             return [
-                'name' => ['required'],
+                'type' => ['required'],
                 'icon' => ['required'],
                 'message' => ['required'],
             ];
         } else {
             return [
-                'name' => ['sometimes', 'required'],
+                'type' => ['sometimes', 'required'],
                 'icon' => ['sometimes', 'required'],
                 'message' => ['sometimes', 'required'],
 

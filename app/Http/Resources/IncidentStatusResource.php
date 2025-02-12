@@ -16,7 +16,7 @@ class IncidentStatusResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status,
+            'statuses' => $this->statuses,
         ];
     }
 }

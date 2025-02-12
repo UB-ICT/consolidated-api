@@ -26,12 +26,12 @@ class UpdateIncidentStatusRequest extends FormRequest
         $method = $this -> method();
         if($method == 'PUT'){ 
             return [
-                'status'=>['required'],
+                'statuses'=>['required'],
             ];
         }
         else {
             return [
-                'status'=>['sometimes', 'required'],
+                'statuses'=>['sometimes', 'required'],
             ];
         }
     }

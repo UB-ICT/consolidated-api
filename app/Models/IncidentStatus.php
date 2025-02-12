@@ -9,7 +9,7 @@ class IncidentStatus extends Model
 {
     use HasFactory;
     protected $fillable = [
-       'status',
+       'statuses',
     ];
     public $timestamps = false;
 

@@ -23,25 +23,25 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
             'name' => ['required'],
             'username' => ['required'],
             'email' => ['required'],
-            'password' => ['required'],
-            'workEmail' => ['required'],
             'phoneNo' => ['required'],
             'organization' => ['required'],
+            'picture' => ['required'],
+            'domain' => ['required'],
+            'password' => ['required'],
             'roleId' => ['required'],
-            'picture'=>['required'],
+            'senderId' => ['required'],
         ];
     }
 
     protected function prepareForValidation()
     {
         $this->merge([
-            'work_email' => $this->workEmail,
             'phone_no' => $this->phoneNo,
             'role_id' => $this->roleId,
+            'sender_id' => $this->senderId
         ]);
     }
 }

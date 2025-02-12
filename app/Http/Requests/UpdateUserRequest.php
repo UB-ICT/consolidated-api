@@ -28,24 +28,26 @@ class UpdateUserRequest extends FormRequest
                 'name' => ['required'],
                 'username' => ['required'],
                 'email' => ['required'],
-                'password' => ['required'],
-                'workEmail' => ['required'],
                 'phoneNo' => ['required'],
                 'organization' => ['required'],
-                'roleId' => ['required'],
                 'picture' => ['required'],
+                'domain' => ['required'],
+                'password' => ['required'],
+                'roleId' => ['required'],
+                'senderId' => ['required'],
             ];
         } else {
             return [
                 'name' => ['sometimes', 'required'],
                 'username' => ['sometimes', 'required'],
                 'email' => ['sometimes', 'required'],
-                'password' => ['sometimes', 'required'],
-                'workEmail' => ['sometimes', 'required'],
                 'phoneNo' => ['sometimes', 'required'],
                 'organization' => ['sometimes', 'required'],
-                'roleId' => ['sometimes', 'required'],
                 'picture' => ['sometimes', 'required'],
+                'domain' => ['sometimes', 'required'],
+                'password' => ['sometimes', 'required'],
+                'roleId' => ['sometimes', 'required'],
+                'senderId' => ['sometimes', 'required'],
             ];
         }
     }
@@ -53,9 +55,9 @@ class UpdateUserRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'work_email' => $this->workEmail,
             'phone_no' => $this->phoneNo,
             'role_id' => $this->roleId,
+            'sender_id' => $this->senderId
         ]);
     }
 }

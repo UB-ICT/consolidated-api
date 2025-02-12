@@ -9,7 +9,7 @@ class IncidentType extends Model
 {
     use HasFactory;
     protected $fillable = [
-       'name',
+       'type',
        'icon',
        'message',
     ];

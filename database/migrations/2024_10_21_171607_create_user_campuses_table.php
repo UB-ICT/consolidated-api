@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('user_campuses', function (Blueprint $table) {
             $table->id(); // This will create an auto-incrementing primary key column 'id'
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('campus_id')->constrained('campuses');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');;
+            $table->foreignId('campus_id')->constrained('campuses')->onDelete('cascade');
             $table->boolean('primary_campus');
         });
     }

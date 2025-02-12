@@ -57,6 +57,8 @@ class IncidentReportController extends Controller
     public function update(UpdateIncidentReportRequest $request, IncidentReport $incidentReport)
     {
         $incidentReport->update($request->all());
+        return response()->json(['message' => 'incidentReport updated successfully'], 200);
+
     }
 
     /**

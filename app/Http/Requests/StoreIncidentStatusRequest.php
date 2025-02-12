@@ -24,7 +24,7 @@ class StoreIncidentStatusRequest extends FormRequest
     public function rules()
     {
         return [
-            'status'=>['required'],
+            'statuses'=>['required'],
         ];
     }
 };

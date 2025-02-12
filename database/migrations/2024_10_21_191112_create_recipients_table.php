@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('recipients', function (Blueprint $table) {
             $table->id();
             // $table->primary(['user_id', 'message_id']); 
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('message_id')->constrained('messages');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('message_id')->constrained('messages')->onDelete('cascade');
         });
     }
 

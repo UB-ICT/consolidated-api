@@ -21,12 +21,12 @@ return new class extends Migration
             $table->string('uploaded_by');
             $table->integer('frequency');
             $table->dateTime('incident_reoccured');
-            $table->foreignId('incident_file_id')->constrained('incident_files');
-            $table->foreignId('incident_status_id')->constrained('incident_statuses');
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('campus_id')->constrained('campuses');
-            $table->foreignId('building_id')->constrained('buildings');
-            $table->string('incident_type_id');
+            $table->foreignId('incident_file_id')->constrained('incident_files')->onDelete('cascade');
+            $table->foreignId('incident_status_id')->constrained('incident_statuses')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->onDelete('cascade');
+            $table->foreignId('campus_id')->constrained('campuses')->onDelete('cascade');
+            $table->foreignId('building_id')->constrained('buildings')->onDelete('cascade');
+            $table->string('incident_type_id')->onDelete('cascade');
         });
     }
 

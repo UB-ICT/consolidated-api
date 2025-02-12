@@ -24,7 +24,9 @@ class StoreIncidentTypeRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'=> ['required'],
+            'type'=> ['required'],
+            'icon'=> ['required'],
+            'message'=> ['required'],
         ];
     }
 }

@@ -15,12 +15,11 @@ return new class extends Migration {
             $table->string('name');
             $table->string('username')->unique()->nullable();
             $table->string('email')->unique();
-            $table->string('work_email')->unique()->nullable();
             $table->string('phone_no')->nullable();
             $table->string('organization')->default('University of Belize');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('guid')->nullable();
-            $table->string('domain')->nullable();
+            $table->string('domain')->default('ub.edu.bz');
             $table->string('password')->nullable();
             $table->string('picture')->nullable();
             $table->rememberToken();
@@ -29,7 +28,7 @@ return new class extends Migration {
             $table->integer('sender_id')->nullable();
             $table->unsignedBigInteger('role_id')->default(4);
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); // Reference roles table
-        
+
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

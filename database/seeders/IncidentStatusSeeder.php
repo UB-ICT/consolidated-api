@@ -14,9 +14,9 @@ class IncidentStatusSeeder extends Seeder
      */
     public function run()
     {
-        IncidentStatus::create(['status' => 'Open']);
-        IncidentStatus::create(['status' => 'Closed']);
-        IncidentStatus::create(['status' => 'Pending']);
-        IncidentStatus::create(['status' => 'Blah']);
+        IncidentStatus::create(['statuses' => 'Open']);
+        IncidentStatus::create(['statuses' => 'Closed']);
+        IncidentStatus::create(['statuses' => 'Pending']);
+        IncidentStatus::create(['statuses' => 'Blah']);
     }
 }
