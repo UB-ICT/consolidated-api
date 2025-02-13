@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('path');
             $table->text('comment')->nullable();
-            $table->foreignId('message_id')->constrained('messages');
+            $table->foreignId('message_id')->constrained('messages')->onDelete('cascade');
             // $table->foreignId('incident_report_id')->constrained('incident_reports');
             $table->timestamps();
         });

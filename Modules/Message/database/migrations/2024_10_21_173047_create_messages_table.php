@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->string('user')->nullable(); // Optional sender's name
-            $table->foreignId('message_category_id')->nullable()->constrained('message_categories'); // Reference message_categories table
+            $table->foreignId('message_category_id')->nullable()->constrained('message_categories')->onDelete('cascade'); // Reference message_categories table
             $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete(); // Reference users table with cascading null on delete
             $table->string('sender')->nullable();
             $table->string('topic')->nullable();
