@@ -14,7 +14,7 @@ class UserStatus extends Model
      * @var array
      */
     protected $fillable = [
-        'status'
+        'userStatuses'
     ];
     public $timestamps = false;
 

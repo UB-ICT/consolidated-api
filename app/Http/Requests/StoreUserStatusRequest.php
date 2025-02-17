@@ -24,7 +24,7 @@ class StoreUserStatusRequest extends FormRequest
     public function rules()
     {
         return [
-            'status'=>['required'],
+            'userStatuses'=>['required'],
         ];
     }
 }

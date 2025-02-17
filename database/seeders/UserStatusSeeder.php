@@ -14,8 +14,8 @@ class UserStatusSeeder extends Seeder
      */
     public function run()
     {
-        UserStatus::create(['status' => 'Active']);
-        UserStatus::create(['status' => 'Inactive']);
-        UserStatus::create(['status' => 'Suspended']);   
+        UserStatus::create(['userStatuses' => 'Active']);
+        UserStatus::create(['userStatuses' => 'Inactive']);
+        UserStatus::create(['userStatuses' => 'Suspended']);   
      }
 }

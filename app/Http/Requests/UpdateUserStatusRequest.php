@@ -26,12 +26,12 @@ class UpdateUserStatusRequest extends FormRequest
         $method = $this -> method();
         if($method == 'PUT') {
             return [
-                'status'=>['required'],
+                'userStatuses'=>['required'],
             ];
         }
         else {
             return [
-                'status'=>['required'],
+                'userStatuses'=>['required'],
             ];
         }
     }

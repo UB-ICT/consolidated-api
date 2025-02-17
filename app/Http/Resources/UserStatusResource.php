@@ -16,7 +16,7 @@ class UserStatusResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status
+            'userStatuses' => $this->userStatuses
         ];
     }
 }
