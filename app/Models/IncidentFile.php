@@ -12,6 +12,7 @@ class IncidentFile extends Model
     protected $fillable = [
         'path',
         'comment',
+        'message_id',
     ];
     public $timestamps = false;
 

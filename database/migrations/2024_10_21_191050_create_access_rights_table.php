@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('access_rights', function (Blueprint $table) {
             $table->id();
             $table->string('description');
-            $table->foreignId('role_id')->constrained('roles');
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
         });
     }
 

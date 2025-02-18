@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('menu_roles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('menu_id')->constrained('menus');
-            $table->foreignId('role_id')->constrained('roles');
+            $table->foreignId('menu_id')->constrained('menus')->onDelete('cascade');
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             // $table->primary(['menu_id', 'role_id']);
         });
     }

@@ -26,7 +26,7 @@ return new class extends Migration {
             $table->integer('user_status_id')->nullable();
             $table->integer('menu_id')->nullable();
             $table->integer('sender_id')->nullable();
-            $table->unsignedBigInteger('role_id')->default(4);
+            $table->unsignedBigInteger('role_id')->nullable();
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); // Reference roles table
 
         });
