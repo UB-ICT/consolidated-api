@@ -56,6 +56,7 @@ class CampusController extends Controller
     public function update(UpdateCampusRequest $request, Campus $campus)
     {
         $campus->update($request->all());
+        return response()->json(['message' => 'campus updated successfully'], 200);
     }
 
     /**

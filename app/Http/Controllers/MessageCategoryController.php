@@ -56,6 +56,8 @@ class MessageCategoryController extends Controller
     public function update(UpdateMessageCategoryRequest $request, MessageCategory $messageCategory)
     {
         $messageCategory->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
+
     }
 
     /**

@@ -57,6 +57,7 @@ class DepartmentController extends Controller
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
         $department->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
 
     }
 

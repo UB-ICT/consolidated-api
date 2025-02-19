@@ -55,6 +55,7 @@ class IncidentStatusController extends Controller
     public function update(UpdateIncidentStatusRequest $request, IncidentStatus $incidentStatus)
     {
         $incidentStatus->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
     }
 
     /**

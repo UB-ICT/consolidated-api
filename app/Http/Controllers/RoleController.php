@@ -60,6 +60,7 @@ class RoleController extends Controller
     public function update(UpdateRoleRequest $request, Role $role)
     {
         $role->update($request->all());
+        return response()->json(['message' => 'role updated successfully'], 200);   
     }
 
     /**

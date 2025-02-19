@@ -56,6 +56,7 @@ class IncidentFileController extends Controller
     public function update(UpdateIncidentFileRequest $request, IncidentFile $incidentFile)
     {
         $incidentFile->update($request->all());
+        return response()->json(['message' => 'incidentFile updated successfully'], 200);
     }
 
     /**

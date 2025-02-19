@@ -56,6 +56,7 @@ class IncidentTypeController extends Controller
     public function update(UpdateIncidentTypeRequest $request, IncidentType $incidentType)
     {
         $incidentType->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
     }
 
     /**

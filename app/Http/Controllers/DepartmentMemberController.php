@@ -15,7 +15,7 @@ class DepartmentMemberController extends Controller
      */
     public function index()
     {
-        return new DepartmentMemberCollection( DepartmentMember::paginate());
+        return new DepartmentMemberCollection(DepartmentMember::paginate());
     }
 
     /**
@@ -56,6 +56,8 @@ class DepartmentMemberController extends Controller
     public function update(UpdateDepartmentMemberRequest $request, DepartmentMember $departmentMember)
     {
         $departmentMember->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
+
     }
 
     /**

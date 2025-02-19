@@ -57,6 +57,8 @@ class MenuRoleController extends Controller
     public function update(UpdateMenuRoleRequest $request, MenuRole $menuRole)
     {
         $menuRole->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
+
     }
 
     /**

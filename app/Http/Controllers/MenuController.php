@@ -62,6 +62,8 @@ class MenuController extends Controller
     public function update(UpdateMenuRequest $request, Menu $menu)
     {
         $menu->update($request->all());
+        return response()->json(['message' => 'updated successfully'], 200);
+
     }
 
     /**
@@ -80,7 +82,7 @@ class MenuController extends Controller
             return response()->json(['error' => 'Role ID is required'], 400);
         }
 
-        $roleId = $request->role_id; 
+        $roleId = $request->role_id;
         $menus = $this->getMenusByRole($roleId);
 
         return response()->json($menus);

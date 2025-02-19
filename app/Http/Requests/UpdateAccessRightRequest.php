@@ -23,26 +23,26 @@ class UpdateAccessRightRequest extends FormRequest
      */
     public function rules()
     {
-       
-            $method = $this -> method();
-            if($method == 'PUT') {
-                return [
-                    'description'=>['required'],
-                    'roleId'=>['required'],
-                ];
-            }
-            else {
-                return [
-                    'description'=>['sometimes','required'],
-                    'roleId'=>['sometimes','required'],
-                ];
-            }
+
+        $method = $this->method();
+        if ($method == 'PUT') {
+            return [
+                'description' => ['required'],
+                'roleId' => ['required'],
+            ];
+        } else {
+            return [
+                'description' => ['sometimes', 'required'],
+                'roleId' => ['sometimes', 'required'],
+            ];
+        }
     }
 
-    protected function prepareForValidation() {
+    protected function prepareForValidation()
+    {
         $this->merge([
-            'description'=>$this->description,
-            'role_id'=>$this->roleId 
+            'description' => $this->description,
+            'role_id' => $this->roleId
         ]);
     }
 }

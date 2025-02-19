@@ -57,6 +57,7 @@ class BuildingController extends Controller
     public function update(UpdateBuildingRequest $request, Building $building)
     {
         $building->update($request->all());
+        return response()->json(['message' => 'building updated successfully'], 200);
 
     }
 

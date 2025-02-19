@@ -59,7 +59,7 @@ class RecipientController extends Controller
     public function update(UpdateRecipientRequest $request, Recipient $recipient)
     {
         $recipient->update($request->all());
-
+        return response()->json(['message' => 'updated successfully'], 200);
     }
 
     /**

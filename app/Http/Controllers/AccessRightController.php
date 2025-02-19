@@ -58,6 +58,7 @@ class AccessRightController extends Controller
     public function update(UpdateAccessRightRequest $request, AccessRight $accessRight)
     {
         $accessRight->update($request->all());
+        return response()->json(['message' => 'accessRight updated successfully'], 200);
 
     }
 
