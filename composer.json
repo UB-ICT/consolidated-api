@@ -18,7 +18,8 @@
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
         "nwidart/laravel-modules": "^11.1",
-        "php-open-source-saver/jwt-auth": "^2.7"
+        "php-open-source-saver/jwt-auth": "^2.7",
+        "spatie/laravel-permission": "^6.15"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

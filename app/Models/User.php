@@ -10,11 +10,12 @@ use Laravel\Sanctum\HasApiTokens;
 use LdapRecord\Laravel\Auth\LdapAuthenticatable;
 use LdapRecord\Laravel\Auth\AuthenticatesWithLdap;
 use LdapRecord\Laravel\Auth\HasLdapUser;
+use Spatie\Permission\Traits\HasRoles;
 
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, AuthenticatesWithLdap;
+    use HasFactory, Notifiable, HasApiTokens, AuthenticatesWithLdap, HasLdapUser, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -73,10 +74,10 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $this->hasOne(UserCampus::class, 'user_id');
     }
 
-    public function receivedMessages()
-    {
-        return $this->hasMany(Message::class, 'recipient_id');
-    }
+    // public function receivedMessages()
+    // {
+    //     return $this->hasMany(Message::class, 'recipient_id');
+    // }
 
     public function userStatus()
     {
