@@ -17,8 +17,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            UserSeeder::class, 
-            CampusSeeder::class,     
+            CampusSeeder::class,
+            UserStatusSeeder::class,
+
+            UserSeeder::class,
             MessageCategorySeeder::class,
             UserCampusSeeder::class,
             BuildingSeeder::class,
@@ -26,7 +28,6 @@ class DatabaseSeeder extends Seeder
             IncidentFileSeeder::class,
             IncidentStatusSeeder::class,
             IncidentReportSeeder::class,
-            UserStatusSeeder::class,
             AccessRightSeeder::class,
             RecipientSeeder::class,
             IncidentTypeSeeder::class,
@@ -35,6 +36,6 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             MenuRoleSeeder::class,
             SubMenuSeeder::class,
-        ]);   
-     }
+        ]);
+    }
 }

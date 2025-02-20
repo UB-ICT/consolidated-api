@@ -31,7 +31,7 @@ class UpdateUserStatusRequest extends FormRequest
         }
         else {
             return [
-                'userStatuses'=>['required'],
+                'userStatuses'=> ['sometimes', 'required'],
             ];
         }
     }

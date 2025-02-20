@@ -21,11 +21,11 @@ class UserSeeder extends Seeder
             'phone_no' => '605-2234',
             'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            // 'guid'=>'123456',
             'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 1,
-            'sender_id' => 1,
+            'campus_id' => 1,
+            'user_status_id' => 1,
         ]);
 
         User::create([
@@ -35,11 +35,11 @@ class UserSeeder extends Seeder
             'phone_no' => '605-5331',
             'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            // 'guid'=>'1234563',
             'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 2,
-            'sender_id' => 1,
+            'campus_id' => 2,
+            'user_status_id' => 3,
         ]);
 
         User::create([
@@ -49,11 +49,11 @@ class UserSeeder extends Seeder
             'phone_no' => '622-2234',
             'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            // 'guid'=>'1234561',
             'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 3,
-            'sender_id' => 1,
+            'campus_id' => 3,
+            'user_status_id' => 2,
         ]);
 
         User::create([
@@ -63,11 +63,11 @@ class UserSeeder extends Seeder
             'phone_no' => '622-0234',
             'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            // 'guid'=>'1234565',
             'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 4,
-            'sender_id' => 1,
+            'campus_id' => 3,
+            'user_status_id' => 2,
         ]);
     }
 }

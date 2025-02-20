@@ -25,7 +25,8 @@ class UserResource extends JsonResource
             'domain' => $this->domain,
             'password' => $this->password,
             'roleId' => $this->role_id,
-            'senderId' => $this->sender_id
+            'campusId' => $this->campus_id,
+            'userStatusId' => $this->user_status_id,
         ];
     }
 }

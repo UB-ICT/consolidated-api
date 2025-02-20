@@ -34,7 +34,8 @@ class UpdateUserRequest extends FormRequest
                 'domain' => ['required'],
                 'password' => ['required'],
                 'roleId' => ['required'],
-                'senderId' => ['required'],
+                'campusId' => ['required'],
+                'userStatusId' => ['required'],
             ];
         } else {
             return [
@@ -47,7 +48,8 @@ class UpdateUserRequest extends FormRequest
                 'domain' => ['sometimes', 'required'],
                 'password' => ['sometimes', 'required'],
                 'roleId' => ['sometimes', 'required'],
-                'senderId' => ['sometimes', 'required'],
+                'campusId' => ['sometimes', 'required'],
+                'userStatusId' => ['sometimes', 'required'],
             ];
         }
     }
@@ -57,7 +59,8 @@ class UpdateUserRequest extends FormRequest
         $this->merge([
             'phone_no' => $this->phoneNo,
             'role_id' => $this->roleId,
-            'sender_id' => $this->senderId
+            'campus_id' => $this->campusId,
+            'user_status_id' => $this->userStatusId
         ]);
     }
 }

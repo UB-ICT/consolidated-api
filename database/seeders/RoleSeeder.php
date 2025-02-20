@@ -15,14 +15,14 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            ['name' => 'super admin', 'description' => 'Has full system access', 'guard_name' => 'web'],
-            ['name' => 'admin', 'description' => 'Manages system settings', 'guard_name' => 'web'],
-            ['name' => 'employee', 'description' => 'Limited access for employees', 'guard_name' => 'web'],
-            ['name' => 'student', 'description' => 'Limited access for students', 'guard_name' => 'web'],
+            ['roles' => 'super admin', 'description' => 'Has full system access', 'guard_name' => 'web'],
+            ['roles' => 'admin', 'description' => 'Manages system settings', 'guard_name' => 'web'],
+            ['roles' => 'employee', 'description' => 'Limited access for employees', 'guard_name' => 'web'],
+            ['roles' => 'student', 'description' => 'Limited access for students', 'guard_name' => 'web'],
         ];
 
         foreach ($roles as $role) {
-            Role::updateOrCreate(['name' => $role['name']], $role);
+            Role::updateOrCreate(['roles' => $role['roles']], $role);
         }
     }
 }

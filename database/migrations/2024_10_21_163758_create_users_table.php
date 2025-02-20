@@ -23,12 +23,14 @@ return new class extends Migration {
             $table->string('password')->nullable();
             $table->string('picture')->nullable();
             $table->rememberToken();
-            $table->integer('user_status_id')->nullable();
             $table->integer('menu_id')->nullable();
-            $table->integer('sender_id')->nullable();
+            $table->integer('user_status_id')->nullable();
             $table->unsignedBigInteger('role_id')->nullable();
+            $table->integer('campus_id')->nullable();
+            $table->foreign('campus_id')->references('id')->on('campuses')->onDelete('cascade');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); // Reference roles table
-
+            $table->foreign('user_status_id')->references('id')->on('user_statuses')->onDelete('cascade'); // Reference user_statuses table
+            $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

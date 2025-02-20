@@ -31,10 +31,10 @@ class User extends Authenticatable implements LdapAuthenticatable
         'organization',
         'picture',
         'device_token',
-        'user_status_id',
         'role_id',
         'menu_id',
-        'sender_id'
+        'campus_id',
+        'user_status_id',
     ];
     public $timestamps = false;
 
@@ -73,11 +73,6 @@ class User extends Authenticatable implements LdapAuthenticatable
     {
         return $this->hasOne(UserCampus::class, 'user_id');
     }
-
-    // public function receivedMessages()
-    // {
-    //     return $this->hasMany(Message::class, 'recipient_id');
-    // }
 
     public function userStatus()
     {

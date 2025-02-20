@@ -32,7 +32,8 @@ class StoreUserRequest extends FormRequest
             'domain' => ['required'],
             'password' => ['required'],
             'roleId' => ['required'],
-            'senderId' => ['required'],
+            'campusId' => ['required'],
+            'userStatusId' => ['required'],
         ];
     }
 
@@ -41,7 +42,8 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'phone_no' => $this->phoneNo,
             'role_id' => $this->roleId,
-            'sender_id' => $this->senderId
+            'campus_id' => $this->campusId,
+            'user_status_id' => $this->userStatusId
         ]);
     }
 }
