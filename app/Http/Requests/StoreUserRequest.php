@@ -24,12 +24,8 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => ['required'],
-            'username' => ['required'],
             'email' => ['required'],
-            'phoneNo' => ['required'],
-            'organization' => ['required'],
             'picture' => ['required'],
-            'domain' => ['required'],
             'password' => ['required'],
             'roleId' => ['required'],
             'campusId' => ['required'],
@@ -40,7 +36,6 @@ class StoreUserRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'phone_no' => $this->phoneNo,
             'role_id' => $this->roleId,
             'campus_id' => $this->campusId,
             'user_status_id' => $this->userStatusId

@@ -16,10 +16,7 @@ class UserSeeder extends Seeder
     {
         User::create([
             'name' => 'James',
-            'username' => 'Kingjames',
             'email' => 'jaafaber@gmail.com',
-            'phone_no' => '605-2234',
-            'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
             'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
@@ -30,40 +27,33 @@ class UserSeeder extends Seeder
 
         User::create([
             'name' => 'David',
-            'username' => 'Kingjames11',
             'email' => 'jaaf@gmail.com',
-            'phone_no' => '605-5331',
-            'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 2,
             'campus_id' => 2,
+            'domain' => 'ub.edu.bz',
             'user_status_id' => 3,
         ]);
 
         User::create([
             'name' => 'Andrew',
-            'username' => 'Kingjames111',
             'email' => 'jaber@gmail.com',
-            'phone_no' => '622-2234',
-            'organization' => 'University of Belize',
             'picture' => './path/to/pic/',
-            'domain' => 'ub.edu.bz',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 3,
             'campus_id' => 3,
+            'domain' => 'ub.edu.bz',
+
             'user_status_id' => 2,
         ]);
 
         User::create([
             'name' => 'Beverly',
-            'username' => 'Kingjames1111',
             'email' => 'jfabe@gmail.com',
-            'phone_no' => '622-0234',
-            'organization' => 'University of Belize',
-            'picture' => './path/to/pic/',
             'domain' => 'ub.edu.bz',
+
+            'picture' => './path/to/pic/',
             'password' => Hash::make('password'), // Hash the password using Bcrypt
             'role_id' => 4,
             'campus_id' => 3,

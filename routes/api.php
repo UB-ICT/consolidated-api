@@ -9,7 +9,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserCampusController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\MessageCategoryController;
-// use App\Http\Controllers\MessageController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IncidentStatusController;
@@ -23,7 +22,7 @@ use App\Http\Controllers\DepartmentMemberController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SubMenuController;
 use App\Http\Controllers\MenuRoleController;
-// use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\FileUploadController;
 use App\Services\FCMService;
 
 
@@ -52,20 +51,16 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::apiResource('menuRoles', MenuRoleController::class);
     Route::apiResource('subMenus', SubMenuController::class);
     // Route::get('/logout', [AuthController::class, 'logout']);
-
     Route::get('getUsers', [UserController::class, 'getUsers']);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
-
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
+    Route::post('/upload', [FileUploadController::class, 'upload']);
+
 
 });
 
-
-
-// Route::get('v1/publicSafety/usersSearch', [UserController::class, 'usersSearch']);
-// Route::post('v1/publicSafety/loginOrCreate', [UserController::class, 'loginOrCreate']);
 
 
 

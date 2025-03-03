@@ -26,12 +26,8 @@ class UpdateUserRequest extends FormRequest
         if ($method == 'PUT') {
             return [
                 'name' => ['required'],
-                'username' => ['required'],
                 'email' => ['required'],
-                'phoneNo' => ['required'],
-                'organization' => ['required'],
                 'picture' => ['required'],
-                'domain' => ['required'],
                 'password' => ['required'],
                 'roleId' => ['required'],
                 'campusId' => ['required'],
@@ -40,12 +36,8 @@ class UpdateUserRequest extends FormRequest
         } else {
             return [
                 'name' => ['sometimes', 'required'],
-                'username' => ['sometimes', 'required'],
                 'email' => ['sometimes', 'required'],
-                'phoneNo' => ['sometimes', 'required'],
-                'organization' => ['sometimes', 'required'],
                 'picture' => ['sometimes', 'required'],
-                'domain' => ['sometimes', 'required'],
                 'password' => ['sometimes', 'required'],
                 'roleId' => ['sometimes', 'required'],
                 'campusId' => ['sometimes', 'required'],
