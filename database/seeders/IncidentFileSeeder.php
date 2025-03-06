@@ -17,8 +17,8 @@ class IncidentFileSeeder extends Seeder
 
 
         IncidentFile::create(['path' => 'path/to/file1', 'comment' => 'Comment for file 1', 'message_id' => 1,]);
-        IncidentFile::create(['path' => 'path/to/file2', 'comment' => 'Comment for file 2', 'message_id' => 2,]);
+        IncidentFile::create(['path' => 'path/to/file2', 'comment' => 'Comment for file 2', 'message_id' => 1,]);
         IncidentFile::create(['path' => 'path/to/file3', 'comment' => 'Comment for file 3', 'message_id' => 1,]);
-        IncidentFile::create(['path' => 'path/to/file4', 'comment' => 'Comment for file 4', 'message_id' => 2,]);
+        IncidentFile::create(['path' => 'path/to/file4', 'comment' => 'Comment for file 4', 'message_id' => 1,]);
     }
 }

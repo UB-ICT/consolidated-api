@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             return [
                 'name' => ['required'],
                 'email' => ['required'],
-                'picture' => ['required'],
+                'picture' => ['nullable'],
                 'password' => ['required'],
                 'roleId' => ['required'],
                 'campusId' => ['required'],
@@ -37,7 +37,7 @@ class UpdateUserRequest extends FormRequest
             return [
                 'name' => ['sometimes', 'required'],
                 'email' => ['sometimes', 'required'],
-                'picture' => ['sometimes', 'required'],
+                'picture' => ['sometimes', 'nullable'],
                 'password' => ['sometimes', 'required'],
                 'roleId' => ['sometimes', 'required'],
                 'campusId' => ['sometimes', 'required'],

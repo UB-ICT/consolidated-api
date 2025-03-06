@@ -18,7 +18,7 @@ class RoleSeeder extends Seeder
             ['roles' => 'Super Administrator', 'description' => 'Has full system access', 'guard_name' => 'web'],
             ['roles' => 'Administrator', 'description' => 'Manages system settings', 'guard_name' => 'web'],
             ['roles' => 'Employee', 'description' => 'Limited access for employees', 'guard_name' => 'web'],
-            ['roles' => 'Student', 'description' => 'Limited access for students', 'guard_name' => 'web'],
+            // ['roles' => 'Student', 'description' => 'Limited access for students', 'guard_name' => 'web'],
         ];
 
         foreach ($roles as $role) {

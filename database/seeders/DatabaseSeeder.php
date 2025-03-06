@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CampusSeeder::class,
             UserStatusSeeder::class,
-
             UserSeeder::class,
             MessageCategorySeeder::class,
             UserCampusSeeder::class,

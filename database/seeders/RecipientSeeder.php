@@ -18,21 +18,5 @@ class RecipientSeeder extends Seeder
             'user_id' => 1,
             'message_id' => 1,
         ]);
-
-        Recipient::create([
-            'user_id' => 2,
-            'message_id' => 2,
-        ]);
-
-        Recipient::create([
-            'user_id' => 3,
-            'message_id' => 3,
-        ]);
-
-        Recipient::create([
-            'user_id' => 4,
-            'message_id' => 4,
-        ]);
-
     }
 }

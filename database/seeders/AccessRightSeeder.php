@@ -15,9 +15,7 @@ class AccessRightSeeder extends Seeder
     public function run()
     {
         AccessRight::create(['description'=>'blah', 'role_id'=> 1]);
-        AccessRight::create(['description'=>'bla', 'role_id'=> 2]);
-        AccessRight::create(['description'=>'blh', 'role_id'=> 3]);
-        AccessRight::create(['description'=>'bah', 'role_id'=> 4]);
+       
 
     }
 }

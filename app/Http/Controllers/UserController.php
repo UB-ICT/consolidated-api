@@ -9,6 +9,9 @@ use App\Http\Resources\UserCollection;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 
@@ -81,11 +84,42 @@ class UserController extends Controller
 
     public function getUsers()
     {
-        $users = User::select('id', 'username', 'name', )->get();
+        $users = User::select('id', 'name', )->get();
 
         return response()->json([
             'users' => $users
         ]);
     }
 
+    public function uploadProfilePicture(Request $request)
+    {
+        // Validate the request to ensure the file is an image
+        $request->validate([
+            'picture' => 'required|image|mimes:jpg,jpeg,png|max:12048', // 2MB max
+        ]);
+
+        // Check if file is uploaded
+        if ($request->hasFile('picture')) { // Changed 'profile_picture' to 'picture'
+            // Get the uploaded file
+            $file = $request->file('picture');
+
+            // Generate a unique name for the file and store it in the 'profile_pictures' directory
+            $filename = 'picture' . time() . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('pictures', $filename, 'public');
+
+            // Save the file path to the user's record
+            $user = Auth::user();
+            $user->picture = $filePath;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Profile picture uploaded successfully',
+                'file_path' => Storage::url($filePath), // Returns the URL to the uploaded file
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'No file uploaded',
+        ], 400);
+    }
 }

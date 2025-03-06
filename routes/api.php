@@ -23,6 +23,8 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SubMenuController;
 use App\Http\Controllers\MenuRoleController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\PDFController;
+
 use App\Services\FCMService;
 
 
@@ -56,9 +58,9 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
+    Route::post('/uploadProfilePicture', [UserController::class, 'uploadProfilePicture']);
     Route::post('/upload', [FileUploadController::class, 'upload']);
-
-
+    Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });
 
 
