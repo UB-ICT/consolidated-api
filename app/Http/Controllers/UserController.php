@@ -72,6 +72,10 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        if (!Auth::user()->can('Delete User')) {
+            return response()->json(['message' => 'not authorize to delete'], 401);
+        }
+
         $user->delete();
         return response()->json(['message' => 'user deleted successfully'], 200);
     }
