@@ -2,29 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Message\Models\Message;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class IncidentFile extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'path',
-        'comment',
-        'message_id',
-    ];
-    public $timestamps = false;
 
+    protected $fillable = ['incident_report_id', 'path', 'name'];
 
-    
-    public function incidentFile()
+    public function incidentReport()
     {
         return $this->belongsTo(IncidentReport::class);
-    }
-
-    public function message()
-    {
-        return $this->belongsTo(Message::class);
     }
 }

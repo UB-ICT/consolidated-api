@@ -8,6 +8,9 @@ use App\Http\Requests\StoreIncidentReportRequest;
 use App\Http\Requests\UpdateIncidentReportRequest;
 use App\Models\IncidentReport;
 use Database\Factories\IncidentReportFactory;
+use App\Models\IncidentFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 class IncidentReportController extends Controller
 {
@@ -75,5 +78,31 @@ class IncidentReportController extends Controller
         $incidentReport = IncidentReport::count();
         return response()->json(['total' => $incidentReport], 200);
     }
+
+    public function uploadIncidentFile(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'incidentId' => 'required|exists:incident_reports,id'
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('incident_files', $fileName, 'public');
+
+            $incidentFile = IncidentFile::create([
+                'incident_report_id' => $request->incidentId,
+                'path' => Storage::url($filePath),
+                'name' => $fileName
+            ]);
+
+            return response()->json($incidentFile, 201);
+        }
+
+        return response()->json(['error' => 'File upload failed'], 400);
+    }
+
+
 
 }

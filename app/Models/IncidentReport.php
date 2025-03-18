@@ -17,7 +17,7 @@ class IncidentReport extends Model
         'uploaded_by',
         'incident_reoccured',
         'frequency',
-        'incident_file_id',
+        'incident_files',
         'incident_status_id',
         'user_id',
         'campus_id',
@@ -53,8 +53,9 @@ class IncidentReport extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function incidentReport()
+    public function incidentFiles()
     {
         return $this->hasMany(IncidentFile::class);
     }
+
 }

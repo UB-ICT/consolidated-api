@@ -38,10 +38,7 @@ class Message extends Model
     //     return $this->belongsTo(User::class, 'sender_id');
     // }
 
-    public function incidentFile()
-    {
-        return $this->hasOne(IncidentFile::class, 'message_id');
-    }
+  
 
     public function messageCategory()
     {

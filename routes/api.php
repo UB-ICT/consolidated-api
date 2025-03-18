@@ -40,9 +40,9 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::apiResource('userCampuses', UserCampusController::class);
     Route::apiResource('buildings', BuildingController::class);
     // Route::apiResource('messages', MessageController::class);
-    Route::apiResource('incidentFiles', IncidentFileController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
+    Route::post('/uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('accessRights', AccessRightController::class);
     Route::apiResource('recipients', RecipientController::class);
@@ -56,7 +56,6 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::get('getUsers', [UserController::class, 'getUsers']);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
-    Route::get('incidentFileTotal', [IncidentFileController::class, 'getTotalIncidentFile']);
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
     Route::post('/uploadProfilePicture', [UserController::class, 'uploadProfilePicture']);
     Route::post('/upload', [FileUploadController::class, 'upload']);

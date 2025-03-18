@@ -24,7 +24,7 @@ class IncidentReportResource extends JsonResource
             'uploadedBy'=>$this->uploaded_by,
             'frequency'=>$this->frequency,
             'incidentReoccured'=>$this->incident_reoccured,
-            'incidentFileId'=>$this->incident_file_id,
+            'incidentFiles'=>$this->incident_files,
             'incidentStatusId'=>$this->incident_status_id,
             'userId'=>$this->user_id,
             'campusId'=>$this->campus_id,
