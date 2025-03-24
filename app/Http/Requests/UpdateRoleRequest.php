@@ -22,17 +22,15 @@ class UpdateRoleRequest extends FormRequest
     public function rules(): array
     {
         $method = $this->method();
-        if($method == 'PUT') {
-        return [
-            'roles'=> ['required'],
-            'description'=>['required']
-        ];
-    } else {
-        return [
-            //
-            'roles'=> ['sometimes','required'],
-            'description'=>['sometimes','required'] 
-           ];
+        if ($method == 'PUT') {
+            return [
+                'name' => ['required'],
+            ];
+        } else {
+            return [
+                //
+                'name' => ['sometimes', 'required'],
+            ];
+        }
     }
-}
 }

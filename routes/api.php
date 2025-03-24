@@ -5,6 +5,7 @@ use App\Http\Controllers\PushNotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserCampusController;
 use App\Http\Controllers\CampusController;
@@ -34,6 +35,7 @@ use App\Services\FCMService;
 
 Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controllers', 'middleware' => 'auth:sanctum'], function () {
     Route::apiResource('roles', RoleController::class);
+    Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('users', UserController::class);
     Route::apiResource('campuses', CampusController::class);
     Route::apiResource('messageCategories', MessageCategoryController::class);
