@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -97,33 +98,60 @@ class UserController extends Controller
 
     public function uploadProfilePicture(Request $request)
     {
-        // Validate the request to ensure the file is an image
-        $request->validate([
-            'picture' => 'required|image|mimes:jpg,jpeg,png|max:12048', // 2MB max
-        ]);
+        try {
+            // Validate the request
+            $validator = Validator::make($request->all(), [
+                'picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
+            ]);
 
-        // Check if file is uploaded
-        if ($request->hasFile('picture')) { // Changed 'profile_picture' to 'picture'
-            // Get the uploaded file
-            $file = $request->file('picture');
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation errors',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-            // Generate a unique name for the file and store it in the 'profile_pictures' directory
-            $filename = 'picture' . time() . '.' . $file->getClientOriginalExtension();
-            $filePath = $file->storeAs('pictures', $filename, 'public');
+            // Get the user (not necessarily the authenticated user)
+            $user = User::findOrFail($request->userId);
 
-            // Save the file path to the user's record
-            $user = Auth::user();
-            $user->picture = $filePath;
-            $user->save();
+            // Handle file upload
+            if ($request->hasFile('picture')) {
+                // Delete old picture if exists
+                if ($user->picture && Storage::disk('public')->exists($user->picture)) {
+                    Storage::disk('public')->delete($user->picture);
+                }
+
+                // Store new picture
+                $file = $request->file('picture');
+                $filename = 'user_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('profile_pictures', $filename, 'public');
+
+                // Update user record
+                $user->picture = $path;
+                $user->save();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile picture uploaded successfully',
+                    'data' => [
+                        'picture_url' => Storage::url($path),
+                        'picture_path' => $path,
+                    ]
+                ], 200);
+            }
 
             return response()->json([
-                'message' => 'Profile picture uploaded successfully',
-                'file_path' => Storage::url($filePath), // Returns the URL to the uploaded file
-            ], 200);
-        }
+                'success' => false,
+                'message' => 'No file was uploaded'
+            ], 400);
 
-        return response()->json([
-            'message' => 'No file uploaded',
-        ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
