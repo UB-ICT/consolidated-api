@@ -37,11 +37,11 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('users', UserController::class);
+
     Route::apiResource('campuses', CampusController::class);
     Route::apiResource('messageCategories', MessageCategoryController::class);
     Route::apiResource('userCampuses', UserCampusController::class);
     Route::apiResource('buildings', BuildingController::class);
-    // Route::apiResource('messages', MessageController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
     Route::post('/uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
@@ -54,12 +54,11 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::get('menus', [MenuController::class, 'getMenus']);
     Route::apiResource('menuRoles', MenuRoleController::class);
     Route::apiResource('subMenus', SubMenuController::class);
-    // Route::get('/logout', [AuthController::class, 'logout']);
     Route::get('getUsers', [UserController::class, 'getUsers']);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
-    Route::post('/uploadProfilePicture', [UserController::class, 'uploadProfilePicture']);
+    Route::post('uploadPicture', [UserController::class, 'uploadPicture']);
     Route::post('/upload', [FileUploadController::class, 'upload']);
     Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });
