@@ -17,7 +17,6 @@ class UserSeeder extends Seeder
         User::updateOrCreate([
             'name' => 'James Faber',
             'email' => 'jamess.faber@ub.edu.bz',
-            'picture' => '',
             'domain' => 'default',
             'password' => Hash::make('Kingjames_x2'), // Hash the password using Bcrypt
             'role_id' => 1,

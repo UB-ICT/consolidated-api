@@ -18,7 +18,6 @@ return new class extends Migration {
             $table->string('guid')->nullable();
             $table->string('domain')->default('ub.edu.bz');
             $table->string('password')->nullable();
-            $table->string('picture')->nullable();
             $table->rememberToken();
             $table->integer('menu_id')->nullable();
             $table->integer('user_status_id')->nullable();

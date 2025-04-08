@@ -58,7 +58,6 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
-    Route::post('uploadPicture', [UserController::class, 'uploadPicture']);
     Route::post('/upload', [FileUploadController::class, 'upload']);
     Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });

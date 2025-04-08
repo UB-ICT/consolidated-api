@@ -44,8 +44,7 @@ class AuthController extends Controller
                             'id' => $user->id,
                             'name' => $user->name,
                             'email' => $user->email,
-                            'picture' => $user->picture,                          
-                        ] // Placeholder for now
+                        ]
                     ]
                 ];
             } else {

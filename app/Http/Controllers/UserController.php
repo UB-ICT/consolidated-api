@@ -2,18 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests;
+
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UserCollection;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 
 class UserController extends Controller
@@ -94,36 +90,5 @@ class UserController extends Controller
         return response()->json([
             'users' => $users
         ]);
-    }
-
-    public function uploadPicture(Request $request)
-    {
-        $validated = $request->validate([
-            'picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'userId' => 'required|integer|exists:users,id'
-        ]);
-
-        $user = User::findOrFail($validated['userId']);
-
-        // Handle file upload
-        if ($request->hasFile('picture')) {
-            $path = $request->file('picture')->store('profile_pictures', 'public');
-
-            // Delete old picture if exists
-            if ($user->picture) {
-                Storage::delete('public/profile_pictures/' . $user->picture);
-            }
-
-            $user->picture = basename($path);
-            $user->save();
-
-            return response()->json([
-                'data' => [
-                    'picture' => asset('storage/profile_pictures/' . $user->picture)
-                ]
-            ]);
-        }
-
-        return response()->json(['error' => 'File upload failed'], 400);
     }
 }
