@@ -60,6 +60,16 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
     Route::post('/upload', [FileUploadController::class, 'upload']);
     Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
+
+    Route::get('chats', [ChatController::class, 'index']);
+    Route::post('chats', [ChatController::class, 'store']);
+    Route::get('chats/{chat}', [ChatController::class, 'show']);
+    
+    // Message routes
+    Route::get('chats/{chat}/messages', [MessageController::class, 'index']);
+    Route::post('chats/{chat}/messages', [MessageController::class, 'store']);
+    Route::post('messages/{message}/read', [MessageController::class, 'markAsRead']);
+
 });
 
 

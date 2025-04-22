@@ -25,37 +25,30 @@ class UpdateMessageRequest extends FormRequest
         if ($method == 'PUT') {
 
             return [
-                // 'messageCategoryId'=>['required'],
-                'user' => ['required'],
-                // 'senderId' => ['required'],
-                // 'topic' => ['required'],
-                'text' => ['required'],
-                'sender'=>['required'],
-                // 'images' => ['required'],
-                // 'location' => ['required'],
-                // 'dateSent' => ['required'],
-                // 'isArchive' => ['required'],
-                // 'isDeleted' => ['required'],
-                // 'isForwarded' => ['required'],
-                // 'type' => ['required'],
-                'timeStamp' => ['required', 'Date']
+                'content' => 'sometimes|string',
+                'is_deleted' => 'sometimes|boolean',
+                'is_forwarded' => 'sometimes|boolean',
             ];
         } else {
             return [
-                // 'messageCategoryId'=>['sometimes','required'],
-                'user' => ['sometimes', 'required'],
-                // 'senderId' => ['sometimes', 'required'],
-                // 'topic' => ['sometimes', 'required'],
-                'sender' => ['sometimes', 'required'],
-                'text' => ['sometimes', 'required'],
-                // 'images' => ['sometimes', 'required'],
-                // 'location' => ['sometimes', 'required'],
-                // 'dateSent' => ['sometimes', 'required'],
-                // 'isArchive' => ['sometimes', 'required'],
-                // 'isDeleted' => ['sometimes', 'required'],
-                // 'isForwarded' => ['sometimes', 'required'],
-                // 'type' => ['sometimes', 'required'],
-                'timestamp' =>['sometimes', 'required'],
+
+                'content' => ['sometimes', 'required'],
+                'is_deleted' => ['sometimes', 'required'],
+                'is_forwarded' => ['sometimes', 'required'],
+                // // 'messageCategoryId'=>['sometimes','required'],
+                // 'user' => ['sometimes', 'required'],
+                // // 'senderId' => ['sometimes', 'required'],
+                // // 'topic' => ['sometimes', 'required'],
+                // 'sender' => ['sometimes', 'required'],
+                // 'text' => ['sometimes', 'required'],
+                // // 'images' => ['sometimes', 'required'],
+                // // 'location' => ['sometimes', 'required'],
+                // // 'dateSent' => ['sometimes', 'required'],
+                // // 'isArchive' => ['sometimes', 'required'],
+                // // 'isDeleted' => ['sometimes', 'required'],
+                // // 'isForwarded' => ['sometimes', 'required'],
+                // // 'type' => ['sometimes', 'required'],
+                // 'timestamp' => ['sometimes', 'required'],
 
 
             ];

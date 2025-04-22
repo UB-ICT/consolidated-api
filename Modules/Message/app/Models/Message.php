@@ -9,36 +9,31 @@ use App\Models\MessageCategory;
 use App\Models\Department;
 use App\Models\User;
 // use Modules\Message\Database\Factories\MessageFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Message extends Model
 {
     use HasFactory;
     protected $fillable = [
         'user',
-        'message_category_id',
-        'sender_id',
-        'topic',
-        'message',
-        'location',
-        'date_sent',
-        'sender',
-        'images',
-        'is_archive',
-        'is_deleted',
-        'is_forwarded',
-        'type',
-        'incident_type_id',
-        
+    ];
+
+    protected $casts = [
+        'attachments' => 'array',
+        'read_at' => 'datetime',
     ];
     public $timestamps = false;
 
 
-    // public function sender()
-    // {
-    //     return $this->belongsTo(User::class, 'sender_id');
-    // }
+    public function chat(): BelongsTo
+    {
+        return $this->belongsTo(Chat::class);
+    }
 
-  
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
 
     public function messageCategory()
     {
