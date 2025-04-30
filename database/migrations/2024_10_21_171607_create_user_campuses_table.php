@@ -11,16 +11,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('user_campuses', function (Blueprint $table) {
-            // $table->id(); // This will create an auto-incrementing primary key column 'id'
             $table->uuid('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('campus_id');
+            $table->uuid('campus_id');
             $table->foreign('campus_id')->references('id')->on('campuses')->onDelete('cascade');
             $table->boolean('primary_campus');
             $table->primary(['user_id', 'campus_id']);
         });
     }
-
     /**
      * Reverse the migrations.
      */

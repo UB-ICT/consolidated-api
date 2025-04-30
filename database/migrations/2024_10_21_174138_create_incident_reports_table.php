@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('incident_reports', function (Blueprint $table) {
-            $table->uuid('id')->primary(); // Added primary()
-            $table->text('description'); // Changed from 'report' to 'description'
+            $table->uuid('id')->primary();
+            $table->text('description');
             $table->string('disposition');
             $table->string('case_number');
             $table->string('action');
@@ -21,24 +21,31 @@ return new class extends Migration {
             $table->integer('frequency');
             $table->dateTime('incident_reoccured');
             $table->foreignUuid('incident_status_id')->constrained('incident_statuses')->onDelete('cascade');
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // Removed duplicate onDelete
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('campus_id')->constrained('campuses')->onDelete('cascade');
             $table->foreignUuid('building_id')->constrained('buildings')->onDelete('cascade');
-            $table->foreignUuid('incident_type_id')->constrained('incident_types')->onDelete('cascade'); // Fixed to proper foreign key
-            $table->timestamps(); // Added timestamps
+            $table->uuid('incident_type_id'); // Changed to uuid to match referenced column
+            $table->timestamps();
+
+            $table->foreign('incident_type_id')
+                ->references('id')
+                ->on('incident_types')
+                ->onDelete('cascade');
         });
 
         Schema::create('incident_files', function (Blueprint $table) {
             $table->id();
-            $table->uuid('incident_report_id'); // Changed to uuid to match parent table
+            $table->uuid('incident_report_id');
             $table->string('path');
             $table->string('name');
             $table->timestamps();
 
-            $table->foreign('incident_report_id')->references('id')->on('incident_reports')->onDelete('cascade');
+            $table->foreign('incident_report_id')
+                ->references('id')
+                ->on('incident_reports')
+                ->onDelete('cascade');
         });
     }
-
     /**
      * Reverse the migrations.
      */

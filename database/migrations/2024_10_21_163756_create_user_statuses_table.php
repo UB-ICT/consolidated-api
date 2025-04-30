@@ -12,7 +12,11 @@ return new class extends Migration {
     {
         Schema::create('user_statuses', function (Blueprint $table) {
             $table->id();
-            $table->string('userStatuses');
+            $table->string('name'); // or 'status' if you prefer
+            $table->string('description')->nullable();
+            $table->string( 'userStatuses');
+
+            $table->timestamps();
         });
     }
 

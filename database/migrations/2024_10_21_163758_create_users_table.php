@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->integer('menu_id')->nullable();
             $table->integer('user_status_id')->nullable();
             $table->unsignedBigInteger('role_id')->nullable();
-            $table->uuid('campus_id')->change();
+            $table->uuid('campus_id')->nullable(); // Properly define the column first
             $table->foreign('campus_id')->references('id')->on('campuses')->onDelete('cascade');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); // Reference roles table
             $table->foreign('user_status_id')->references('id')->on('user_statuses')->onDelete('cascade'); // Reference user_statuses table

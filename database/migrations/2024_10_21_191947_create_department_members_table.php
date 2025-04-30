@@ -4,18 +4,16 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('department_members', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('department_id')->constrained('departments')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            // $table->primary(['department_id', 'user_id']);
+            $table->uuid('id')->primary();
+            $table->foreignUuid('department_id')->constrained('departments')->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
         });
     }
 
