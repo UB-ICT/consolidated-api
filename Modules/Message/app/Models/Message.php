@@ -13,24 +13,36 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Message extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'message_category_id',
-        'sender_id',
-        'topic',
-        'message',
-        'location',
-        'date_sent',
-        'is_archive',
-        'is_deleted',
-        'is_forwarded',
-        'type',
-        'images',
-     ];
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+    protected $fillable = [
+        // 'message_category_id',
+        // 'sender_id',
+        // 'topic',
+        // 'message',
+        // 'location',
+        // 'date_sent',
+        // 'is_archive',
+        // 'is_deleted',
+        // 'is_forwarded',
+        // 'type',
+        // 'images',
+
+        'id',
+        'chat_id',
+        'sender_id',
+        'text',
+        'timestamp'
+    ];
+
+    protected $casts = [
+        'timestamp' => 'datetime',
+    ];
     public $timestamps = false;
 
 
-   
+
 
     public function sender(): BelongsTo
     {
@@ -51,4 +63,15 @@ class Message extends Model
     {
         return $this->belongsToMany(User::class, 'recipient', 'message_id', 'user_id');
     }
+
+    public function files()
+    {
+        return $this->hasMany(MessageFile::class);
+    }
+
+    public function chat()
+    {
+        return $this->belongsTo(Chat::class);
+    }
+
 }

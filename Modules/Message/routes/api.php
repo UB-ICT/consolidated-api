@@ -17,7 +17,7 @@ use Modules\Message\Http\Controllers\MessageController;
 
 
 
-Route::middleware(['auth:sanctum'])->prefix('v1/publicSafety/')->group(function () {
-    Route::apiResource('messages', MessageController::class)->names('message');
-    Route::get('totalMessages', [MessageController::class, 'getTotalMessage']);
-});
+// Route::middleware(['auth:sanctum'])->prefix('v1/publicSafety/')->group(function () {
+//     Route::apiResource('messages', MessageController::class)->names('message');
+//     Route::get('totalMessages', [MessageController::class, 'getTotalMessage']);
+// });

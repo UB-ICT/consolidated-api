@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PushNotificationController;
+// use App\Http\Controllers\AuthController;
+// use App\Http\Controllers\PushNotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
@@ -13,7 +13,7 @@ use App\Http\Controllers\MessageCategoryController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IncidentStatusController;
-use App\Http\Controllers\IncidentFileController;
+// use App\Http\Controllers\IncidentFileController;
 use App\Http\Controllers\UserStatusController;
 use App\Http\Controllers\AccessRightController;
 use App\Http\Controllers\RecipientController;
@@ -25,19 +25,20 @@ use App\Http\Controllers\SubMenuController;
 use App\Http\Controllers\MenuRoleController;
 use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\PDFController;
+use Modules\Message\Http\Controllers\ChatController;
+use Modules\Message\Http\Controllers\MessageController;
 
 use App\Services\FCMService;
 
-
-
-// Route::post('/login', [AuthController::class, 'login']);
-// Route::post('/register', [AuthController::class, 'register']);
-
-Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controllers', 'middleware' => 'auth:sanctum'], function () {
+Route::group([
+    'prefix' => 'v1/publicSafety',
+    'namespace' => 'App\Http\Controllers',
+    'middleware' => 'auth:sanctum'
+], function () {
+    // Existing routes
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('users', UserController::class);
-
     Route::apiResource('campuses', CampusController::class);
     Route::apiResource('messageCategories', MessageCategoryController::class);
     Route::apiResource('userCampuses', UserCampusController::class);
@@ -61,15 +62,22 @@ Route::group(['prefix' => 'v1/publicSafety', 'namespace' => 'App\Http\Controller
     Route::post('/upload', [FileUploadController::class, 'upload']);
     Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 
-    Route::get('chats', [ChatController::class, 'index']);
-    Route::post('chats', [ChatController::class, 'store']);
-    Route::get('chats/{chat}', [ChatController::class, 'show']);
-    
-    // Message routes
-    Route::get('chats/{chat}/messages', [MessageController::class, 'index']);
-    Route::post('chats/{chat}/messages', [MessageController::class, 'store']);
-    Route::post('messages/{message}/read', [MessageController::class, 'markAsRead']);
+    // New chat and message routes
+    Route::apiResource('chats', ChatController::class);
 
+    // Message routes with chat prefix
+    Route::prefix('chats/{chat}/messages')->group(function () {
+        Route::get('/', [MessageController::class, 'index']);
+        Route::post('/', [MessageController::class, 'store']);
+        Route::get('search', [MessageController::class, 'search']);
+        Route::get('images', [MessageController::class, 'getSharedImages']);
+        Route::delete('{message}', [MessageController::class, 'destroy']);
+    });
+
+    // Additional chat endpoints
+    Route::get('chatsTotal', [ChatController::class, 'getTotalChats']);
+    Route::get('messagesTotal', [MessageController::class, 'getTotalMessages']);
+    Route::post('chats/{chat}/markAsRead', [ChatController::class, 'markAsRead']);
 });
 
 

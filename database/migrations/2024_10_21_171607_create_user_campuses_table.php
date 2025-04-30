@@ -4,18 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('user_campuses', function (Blueprint $table) {
-            $table->id(); // This will create an auto-incrementing primary key column 'id'
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');;
-            $table->foreignId('campus_id')->constrained('campuses')->onDelete('cascade');
+            // $table->id(); // This will create an auto-incrementing primary key column 'id'
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('campus_id');
+            $table->foreign('campus_id')->references('id')->on('campuses')->onDelete('cascade');
             $table->boolean('primary_campus');
+            $table->primary(['user_id', 'campus_id']);
         });
     }
 

@@ -18,6 +18,9 @@ class UserCampus extends Model
     *
     * @var array
     */
+
+    protected $keyType = 'string';  // For UUID
+    public $incrementing = false;   // For UUID
    protected $fillable = [
        'user_id',
        'campus_id',

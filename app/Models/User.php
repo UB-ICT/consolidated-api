@@ -22,6 +22,8 @@ class User extends Authenticatable implements LdapAuthenticatable
      *
      * @var array
      */
+    protected $keyType = 'string';
+    public $incrementing = false;
     protected $fillable = [
         'name',
         'email',
