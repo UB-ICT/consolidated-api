@@ -11,9 +11,22 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('department_members', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('department_id')->constrained('departments')->onDelete('cascade');
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->id(); // Standard auto-incrementing primary key (remove ->unique() as it's redundant)
+
+            // Define columns first
+            $table->unsignedBigInteger('department_id');
+            $table->unsignedBigInteger('user_id');
+
+            // Then add foreign key constraints
+            $table->foreign('department_id')
+                ->references('id')
+                ->on('departments')
+                ->onDelete('cascade');
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
         });
     }
 

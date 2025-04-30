@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('incident_types', function (Blueprint $table) {
-            $table->uuid('id')->primary();  // Changed to UUID to match
+            $table->id()->unique();
             $table->string('icon');
             $table->string('type');
             $table->string('message');

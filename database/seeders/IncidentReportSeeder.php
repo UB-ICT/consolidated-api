@@ -14,34 +14,29 @@ class IncidentReportSeeder extends Seeder
      */
     public function run(): void
     {
-        $incidentReport = IncidentReport::create([
+        IncidentReport::create([
             'report' => 'Description of incident 1',
+            'description' => 'Detailed description',
             'disposition' => 'Disposition of incident 1',
             'case_number' => 'Case number for incident 1',
             'action' => 'Action taken for incident 1',
             'location' => 'Location of incident 1',
             'uploaded_by' => 'Uploader of incident 1',
             'frequency' => 1,
-            'incident_reoccured' => now(),
-            'incident_files' => './path/to/file1',
+            'incident_reoccured' => '2025-04-30 22:13:28',
             'incident_status_id' => 1,
             'user_id' => 1,
             'campus_id' => 1,
             'building_id' => 1,
-            'incident_type_id' => 'incident_type_1',
+            'incident_type_id' => 1
         ]);
 
         // Create associated incident files
         IncidentFile::create([
-            'incident_report_id' => $incidentReport->id,
+            'incident_report_id' => 1, // Must match column name in DB
             'path' => 'storage/incident_files/file1.jpg',
             'name' => 'file1.jpg',
         ]);
 
-        IncidentFile::create([
-            'incident_report_id' => $incidentReport->id,
-            'path' => 'storage/incident_files/file2.jpg',
-            'name' => 'file2.jpg',
-        ]);
     }
 }

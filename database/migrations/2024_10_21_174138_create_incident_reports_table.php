@@ -11,7 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('incident_reports', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id(); // Standard auto-incrementing primary key
+            $table->string('report');
             $table->text('description');
             $table->string('disposition');
             $table->string('case_number');
@@ -20,12 +21,36 @@ return new class extends Migration {
             $table->string('uploaded_by');
             $table->integer('frequency');
             $table->dateTime('incident_reoccured');
-            $table->foreignUuid('incident_status_id')->constrained('incident_statuses')->onDelete('cascade');
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignUuid('campus_id')->constrained('campuses')->onDelete('cascade');
-            $table->foreignUuid('building_id')->constrained('buildings')->onDelete('cascade');
-            $table->uuid('incident_type_id'); // Changed to uuid to match referenced column
+
+            // Foreign keys using unsignedBigInteger
+            $table->unsignedBigInteger('incident_status_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('campus_id');
+            $table->unsignedBigInteger('building_id');
+            $table->unsignedBigInteger('incident_type_id');
+
             $table->timestamps();
+
+            // Foreign key constraints
+            $table->foreign('incident_status_id')
+                ->references('id')
+                ->on('incident_statuses')
+                ->onDelete('cascade');
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+
+            $table->foreign('campus_id')
+                ->references('id')
+                ->on('campuses')
+                ->onDelete('cascade');
+
+            $table->foreign('building_id')
+                ->references('id')
+                ->on('buildings')
+                ->onDelete('cascade');
 
             $table->foreign('incident_type_id')
                 ->references('id')
@@ -35,7 +60,7 @@ return new class extends Migration {
 
         Schema::create('incident_files', function (Blueprint $table) {
             $table->id();
-            $table->uuid('incident_report_id');
+            $table->unsignedBigInteger('incident_report_id'); // Changed to match incident_reports.id
             $table->string('path');
             $table->string('name');
             $table->timestamps();
@@ -46,6 +71,7 @@ return new class extends Migration {
                 ->onDelete('cascade');
         });
     }
+
     /**
      * Reverse the migrations.
      */

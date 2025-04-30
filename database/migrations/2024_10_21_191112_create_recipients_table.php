@@ -4,17 +4,31 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('recipients', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignUuid('message_id')->constrained('messages')->onDelete('cascade');
+            $table->id(); // Remove ->unique() as it's redundant for primary keys
+
+            // First define the columns
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('message_id');
+
+            // Then add the foreign key constraints
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+
+            $table->foreign('message_id')
+                ->references('id')
+                ->on('messages')
+                ->onDelete('cascade');
+
+           
         });
     }
 

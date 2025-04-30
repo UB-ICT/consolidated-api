@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id(); // Standard auto-incrementing primary key (no need for ->unique() as id() is already unique)
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -20,13 +20,31 @@ return new class extends Migration {
             $table->string('password')->nullable();
             $table->rememberToken();
             $table->integer('menu_id')->nullable();
-            $table->integer('user_status_id')->nullable();
+
+            // Changed to unsignedBigInteger for consistency
+            $table->unsignedBigInteger('user_status_id')->nullable();
             $table->unsignedBigInteger('role_id')->nullable();
-            $table->uuid('campus_id')->nullable(); // Properly define the column first
-            $table->foreign('campus_id')->references('id')->on('campuses')->onDelete('cascade');
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); // Reference roles table
-            $table->foreign('user_status_id')->references('id')->on('user_statuses')->onDelete('cascade'); // Reference user_statuses table
+
+            // Changed from uuid to unsignedBigInteger
+            $table->unsignedBigInteger('campus_id')->nullable();
+
             $table->timestamps();
+
+            // Foreign key constraints
+            $table->foreign('campus_id')
+                ->references('id')
+                ->on('campuses')
+                ->onDelete('cascade');
+
+            $table->foreign('role_id')
+                ->references('id')
+                ->on('roles')
+                ->onDelete('cascade');
+
+            $table->foreign('user_status_id')
+                ->references('id')
+                ->on('user_statuses')
+                ->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

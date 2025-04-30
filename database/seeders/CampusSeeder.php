@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Campus;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class CampusSeeder extends Seeder
 {
@@ -14,30 +13,11 @@ class CampusSeeder extends Seeder
      */
     public function run(): void
     {
-        // //
-        // Campus::create(['id' => Str::uuid(), 'campus' => 'Business Campus',]);
-        // Campus::create(['id' => Str::uuid(), 'campus' => 'FST Campus']);
-        // Campus::create(['id' => Str::uuid(), 'campus' => 'IT Campus']);
-        // Campus::create(['id' => Str::uuid(), 'campus' => 'Social Studies Campus']);
-
-        $campuses = [
-            [
-                'id' => Str::uuid(),
-                'campus' => 'Business Campus'
-            ],
-            [
-                'id' => Str::uuid(),
-                'campus' => 'FST Campus'
-            ],
-            [
-                'id' => Str::uuid(),
-                'campus' => 'IT Campus'
-            ],
-            [
-                'id' => Str::uuid(),
-                'campus' => 'Social Studies Campus'
-            ],
-        ];
+        //
+        Campus::create(['campus' => 'Business Campus',]);
+        Campus::create(['campus' => 'FST Campus']);
+        Campus::create(['campus' => 'IT Campus']);
+        Campus::create(['campus' => 'Social Studies Campus']);
 
     }
 }

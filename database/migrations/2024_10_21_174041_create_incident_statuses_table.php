@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('incident_statuses', function (Blueprint $table) {
-            $table->uuid('id')->primary(); // Change from id() to uuid()
+            $table->id()->unique();
             $table->string('statuses');
         });
     }

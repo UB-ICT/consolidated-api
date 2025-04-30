@@ -28,12 +28,26 @@ return new class extends Migration {
         // });
 
         Schema::create('messages', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('chat_id')->constrained('chats')->onDelete('cascade');
-            $table->foreignUuid('sender_id')->constrained('users')->onDelete('cascade');
+            $table->id(); // Standard auto-incrementing primary key (remove ->unique() as it's redundant)
+
+            // Changed from foreignUuid to unsignedBigInteger
+            $table->unsignedBigInteger('chat_id');
+            $table->unsignedBigInteger('sender_id');
+
             $table->text('text')->nullable();
             $table->timestamp('timestamp')->useCurrent();
             $table->timestamps();
+
+            // Foreign key constraints
+            $table->foreign('chat_id')
+                ->references('id')
+                ->on('chats')
+                ->onDelete('cascade');
+
+            $table->foreign('sender_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
 
             // Indexes
             $table->index('chat_id');
@@ -42,12 +56,21 @@ return new class extends Migration {
         });
 
         Schema::create('message_files', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('message_id')->constrained('messages')->onDelete('cascade');
+            $table->id(); // Changed from uuid('id')->primary()
+
+            // Changed from foreignUuid to unsignedBigInteger
+            $table->unsignedBigInteger('message_id');
+
             $table->string('url');
             $table->string('name');
             $table->enum('type', ['image'])->default('image');
             $table->timestamps();
+
+            // Foreign key constraint
+            $table->foreign('message_id')
+                ->references('id')
+                ->on('messages')
+                ->onDelete('cascade');
 
             // Indexes
             $table->index('message_id');
@@ -55,12 +78,26 @@ return new class extends Migration {
         });
 
         Schema::create('shared_images', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('chat_id')->constrained('chats')->onDelete('cascade');
-            $table->foreignUuid('message_id')->constrained('messages')->onDelete('cascade');
+            $table->id(); // Changed from uuid('id')->primary()
+
+            // Changed from foreignUuid to unsignedBigInteger
+            $table->unsignedBigInteger('chat_id');
+            $table->unsignedBigInteger('message_id');
+
             $table->string('url');
             $table->string('description')->nullable();
             $table->timestamps();
+
+            // Foreign key constraints
+            $table->foreign('chat_id')
+                ->references('id')
+                ->on('chats')
+                ->onDelete('cascade');
+
+            $table->foreign('message_id')
+                ->references('id')
+                ->on('messages')
+                ->onDelete('cascade');
 
             // Indexes
             $table->index('chat_id');
