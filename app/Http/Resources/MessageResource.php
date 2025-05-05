@@ -16,18 +16,14 @@ class MessageResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user' => $this->user,
-            'messageCategoryId' => $this->message_category_id,
-            'senderId' => $this->sender_id,
+            'profilePic' => $this->profile_pic,
             'sender' => $this->sender,
-            'topic' => $this->topic,
+            'messageCategoryId' => $this->message_category_id,
             'images' => $this->images,
             'message' => $this->message,
             'location' => $this->location,
             'dateSent' => $this->date_sent,
-            'isArchive' => $this->is_archive,
             'isDeleted' => $this->is_deleted,
-            'isForwarded' => $this->is_forwarded,
             'type' => $this->type,
         ];
     }

@@ -3,19 +3,14 @@
 namespace Modules\Message\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Events\NewMessage;
-use App\Models\User;
+use App\Models\UserCampus;
 use Illuminate\Http\Request;
 use Modules\Message\Models\Message;
-use Modules\Message\Models\MessageFile;
-use Modules\Message\Models\Chat;
 use Modules\Message\Http\Requests\StoreMessageRequest;
 use Modules\Message\Http\Requests\UpdateMessageRequest;
 use Modules\Message\Transformers\MessageResource;
 use Modules\Message\Transformers\MessageCollection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+
 
 
 
@@ -25,228 +20,35 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class MessageController extends Controller
 {
     use AuthorizesRequests;
-    /**
-     * Display a listing of the resource.
-     */
-    // public function index(Request $request)
-    // {
-    //     $request->validate([
-    //         'chat_id' => 'sometimes|exists:chats,id',
-    //         'type' => 'sometimes|in:email,sms,notification,text,image,video,document,audio',
-    //         'date_sent' => 'sometimes|date',
-    //         'search' => 'sometimes|string',
-    //     ]);
 
-    //     $query = Message::with(['sender', 'chat'])
-    //         ->when($request->chat_id, fn($q) => $q->where('chat_id', $request->chat_id))
-    //         ->when($request->type, fn($q) => $q->where('type', $request->type))
-    //         ->when($request->date_sent, fn($q) => $q->whereDate('created_at', $request->date_sent))
-    //         ->when($request->search, function ($q) use ($request) {
-    //             $q->where('content', 'like', '%' . $request->search . '%');
-    //         })
-    //         ->orderBy('created_at', 'desc');
-
-    //     return new MessageCollection($query->paginate($request->per_page ?? 20));
-    // }
-  
-
-    // public function store(StoreMessageRequest $request)
-    // {
-    //     return DB::transaction(function () use ($request) {
-    //         $data = $request->validated();
-    //         $data['sender_id'] = auth()->id();
-
-    //         // Handle file uploads if present
-    //         if ($request->hasFile('attachments')) {
-    //             $attachments = [];
-    //             foreach ($request->file('attachments') as $file) {
-    //                 $path = $file->store('attachments', 'public');
-    //                 $attachments[] = [
-    //                     'name' => $file->getClientOriginalName(),
-    //                     'path' => $path,
-    //                     'mime' => $file->getMimeType(),
-    //                 ];
-    //             }
-    //             $data['attachments'] = $attachments;
-    //         }
-
-    //         $message = Message::create($data);
-
-    //         // Broadcast the new message to other participants
-    //         broadcast(new NewMessage($message))->toOthers();
-
-    //         // Update chat's last message timestamp
-    //         $message->chat->touch();
-
-    //         return new MessageResource($message->load('sender'));
-    //     });
-    // }
-
-    
-    // public function show(Message $message)
-    // {
-    //     return new MessageResource($message->load(['sender', 'chat.users']));
-    // }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    // public function update(UpdateMessageRequest $request, Message $message)
-    // {
-    //     $this->authorize('update', $message);
-
-    //     $message->update($request->validated());
-
-    //     return new MessageResource($message->fresh()->load('sender'));
-    // }
-
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    // public function destroy(Message $message)
-    // {
-    //     $this->authorize('delete', $message);
-
-    //     $message->delete();
-
-    //     return response()->json([
-    //         'message' => 'Message deleted successfully',
-    //         'chat_id' => $message->chat_id,
-    //     ]);
-    // }
-
-
-    // public function markAsRead(Message $message)
-    // {
-    //     $this->authorize('view', $message);
-
-    //     if (!$message->read_at) {
-    //         $message->update(['read_at' => now()]);
-    //     }
-
-    //     return new MessageResource($message);
-    // }
-
-    // public function getCounts(Request $request)
-    // {
-    //     $counts = Message::query()
-    //         ->when($request->chat_id, fn($q) => $q->where('chat_id', $request->chat_id))
-    //         ->selectRaw('type, count(*) as count')
-    //         ->groupBy('type')
-    //         ->pluck('count', 'type');
-
-    //     return response()->json($counts);
-    // }
-
-    // public function search(Request $request)
-    // {
-    //     $request->validate([
-    //         'chat_id' => 'required|exists:chats,id',
-    //         'query' => 'required|string|min:2',
-    //     ]);
-
-    //     $messages = Message::where('chat_id', $request->chat_id)
-    //         ->where('content', 'like', '%' . $request->query . '%')
-    //         ->with('sender')
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate($request->per_page ?? 20);
-
-    //     return new MessageCollection($messages);
-    // }
-
-    // public function getTotalMessage(Message $message)
-    // {
-    //     $message = Message::count();
-    //     return response()->json(['total' => $message]);
-    // }
-
-    public function index($chatId)
+    public function index()
     {
-        $messages = Message::with('files')
-            ->where('chat_id', $chatId)
-            ->orderBy('timestamp', 'desc')
-            ->paginate(50);
-
-        return response()->json($messages);
+        return new MessageCollection(Message::paginate());
     }
 
-    public function store(Request $request, $chatId)
+    public function store(StoreMessageRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'text' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'file|image|max:10240', // 10MB max
-        ]);
+        return new UserCampus(Message::create($request->all()));
+    }
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+    public function show(Message $message)
+    {
+        return new MessageResource($message);
+    }
+    public function update(UpdateMessageRequest $request, Message $message)
+    {
+        $message->update($request->all());
+        return response()->json(['message' => 'Message updated successfully'], 200);
+    }
+
+    public function destroy(Request $request)
+    {
+        $message = Message::find($request->id);
+        if ($message) {
+            $message->delete();
+            return response()->json(['message' => 'Message deleted successfully'], 200);
+        } else {
+            return response()->json(['message' => 'Message not found'], 404);
         }
-
-        $message = Message::create([
-            'chat_id' => $chatId,
-            'sender_id' => auth()->id(),
-            'text' => $request->text,
-            'timestamp' => now(),
-        ]);
-
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('message_files', 'public');
-                
-                MessageFile::create([
-                    'message_id' => $message->id,
-                    'url' => Storage::url($path),
-                    'name' => $file->getClientOriginalName(),
-                    'type' => 'image',
-                ]);
-            }
-        }
-
-        return response()->json($message->load('files'), 201);
     }
-
-    public function getSharedImages($chatId)
-    {
-        $images = MessageFile::whereHas('message', function($query) use ($chatId) {
-                $query->where('chat_id', $chatId);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($images);
-    }
-
-    public function search($chatId, Request $request)
-    {
-        $query = $request->query('q');
-        
-        $messages = Message::where('chat_id', $chatId)
-            ->where('text', 'like', "%{$query}%")
-            ->with('files')
-            ->orderBy('timestamp', 'desc')
-            ->get();
-
-        return response()->json($messages);
-    }
-
-    public function destroy($chatId, $messageId)
-    {
-        $message = Message::where('chat_id', $chatId)
-            ->where('id', $messageId)
-            ->firstOrFail();
-
-        // Delete associated files from storage
-        foreach ($message->files as $file) {
-            $path = str_replace('/storage', '', parse_url($file->url, PHP_URL_PATH));
-            Storage::disk('public')->delete($path);
-        }
-
-        $message->delete();
-
-        return response()->json(null, 204);
-    }
-
-
-
 }

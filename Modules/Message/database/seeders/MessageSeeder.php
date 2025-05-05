@@ -17,81 +17,45 @@ class MessageSeeder extends Seeder
      */
     public function run(): void
     {
-        //
-        // Message::create([
-        //     'user' => 'James Faber',
-        //     'message_category_id' => 1,
-        //     'sender_id' => 1,
-        //     'sender' => 'own',
-        //     'topic' => 'Topic 1',
-        //     'images' => 'image1.jpg',
-        //     'message' => 'This is message 1 content.',
-        //     'location' => 'Location 1',
-        //     'date_sent' => now(),
-        //     'is_archive' => false,
-        //     'is_deleted' => false,
-        //     'is_forwarded' => false,
-        //     'type' => 'email',
-        // ]);
 
-        $chats = Chat::all();
-        $users = User::all();
+        Message::create([
+            "profile_pic" => 'https://example.com/profile_pic.jpg',
+            'sender' => 'Shanell Leslie',
+            'message_category_id' => 1,
+            'images' => 'image1.jpg',
+            'message' => 'This is message 1 content.',
+            'location' => 'Location 1',
+            'date_sent' => now(),
+            'is_deleted' => false,
+            'type' => 'emergency',
+        ]);
 
-        $sampleMessages = [
-            "Hello there!",
-            "How are you doing?",
-            "What's up?",
-            "Let's meet tomorrow",
-            "Did you see that?",
-            "I need your help",
-            "Check this out",
-            "Important information",
-            "Emergency situation",
-            "Anonymous tip"
-        ];
+        Message::create([
+            "profile_pic" => 'https://example.com/profile_pic.jpg',
+            'sender' => 'Andrew Faber',
+            'message_category_id' => 2,
+            'images' => 'image1.jpg',
+            'message' => 'This is message 2 content.',
+            'location' => 'Location 2',
+            'date_sent' => now(),
+            'is_deleted' => false,
+            'type' => 'anonymous',
+        ]);
 
-        $sampleImages = [
-            'https://picsum.photos/300/300?random=1',
-            'https://picsum.photos/300/300?random=2',
-            'https://picsum.photos/300/300?random=3',
-            'https://picsum.photos/300/300?random=4',
-            'https://picsum.photos/300/300?random=5',
-        ];
+        Message::create([
+            "profile_pic" => 'https://example.com/profile_pic.jpg',
+            'sender' => 'David Faber',
+            'message_category_id' => 3,
+            'images' => 'image1.jpg',
+            'message' => 'This is message 3 content.',
+            'location' => 'Location 3',
+            'date_sent' => now(),
+            'is_deleted' => false,
+            'type' => 'all',
+        ]);
 
-        foreach ($chats as $chat) {
-            // Create 5-15 messages per chat
-            $messageCount = rand(5, 15);
 
-            for ($i = 0; $i < $messageCount; $i++) {
-                $user = $users->random();
-                $hasImage = rand(0, 1);
 
-                $message = Message::create([
-                    'chat_id' => $chat->id,
-                    'sender_id' => $user->id,
-                    'text' => $sampleMessages[array_rand($sampleMessages)],
-                    'timestamp' => now()->subDays(rand(0, 30))->subHours(rand(0, 24)),
-                ]);
-
-                // 30% chance to add an image to the message
-                if ($hasImage && $i % 3 === 0) {
-                    MessageFile::create([
-                        'message_id' => $message->id,
-                        'url' => $sampleImages[array_rand($sampleImages)],
-                        'name' => 'image_' . $i . '.jpg',
-                        'type' => 'image',
-                    ]);
-                }
-            }
-
-            // Update chat's last message
-            $lastMessage = $chat->messages()->latest('timestamp')->first();
-            if ($lastMessage) {
-                $chat->update([
-                    'last_text' => $lastMessage->text
-                ]);
-            }
-        }
 
     }
 }

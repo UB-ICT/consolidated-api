@@ -28,7 +28,6 @@ class DatabaseSeeder extends Seeder
             IncidentTypeSeeder::class,
             IncidentReportSeeder::class,
             AccessRightSeeder::class,
-            // RecipientSeeder::class,
             DepartmentSeeder::class,
             DepartmentMemberSeeder::class,
             MenuSeeder::class,

@@ -25,30 +25,29 @@ class UpdateMessageRequest extends FormRequest
         if ($method == 'PUT') {
 
             return [
-                'content' => 'sometimes|string',
-                'is_deleted' => 'sometimes|boolean',
-                'is_forwarded' => 'sometimes|boolean',
+                'profilePic' => ['nullable'],
+                'sender' => ['required'],
+                'messageCategoryId' => ['required'],
+                'message' => ['required'],
+                'images' => ['required'],
+                'location' => ['required'],
+                'dateSent' => ['required'],
+                'isDeleted' => ['required'],
+                'type' => ['required'],
+                'timestamp' => ['required'],
             ];
         } else {
             return [
-
-                'content' => ['sometimes', 'required'],
-                'is_deleted' => ['sometimes', 'required'],
-                'is_forwarded' => ['sometimes', 'required'],
-                // // 'messageCategoryId'=>['sometimes','required'],
-                // 'user' => ['sometimes', 'required'],
-                // // 'senderId' => ['sometimes', 'required'],
-                // // 'topic' => ['sometimes', 'required'],
-                // 'sender' => ['sometimes', 'required'],
-                // 'text' => ['sometimes', 'required'],
-                // // 'images' => ['sometimes', 'required'],
-                // // 'location' => ['sometimes', 'required'],
-                // // 'dateSent' => ['sometimes', 'required'],
-                // // 'isArchive' => ['sometimes', 'required'],
-                // // 'isDeleted' => ['sometimes', 'required'],
-                // // 'isForwarded' => ['sometimes', 'required'],
-                // // 'type' => ['sometimes', 'required'],
-                // 'timestamp' => ['sometimes', 'required'],
+                'profilePic' => ['sometimes', 'required'],
+                'sender' => ['sometimes', 'required'],
+                'messageCategoryId' => ['sometimes', 'required'],
+                'message' => ['sometimes', 'required'],
+                'images' => ['sometimes', 'required'],
+                'location' => ['sometimes', 'required'],
+                'dateSent' => ['sometimes', 'required'],
+                'isDeleted' => ['sometimes', 'required'],
+                'type' => ['sometimes', 'required'],
+                'timestamp' => ['sometimes', 'required'],
 
 
             ];
@@ -57,13 +56,12 @@ class UpdateMessageRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            // 'message_category_id' => $this-> messageCategoryId,
-            // 'sender_id' => $this->senderId,
-            // 'date_sent' => $this->dateSent,
-            // 'is_archive' => $this->isArchive,
-            // 'is_deleted' => $this->isDeleted,
-            // 'is_forwarded' => $this->isForwarded,
-            // 'time_stamp' => $this -> timeStamp
+            'profile_pic' => $this->profilePic,
+            'message_category_id' => $this-> messageCategoryId,
+            'sender_id' => $this->senderId,
+            'date_sent' => $this->dateSent,
+            'is_deleted' => $this->isDeleted,
+            'time_stamp' => $this -> timeStamp
         ]);
     }
 }

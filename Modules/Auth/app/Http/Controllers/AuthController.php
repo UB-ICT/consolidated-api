@@ -29,8 +29,7 @@ class AuthController extends Controller
             if (Auth::validate($credentials)) {
                 $user = Auth::getLastAttempted();
 
-                // Save Eamil
-                // $user->email = 
+             
 
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
 
@@ -65,15 +64,5 @@ class AuthController extends Controller
 
         return response($response, 200);
     }
-
-
-    // public function getUsers()
-    // {
-    //     $users = User::select('id', 'username', 'name')->get();
-
-    //     return response()->json([
-    //         'users' => $users
-    //     ]);
-    // }
 
 }

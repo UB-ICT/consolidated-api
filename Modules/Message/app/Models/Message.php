@@ -17,23 +17,15 @@ class Message extends Model
     protected $keyType = 'string';
     public $incrementing = false;
     protected $fillable = [
-        // 'message_category_id',
-        // 'sender_id',
-        // 'topic',
-        // 'message',
-        // 'location',
-        // 'date_sent',
-        // 'is_archive',
-        // 'is_deleted',
-        // 'is_forwarded',
-        // 'type',
-        // 'images',
-
-        'id',
-        'chat_id',
-        'sender_id',
-        'text',
-        'timestamp'
+        'profile_pic',
+        'sender',
+        'message_category_id',
+        'images',
+        'message',
+        'location',
+        'date_sent',
+        'is_deleted',
+        'type',
     ];
 
     protected $casts = [
@@ -52,26 +44,6 @@ class Message extends Model
     public function messageCategory()
     {
         return $this->belongsTo(MessageCategory::class, 'messageCategory_id');
-    }
-
-    public function department()
-    {
-        return $this->belongsTo(Department::class, 'message_id');
-    }
-
-    public function recipients()
-    {
-        return $this->belongsToMany(User::class, 'recipient', 'message_id', 'user_id');
-    }
-
-    public function files()
-    {
-        return $this->hasMany(MessageFile::class);
-    }
-
-    public function chat()
-    {
-        return $this->belongsTo(Chat::class);
     }
 
 }

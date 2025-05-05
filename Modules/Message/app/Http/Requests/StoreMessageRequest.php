@@ -24,25 +24,24 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'chat_id' => 'required|exists:chats,id',
-            'content' => 'required_without:attachments|string|nullable',
-            'attachments' => 'sometimes|array',
-            'attachments.*' => 'file|mimes:jpg,jpeg,png,gif,mp4,pdf,doc,docx,txt|max:10240',
-            'type' => [
-                'required',
-                Rule::in(['text', 'image', 'video', 'document', 'audio', 'email', 'sms', 'notification'])
-            ],
+            'profilePic' => ['nullable'],
+            'sender' => ['required'],
+            'messageCategoryId' => ['nullable'],
+            'images' => ['nullable'],
+            'message' => ['required'],
+            'location' => ['nullable'],
+            'dateSent' => ['required'],
+            'isDeleted' => ['required'],
+            'type' => ['required'],
         ];
     }
-    // protected function prepareForValidation()
-    // {
-    //     $this->merge([
-
-    //         // 'message_category_id' => $this->messageCategoryId,
-    //         'sender_id' => $this->senderId,
-    //         'is_archive' => $this->isArchive,
-    //         'is_deleted' => $this->isDeleted,
-    //         'is_forwarded' => $this->isForwarded,
-    //     ]);
-    // }
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'profile_pic' => $this->profilePic,
+            'message_category_id' => $this->messageCategoryId,
+            'date_sent' => $this->dateSent,
+            'is_deleted' => $this->isDeleted,
+        ]);
+    }
 }
