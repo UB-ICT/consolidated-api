@@ -4,10 +4,8 @@ namespace Modules\Message\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\IncidentFile;
-use App\Models\MessageCategory;
-use App\Models\Department;
-use App\Models\User;
+use Modules\PublicSafety\Models\MessageCategory;
+use Modules\PublicSafety\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Message extends Model

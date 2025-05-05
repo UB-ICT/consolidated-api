@@ -1,0 +1,11 @@
+{
+    "name": "PublicSafety",
+    "alias": "publicsafety",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\PublicSafety\\Providers\\PublicSafetyServiceProvider"
+    ],
+    "files": []
+}

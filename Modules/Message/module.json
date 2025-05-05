@@ -4,8 +4,6 @@
     "description": "",
     "keywords": [],
     "priority": 0,
-    "providers": [
-        "Modules\\Message\\Providers\\MessageServiceProvider"
-    ],
+    "providers": ["Modules\\Message\\Providers\\MessageServiceProvider"],
     "files": []
 }

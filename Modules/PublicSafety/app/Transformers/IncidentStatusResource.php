@@ -1,0 +1,22 @@
+<?php
+
+namespace Modules\PublicSafety\transformers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class IncidentStatusResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'statuses' => $this->statuses,
+        ];
+    }
+}

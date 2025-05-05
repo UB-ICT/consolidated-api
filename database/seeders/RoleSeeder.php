@@ -14,10 +14,10 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // Create permissions
-        Permission::create(['name' => 'create users']);
-        Permission::create(['name' => 'edit users']);
-        Permission::create(['name' => 'view users']);
-        Permission::create(['name' => 'delete users']);
+        Permission::create(['name' => 'create users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'edit users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'view users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'delete users', 'guard_name' => 'web']);
 
         // Create roles and assign permissions
         $superAdmin = Role::create(['name' => 'Super Admin']);
