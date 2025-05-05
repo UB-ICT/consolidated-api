@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\IncidentStatusResource;
-use App\Http\Resources\IncidentStatusCollection;
-use App\Http\Requests\StoreIncidentStatusRequest;
-use App\Http\Requests\UpdateIncidentStatusRequest;
-use App\Models\IncidentStatus;
+use Modules\PublicSafety\Http\Resources\IncidentStatusResource;
+use Modules\PublicSafety\Http\Resources\IncidentStatusCollection;
+use Modules\PublicSafety\Http\Requests\StoreIncidentStatusRequest;
+use Modules\PublicSafety\Http\Requests\UpdateIncidentStatusRequest;
+use Modules\PublicSafety\Models\IncidentStatus;
 
 class IncidentStatusController extends Controller
 {

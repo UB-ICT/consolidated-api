@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\BuildingResource;
-use App\Http\Resources\BuildingCollection;
-use App\Http\Requests\StoreBuildingRequest;
-use App\Http\Requests\UpdateBuildingRequest;
-use App\Models\Building;
+use Modules\PublicSafety\Http\Resources\BuildingResource;
+use Modules\PublicSafety\Http\Resources\BuildingCollection;
+use Modules\PublicSafety\Http\Requests\StoreBuildingRequest;
+use Modules\PublicSafety\Http\Requests\UpdateBuildingRequest;
+use Modules\PublicSafety\Models\Building;
 
 class BuildingController extends Controller
 {

@@ -5,7 +5,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\IncidentReport;
+use Modules\PublicSafety\Models\IncidentReport;
 
 class PDFController extends Controller
 {

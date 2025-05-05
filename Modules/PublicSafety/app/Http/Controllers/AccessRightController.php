@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\AccessRightResource;
-use App\Http\Resources\AccessRightCollection;
-use App\Http\Requests\StoreAccessRightRequest;
-use App\Http\Requests\UpdateAccessRightRequest;
-use App\Models\AccessRight;
+use Modules\PublicSafety\Transformers\AccessRightResource;
+use Modules\PublicSafety\Transformers\AccessRightCollection;
+use Modules\PublicSafety\Http\Requests\StoreAccessRightRequest;
+use Modules\PublicSafety\Http\Requests\UpdateAccessRightRequest;
+use Modules\PublicSafety\Models\AccessRight;
 
 class AccessRightController extends Controller
 {

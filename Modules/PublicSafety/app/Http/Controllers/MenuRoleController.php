@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\MenuRoleResource;
-use App\Http\Resources\MenuRoleCollection;
-use App\Http\Requests\StoreMenuRoleRequest;
-use App\Http\Requests\UpdateMenuRoleRequest;
-use App\Models\MenuRole;
+use Modules\PublicSafety\Http\Resources\MenuRoleResource;
+use Modules\PublicSafety\Http\Resources\MenuRoleCollection;
+use Modules\PublicSafety\Http\Requests\StoreMenuRoleRequest;
+use Modules\PublicSafety\Http\Requests\UpdateMenuRoleRequest;
+use Modules\PublicSafety\Models\MenuRole;
 
 class MenuRoleController extends Controller
 {

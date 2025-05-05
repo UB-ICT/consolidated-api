@@ -4,13 +4,13 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\IncidentReportResource;
-use App\Http\Resources\IncidentReportCollection;
-use App\Http\Requests\StoreIncidentReportRequest;
-use App\Http\Requests\UpdateIncidentReportRequest;
-use App\Models\IncidentReport;
+use Modules\PublicSafety\Http\Resources\IncidentReportResource;
+use Modules\PublicSafety\Http\Resources\IncidentReportCollection;
+use Modules\PublicSafety\Http\Requests\StoreIncidentReportRequest;
+use Modules\PublicSafety\Http\Requests\UpdateIncidentReportRequest;
+use Modules\PublicSafety\Models\IncidentReport;
 use Database\Factories\IncidentReportFactory;
-use App\Models\IncidentFile;
+use Modules\PublicSafety\Models\IncidentFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 

@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\MessageCategoryResource;
-use App\Http\Resources\MessageCategoryCollection;
-use App\Http\Requests\StoreMessageCategoryRequest;
-use App\Http\Requests\UpdateMessageCategoryRequest;
-use App\Models\MessageCategory;
+use Modules\PublicSafety\Http\Resources\MessageCategoryResource;
+use Modules\PublicSafety\Http\Resources\MessageCategoryCollection;
+use Modules\PublicSafety\Http\Requests\StoreMessageCategoryRequest;
+use Modules\PublicSafety\Http\Requests\UpdateMessageCategoryRequest;
+use Modules\PublicSafety\Models\MessageCategory;
 
 class MessageCategoryController extends Controller
 {

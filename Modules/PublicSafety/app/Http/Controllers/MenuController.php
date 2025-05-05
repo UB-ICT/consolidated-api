@@ -4,12 +4,12 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use App\Http\Resources\MenuResource;
-use App\Http\Resources\MenuCollection;
-use App\Http\Requests\StoreMenuRequest;
-use App\Http\Requests\UpdateMenuRequest;
-use App\Models\Menu;
-use App\Models\Role;
+use Modules\PublicSafety\Http\Resources\MenuResource;
+use Modules\PublicSafety\Http\Resources\MenuCollection;
+use Modules\PublicSafety\Http\Requests\StoreMenuRequest;
+use Modules\PublicSafety\Http\Requests\UpdateMenuRequest;
+use Modules\PublicSafety\Models\Menu;
+use Modules\PublicSafety\Models\Role;
 
 class MenuController extends Controller
 {

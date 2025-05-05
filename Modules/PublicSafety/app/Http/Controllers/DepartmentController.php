@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\DepartmentResource;
-use App\Http\Resources\DepartmentCollection;
-use App\Http\Requests\StoreDepartmentRequest;
-use App\Http\Requests\UpdateDepartmentRequest;
-use App\Models\Department;
+use Modules\PublicSafety\Http\Resources\DepartmentResource;
+use Modules\PublicSafety\Http\Resources\DepartmentCollection;
+use Modules\PublicSafety\Http\Requests\StoreDepartmentRequest;
+use Modules\PublicSafety\Http\Requests\UpdateDepartmentRequest;
+use Modules\PublicSafety\Models\Department;
 
 class DepartmentController extends Controller
 {

@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\DepartmentMemberResource;
-use App\Http\Resources\DepartmentMemberCollection;
-use App\Http\Requests\StoreDepartmentMemberRequest;
-use App\Http\Requests\UpdateDepartmentMemberRequest;
-use App\Models\DepartmentMember;
+use Modules\PublicSafety\Http\Resources\DepartmentMemberResource;
+use Modules\PublicSafety\Http\Resources\DepartmentMemberCollection;
+use Modules\PublicSafety\Http\Requests\StoreDepartmentMemberRequest;
+use Modules\PublicSafety\Http\Requests\UpdateDepartmentMemberRequest;
+use Modules\PublicSafety\Models\DepartmentMember;
 
 class DepartmentMemberController extends Controller
 {
