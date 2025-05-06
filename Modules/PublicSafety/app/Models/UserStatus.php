@@ -4,7 +4,7 @@ namespace Modules\PublicSafety\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Auth\Models\User;
+use Modules\PublicSafety\Models\User;
 
 class UserStatus extends Model
 {
