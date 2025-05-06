@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\MessageCategoryResource;
-use Modules\PublicSafety\Http\Resources\MessageCategoryCollection;
+use Modules\PublicSafety\Transformers\MessageCategoryResource;
+use Modules\PublicSafety\Transformers\MessageCategoryCollection;
 use Modules\PublicSafety\Http\Requests\StoreMessageCategoryRequest;
 use Modules\PublicSafety\Http\Requests\UpdateMessageCategoryRequest;
 use Modules\PublicSafety\Models\MessageCategory;

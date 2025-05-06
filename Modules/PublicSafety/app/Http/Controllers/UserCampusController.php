@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\UserCampusResource;
-use App\Http\Resources\UserCampusCollection;
-use App\Http\Requests\StoreUserCampusRequest;
-use App\Http\Requests\UpdateUserCampusRequest;
-use App\Models\UserCampus;
+use Modules\PublicSafety\Transformers\UserCampusResource;
+use Modules\PublicSafety\Transformers\UserCampusCollection;
+use Modules\PublicSafety\Http\Requests\StoreUserCampusRequest;
+use Modules\PublicSafety\Http\Requests\UpdateUserCampusRequest;
+use Modules\PublicSafety\Models\UserCampus;
 
 class UserCampusController extends Controller
 {

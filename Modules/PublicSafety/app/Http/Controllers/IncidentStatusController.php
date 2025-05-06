@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\IncidentStatusResource;
-use Modules\PublicSafety\Http\Resources\IncidentStatusCollection;
+use Modules\PublicSafety\Transformers\IncidentStatusResource;
+use Modules\PublicSafety\Transformers\IncidentStatusCollection;
 use Modules\PublicSafety\Http\Requests\StoreIncidentStatusRequest;
 use Modules\PublicSafety\Http\Requests\UpdateIncidentStatusRequest;
 use Modules\PublicSafety\Models\IncidentStatus;
@@ -17,13 +17,6 @@ class IncidentStatusController extends Controller
     public function index()
     {
         return new IncidentStatusCollection(IncidentStatus::paginate());
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
     }
 
     /**
@@ -40,14 +33,6 @@ class IncidentStatusController extends Controller
     public function show(IncidentStatus $incidentStatus)
     {
         return new IncidentStatusResource($incidentStatus);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(IncidentStatus $incidentStatus)
-    {
-        //
     }
 
     /**

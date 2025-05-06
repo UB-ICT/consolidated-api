@@ -4,8 +4,8 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Modules\PublicSafety\Http\Resources\MenuResource;
-use Modules\PublicSafety\Http\Resources\MenuCollection;
+use Modules\PublicSafety\Transformers\MenuResource;
+use Modules\PublicSafety\Transformers\MenuCollection;
 use Modules\PublicSafety\Http\Requests\StoreMenuRequest;
 use Modules\PublicSafety\Http\Requests\UpdateMenuRequest;
 use Modules\PublicSafety\Models\Menu;
@@ -64,7 +64,6 @@ class MenuController extends Controller
     {
         $menu->update($request->all());
         return response()->json(['message' => 'updated successfully'], 200);
-
     }
 
     /**

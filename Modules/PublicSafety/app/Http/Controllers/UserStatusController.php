@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\UserStatusResource;
-use App\Http\Resources\UserStatusCollection;
-use App\Http\Requests\StoreUserStatusRequest;
-use App\Http\Requests\UpdateUserStatusRequest;
-use App\Models\UserStatus;
+use Modules\PublicSafety\Transformers\UserStatusResource;
+use Modules\PublicSafety\Transformers\UserStatusCollection;
+use Modules\PublicSafety\Http\Requests\StoreUserStatusRequest;
+use Modules\PublicSafety\Http\Requests\UpdateUserStatusRequest;
+use Modules\PublicSafety\Models\UserStatus;
 
 class UserStatusController extends Controller
 {
@@ -17,14 +17,6 @@ class UserStatusController extends Controller
     public function index()
     {
         return new UserStatusCollection(UserStatus::paginate());
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -42,15 +34,6 @@ class UserStatusController extends Controller
     {
         return new UserStatusResource($userStatus);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(UserStatus $userStatus)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */

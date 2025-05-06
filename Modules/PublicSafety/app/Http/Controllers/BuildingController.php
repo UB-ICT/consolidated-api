@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\BuildingResource;
-use Modules\PublicSafety\Http\Resources\BuildingCollection;
+use Modules\PublicSafety\Transformers\BuildingResource;
+use Modules\PublicSafety\Transformers\BuildingCollection;
 use Modules\PublicSafety\Http\Requests\StoreBuildingRequest;
 use Modules\PublicSafety\Http\Requests\UpdateBuildingRequest;
 use Modules\PublicSafety\Models\Building;
@@ -21,14 +21,6 @@ class BuildingController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreBuildingRequest $request)
@@ -42,14 +34,6 @@ class BuildingController extends Controller
     public function show(Building $building)
     {
         return new BuildingResource($building);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Building $building)
-    {
-        //
     }
 
     /**

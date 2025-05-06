@@ -2,13 +2,13 @@
 
 namespace Modules\PublicSafety\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Http\Resources\RoleResource;
-use App\Http\Resources\RoleCollection;
-use App\Http\Requests\StoreRoleRequest;
-use App\Http\Requests\UpdateRoleRequest;
-use App\Models\Role;
-use App\Models\User;
+use Modules\PublicSafety\Http\Controllers\Controller;
+use Modules\PublicSafety\Transformers\RoleResource;
+use Modules\PublicSafety\Transformers\RoleCollection;
+use Modules\PublicSafety\Http\Requests\StoreRoleRequest;
+use Modules\PublicSafety\Http\Requests\UpdateRoleRequest;
+use Modules\PublicSafety\Models\Role;
+use Modules\PublicSafety\Models\User;
 use Illuminate\Http\Request;
 
 

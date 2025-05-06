@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\DepartmentMemberResource;
-use Modules\PublicSafety\Http\Resources\DepartmentMemberCollection;
+use Modules\PublicSafety\Transformers\DepartmentMemberResource;
+use Modules\PublicSafety\Transformers\DepartmentMemberCollection;
 use Modules\PublicSafety\Http\Requests\StoreDepartmentMemberRequest;
 use Modules\PublicSafety\Http\Requests\UpdateDepartmentMemberRequest;
 use Modules\PublicSafety\Models\DepartmentMember;

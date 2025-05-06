@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\CampusResource;
-use Modules\PublicSafety\Http\Resources\CampusCollection;
+use Modules\PublicSafety\Transformers\CampusResource;
+use Modules\PublicSafety\Transformers\CampusCollection;
 use Modules\PublicSafety\Http\Requests\StoreCampusRequest;
 use Modules\PublicSafety\Http\Requests\UpdateCampusRequest;
 use Modules\PublicSafety\Models\Campus;
@@ -20,29 +20,12 @@ class CampusController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreCampusRequest $request)
     {
         return new CampusResource(Campus::create($request->all()));
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Campus $campus)
-    {
-        //
-    }
-
     /**
      * Show the form for editing the specified resource.
      */

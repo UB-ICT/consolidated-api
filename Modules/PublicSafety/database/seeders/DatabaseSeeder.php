@@ -4,12 +4,14 @@ namespace Modules\PublicSafety\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class PublicSafetyDatabaseSeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the application's database.
+     *
+     * @return void
      */
-    public function run(): void
+    public function run()
     {
         $this->call([
             RoleSeeder::class,

@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\UserResource;
-use App\Http\Resources\UserCollection;
-use App\Http\Requests\StoreUserRequest;
-use App\Http\Requests\UpdateUserRequest;
-use App\Models\User;
+use Modules\PublicSafety\Transformers\UserResource;
+use Modules\PublicSafety\Transformers\UserCollection;
+use Modules\PublicSafety\Http\Requests\StoreUserRequest;
+use Modules\PublicSafety\Http\Requests\UpdateUserRequest;
+use Modules\PublicSafety\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 

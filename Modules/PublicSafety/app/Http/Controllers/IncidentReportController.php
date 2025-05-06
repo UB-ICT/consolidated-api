@@ -4,12 +4,11 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\IncidentReportResource;
-use Modules\PublicSafety\Http\Resources\IncidentReportCollection;
+use Modules\PublicSafety\Transformers\IncidentReportResource;
+use Modules\PublicSafety\Transformers\IncidentReportCollection;
 use Modules\PublicSafety\Http\Requests\StoreIncidentReportRequest;
 use Modules\PublicSafety\Http\Requests\UpdateIncidentReportRequest;
 use Modules\PublicSafety\Models\IncidentReport;
-use Database\Factories\IncidentReportFactory;
 use Modules\PublicSafety\Models\IncidentFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
@@ -22,14 +21,6 @@ class IncidentReportController extends Controller
     public function index()
     {
         return new IncidentReportCollection(IncidentReport::paginate());
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -46,14 +37,6 @@ class IncidentReportController extends Controller
     public function show(IncidentReport $incidentReport)
     {
         return new IncidentReportResource($incidentReport);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(IncidentReport $incidentReport)
-    {
-        //
     }
 
     /**

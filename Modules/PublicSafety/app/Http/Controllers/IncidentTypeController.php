@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\IncidentTypeResource;
-use Modules\PublicSafety\Http\Resources\IncidentTypeCollection;
+use Modules\PublicSafety\Transformers\IncidentTypeResource;
+use Modules\PublicSafety\Transformers\IncidentTypeCollection;
 use Modules\PublicSafety\Http\Requests\StoreIncidentTypeRequest;
 use Modules\PublicSafety\Http\Requests\UpdateIncidentTypeRequest;
 use Modules\PublicSafety\Models\IncidentType;
@@ -17,14 +17,6 @@ class IncidentTypeController extends Controller
     public function index()
     {
         return new IncidentTypeCollection(IncidentType::paginate());
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -41,14 +33,6 @@ class IncidentTypeController extends Controller
     public function show(IncidentType $incidentType)
     {
         return new IncidentTypeResource($incidentType);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(IncidentType $incidentType)
-    {
-        //
     }
 
     /**

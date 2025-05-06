@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\MenuRoleResource;
-use Modules\PublicSafety\Http\Resources\MenuRoleCollection;
+use Modules\PublicSafety\Transformers\MenuRoleResource;
+use Modules\PublicSafety\Transformers\MenuRoleCollection;
 use Modules\PublicSafety\Http\Requests\StoreMenuRoleRequest;
 use Modules\PublicSafety\Http\Requests\UpdateMenuRoleRequest;
 use Modules\PublicSafety\Models\MenuRole;

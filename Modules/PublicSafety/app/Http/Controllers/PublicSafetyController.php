@@ -2,7 +2,7 @@
 
 namespace Modules\PublicSafety\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Modules\PublicSafety\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class PublicSafetyController extends Controller

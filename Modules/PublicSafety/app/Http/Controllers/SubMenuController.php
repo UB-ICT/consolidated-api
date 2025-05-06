@@ -3,11 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Http\Resources\SubMenuCollection;
-use App\Http\Resources\SubMenuResource;
-use App\Http\Requests\StoreSubMenuRequest;
-use App\Http\Requests\UpdateSubMenuRequest;
-use App\Models\SubMenu;
+use Modules\PublicSafety\Transformers\SubMenuCollection;
+use Modules\PublicSafety\Transformers\SubMenuResource;
+use Modules\PublicSafety\Http\Requests\StoreSubMenuRequest;
+use Modules\PublicSafety\Http\Requests\UpdateSubMenuRequest;
+use Modules\PublicSafety\Models\SubMenu;
 
 class SubMenuController extends Controller
 {
@@ -17,14 +17,6 @@ class SubMenuController extends Controller
     public function index()
     {
         return new SubMenuCollection(SubMenu::paginate());
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -41,14 +33,6 @@ class SubMenuController extends Controller
     public function show(SubMenu $subMenu)
     {
         return new SubMenuResource($subMenu);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SubMenu $subMenu)
-    {
-        //
     }
 
     /**

@@ -3,8 +3,8 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Http\Resources\DepartmentResource;
-use Modules\PublicSafety\Http\Resources\DepartmentCollection;
+use Modules\PublicSafety\Transformers\DepartmentResource;
+use Modules\PublicSafety\Transformers\DepartmentCollection;
 use Modules\PublicSafety\Http\Requests\StoreDepartmentRequest;
 use Modules\PublicSafety\Http\Requests\UpdateDepartmentRequest;
 use Modules\PublicSafety\Models\Department;
@@ -21,14 +21,6 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreDepartmentRequest $request)
@@ -42,14 +34,6 @@ class DepartmentController extends Controller
     public function show(Department $department)
     {
         return new DepartmentResource($department);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Department $department)
-    {
-        //
     }
 
     /**
