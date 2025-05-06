@@ -2,7 +2,6 @@
 
 namespace Modules\PublicSafety\Http\Controllers;
 
-use Modules\PublicSafety\Http\Controllers\Controller;
 use Modules\PublicSafety\Transformers\RoleResource;
 use Modules\PublicSafety\Transformers\RoleCollection;
 use Modules\PublicSafety\Http\Requests\StoreRoleRequest;

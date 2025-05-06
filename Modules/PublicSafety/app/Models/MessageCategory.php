@@ -4,7 +4,7 @@ namespace Modules\PublicSafety\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Message\Models\Message;
+use Modules\PublicSafety\Models\Message;
 
 class MessageCategory extends Model
 {
