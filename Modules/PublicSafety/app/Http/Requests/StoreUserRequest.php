@@ -30,6 +30,7 @@ class StoreUserRequest extends FormRequest
             'roleId' => ['required'],
             'campusId' => ['required'],
             'userStatusId' => ['required'],
+            'profilePicture' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ];
     }
 
@@ -38,7 +39,8 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'role_id' => $this->roleId,
             'campus_id' => $this->campusId,
-            'user_status_id' => $this->userStatusId
+            'user_status_id' => $this->userStatusId,
+            'profile_picture' => $this->profilePicture,
         ]);
     }
 }

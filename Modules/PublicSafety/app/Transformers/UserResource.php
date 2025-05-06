@@ -15,7 +15,6 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'domain' => $this->domain,
@@ -23,6 +22,7 @@ class UserResource extends JsonResource
             'roleId' => $this->role_id,
             'campusId' => $this->campus_id,
             'userStatusId' => $this->user_status_id,
+            'profilePicture' => $this->profile_picture,
         ];
     }
 }

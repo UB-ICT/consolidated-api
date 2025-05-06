@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Auth\Http\Controllers\AuthController;
-use Modules\PublicSafety\Http\Controllers\PublicSafetyController;
+// use Modules\PublicSafety\Http\Controllers\PublicSafetyController;
 use Modules\PublicSafety\Http\Controllers\RoleController;
 use Modules\PublicSafety\Http\Controllers\PermissionController;
 use Modules\PublicSafety\Http\Controllers\UserController;
@@ -22,6 +21,7 @@ use Modules\PublicSafety\Http\Controllers\SubMenuController;
 use Modules\PublicSafety\Http\Controllers\MenuRoleController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\PDFController;
+use Modules\PublicSafety\Http\Controllers\MessageController;
 // use Modules\PublicSafety\Services\FCMService;
 
 
@@ -36,16 +36,14 @@ use Modules\PublicSafety\Http\Controllers\PDFController;
  *
  */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('publicsafety', PublicSafetyController::class)->names('publicsafety');
-});
-
-Route::post('auth/login', [AuthController::class, 'login']);
+// Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+//     Route::apiResource('publicsafety', PublicSafetyController::class)->names('publicsafety');
+// });
 
 
 Route::group([
     'prefix' => 'v1/publicSafety',
-    'namespace' => 'App\Http\Controllers',
+    'namespace' => 'Modules\PublicSafety\Http\Controllers',
     'middleware' => 'auth:sanctum'
 ], function () {
     // Existing routes
@@ -54,11 +52,12 @@ Route::group([
     Route::apiResource('users', UserController::class);
     Route::apiResource('campuses', CampusController::class);
     Route::apiResource('messageCategories', MessageCategoryController::class);
+    Route::apiResource('messages', MessageController::class);
     Route::apiResource('userCampuses', UserCampusController::class);
     Route::apiResource('buildings', BuildingController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
-    Route::post('/uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
+    Route::post('uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('accessRights', AccessRightController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);
@@ -67,12 +66,11 @@ Route::group([
     Route::get('menus', [MenuController::class, 'getMenus']);
     Route::apiResource('menuRoles', MenuRoleController::class);
     Route::apiResource('subMenus', SubMenuController::class);
-    Route::get('getUsers', [UserController::class, 'getUsers']);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
-    Route::post('/assignRoles', [RoleController::class, 'assignRoleToUser']);
-    Route::post('/upload', [FileUploadController::class, 'upload']);
-    Route::get('/download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
+    Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
+    Route::post('upload', [FileUploadController::class, 'upload']);
+    Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });
 
 

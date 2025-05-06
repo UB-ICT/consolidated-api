@@ -10,13 +10,30 @@ class Message extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [];
+    protected $fillable = [
+        'sender',
+        'message_category_id',
+        'images',
+        'message',
+        'location',
+        'date_sent',
+        'is_deleted',
+        'type',
+        'created_at',
+        'updated_at',
+    ];
+
 
     // protected static function newFactory(): MessageFactory
     // {
     //     // return MessageFactory::new();
     // }
+    public function messageCategory()
+    {
+        return $this->belongsTo(MessageCategory::class);
+    }
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender', 'id');
+    }
 }

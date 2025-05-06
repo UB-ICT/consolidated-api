@@ -34,6 +34,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         'menu_id',
         'campus_id',
         'user_status_id',
+        'profile_picture',
     ];
     public $timestamps = false;
 

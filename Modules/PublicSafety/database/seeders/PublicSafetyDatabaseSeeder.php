@@ -12,7 +12,7 @@ class PublicSafetyDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            RoleSeeder::class,
+            RolesAndPermissionSeeder::class,
             CampusSeeder::class,
             UserStatusSeeder::class,
             UserSeeder::class,

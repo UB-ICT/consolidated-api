@@ -10,8 +10,11 @@ namespace Modules\PublicSafety\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Modules\PublicSafety\Models\User;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Role extends Model
+
+
+class Role extends SpatieRole
 {
     use HasFactory;
      /**
@@ -25,10 +28,19 @@ class Role extends Model
     ];
     public $timestamps = false;
 
-    //Defined a relationship with User Model which states that a role can be associated with many users
-    public function users()
+    public static function defaultRoles()
     {
-        return $this->hasMany(User::class);
+        return [
+            'super-admin',
+            'admin',
+            'staff',
+        ];
+    }
+
+    //Defined a relationship with User Model which states that a role can be associated with many users
+    public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
     }
 
     public function accessRights()

@@ -9,8 +9,6 @@ use Modules\PublicSafety\Models\User;
 class IncidentReport extends Model
 {
     use HasFactory;
-    public $incrementing = false;
-    protected $keyType = 'string';
     protected $fillable = [
         'report',
         'disposition',
