@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-// use Modules\PublicSafety\Http\Controllers\PublicSafetyController;
 use Modules\PublicSafety\Http\Controllers\RoleController;
 use Modules\PublicSafety\Http\Controllers\PermissionController;
 use Modules\PublicSafety\Http\Controllers\UserController;
@@ -12,10 +11,7 @@ use Modules\PublicSafety\Http\Controllers\BuildingController;
 use Modules\PublicSafety\Http\Controllers\IncidentReportController;
 use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\UserStatusController;
-use Modules\PublicSafety\Http\Controllers\AccessRightController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
-use Modules\PublicSafety\Http\Controllers\DepartmentController;
-use Modules\PublicSafety\Http\Controllers\DepartmentMemberController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\SubMenuController;
 use Modules\PublicSafety\Http\Controllers\MenuRoleController;
@@ -59,10 +55,8 @@ Route::group([
     Route::apiResource('incidentReports', IncidentReportController::class);
     Route::post('uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
     Route::apiResource('userStatuses', UserStatusController::class);
-    Route::apiResource('accessRights', AccessRightController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);
-    Route::apiResource('departments', DepartmentController::class);
-    Route::apiResource('departmentMembers', DepartmentMemberController::class);
+    Route::apiResource('menus', MenuController::class);
     Route::get('menus', [MenuController::class, 'getMenus']);
     Route::apiResource('menuRoles', MenuRoleController::class);
     Route::apiResource('subMenus', SubMenuController::class);
