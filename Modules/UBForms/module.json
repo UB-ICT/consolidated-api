@@ -1,0 +1,11 @@
+{
+    "name": "UBForms",
+    "alias": "ubforms",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\UBForms\\Providers\\UBFormsServiceProvider"
+    ],
+    "files": []
+}

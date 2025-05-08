@@ -1,5 +1,6 @@
 {
     "Auth": true,
     "Message": true,
-    "PublicSafety": true
+    "PublicSafety": true,
+    "UBForms": true
 }
