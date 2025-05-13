@@ -8,8 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class IncidentStatus extends Model
 {
     use HasFactory;
+    protected $connection = 'pgsql';
+
     protected $fillable = [
-       'statuses',
+        'statuses',
     ];
     public $timestamps = false;
 

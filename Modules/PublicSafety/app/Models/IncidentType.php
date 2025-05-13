@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class IncidentType extends Model
 {
     use HasFactory;
+
+    protected $connection = 'pgsql';
+
     protected $fillable = [
-       'type',
-       'icon',
-       'message',
+        'type',
+        'icon',
+        'message',
     ];
     public $timestamps = false;
 

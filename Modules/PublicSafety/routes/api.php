@@ -37,6 +37,8 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
 // });
 
 
+// This will be the only unprotected route because this is used for authentication
+
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',

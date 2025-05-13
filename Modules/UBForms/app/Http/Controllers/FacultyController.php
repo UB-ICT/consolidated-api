@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Faculty;
-use App\Models\User;
+use Modules\UBForms\Models\Faculty;
+use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controller;
 
 
 /*
@@ -57,7 +58,6 @@ class FacultyController extends Controller
             'meetings'=> Array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => Array(['meetingURL' => ''])]),
             'formSubmitted' => false,
             'otherComments' =>  "",
-            'formSubmitted' => false
         ]);
     }
 

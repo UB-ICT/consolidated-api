@@ -1,15 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Models\Faculty;
-use App\Models\Staff;
-use App\Models\Finance;
-use App\Models\HumanResources;
-use App\Models\Records;
-use App\Models\User;
+use Modules\UBForms\Models\Faculty;
+use Modules\UBForms\Models\Staff;
+use Modules\UBForms\Models\Finance;
+use Modules\UBForms\Models\HumanResources;
+use Modules\UBForms\Models\Records;
 
 
 class ReportController extends Controller
@@ -18,12 +15,6 @@ class ReportController extends Controller
     // 
     public function getReports($reportTypes)
     {
-
-        // $reportTypes = "faculty-finance-human_resources-records-staff";
-
-        // Retrieve 'reportTypes' query parameter which should be an array
-        // $reportTypes = $request->query('reportTypes', []);
-
         $reportTypes = explode("-", $reportTypes);       
 
         $reportData = [];

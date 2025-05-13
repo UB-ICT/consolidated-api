@@ -19,6 +19,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
+        "laravel/ui": "^4.6",
         "mongodb/laravel-mongodb": "^5.4",
         "nwidart/laravel-modules": "^11.1",
         "php-open-source-saver/jwt-auth": "^2.7",

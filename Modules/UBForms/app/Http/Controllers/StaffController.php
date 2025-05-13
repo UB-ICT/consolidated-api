@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Staff;
-use App\Models\User;
+use Modules\UBForms\Models\Staff;
+use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
@@ -29,7 +29,8 @@ Author: SW
 
 class StaffController extends Controller
 {
-    private function initializeReport(string $email){
+    private function initializeReport(string $email)
+    {
         return $reportData = Staff::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
@@ -38,13 +39,13 @@ class StaffController extends Controller
             'deadline' => "",
             'missionStatement' => "",
             'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => ''],
-            'accomplishments'=> ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
+            'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
-            'studentSuccess' => ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => '' ],
-            'activities' => Array(['eventId' =>  0, 'eventName' => '', 'personsInPicture' => '', 'pictureURL' => Array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
+            'studentSuccess' => ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => ''],
+            'activities' => array(['eventId' => 0, 'eventName' => '', 'personsInPicture' => '', 'pictureURL' => array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
             'administrativeData' => ['fullTimeStaff' => '', 'partTimeStaff' => '', 'significantStaffChanges' => ''],
             'financialBudget' => ['fundingSources' => '', 'significantBudgetChanges' => ''],
-            'meetings'=> Array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => Array(['meetingURL' => ''])]),
+            'meetings' => array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => array(['meetingURL' => ''])]),
             'formSubmitted' => false,
             'otherComments' => "",
             'formSubmitted' => false
@@ -52,9 +53,10 @@ class StaffController extends Controller
     }
 
     //This will create the report and generate a report ID
-    public function initialize(Request $request){
+    public function initialize(Request $request)
+    {
 
-        try{
+        try {
 
             $data = $request->all(); //Adding this in the event things need to be validated later on  
 
@@ -66,29 +68,30 @@ class StaffController extends Controller
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
 
         return response($response, 201);
 
     }
 
-    
-    public function store(Request $request){
+
+    public function store(Request $request)
+    {
 
 
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
-        try{
+        try {
 
             $reportData = Staff::create([
                 'academicYearID' => $data['academicYearID'],
@@ -97,13 +100,13 @@ class StaffController extends Controller
                 'deadline' => $data['deadline'],
                 'missionStatement' => $data['missionStatement'],
                 'strategicGoals' => $data['strategicGoals'],
-                'accomplishments'=> $data['accomplishments'],
+                'accomplishments' => $data['accomplishments'],
                 'researchPartnerships' => $data['researchPartnerships'],
                 'studentSuccess' => $data['studentSuccess'],
                 'activities' => $data['activities'],
                 'administrativeData' => $data['administrativeData'],
                 'financialBudget' => $data['financialBudget'],
-                'meetings'=> $data['meetings'],
+                'meetings' => $data['meetings'],
                 'otherComments' => $data['otherComments'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
@@ -112,36 +115,37 @@ class StaffController extends Controller
                 'success' => true,
                 'message' => "Staff Report Created Successfully",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-            
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
+
+        return response($response, 201);
 
     }
 
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
 
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Staff::where('_id', $reportID)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -153,20 +157,21 @@ class StaffController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
-    public function delReport(Request $request){
+    public function delReport(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -178,7 +183,7 @@ class StaffController extends Controller
             if ($report) {
 
                 $report->delete();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
@@ -193,20 +198,21 @@ class StaffController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
-    public function updateReport(Request $request){
+    public function updateReport(Request $request)
+    {
         try {
 
             $data = $request->all();
@@ -235,7 +241,7 @@ class StaffController extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
@@ -250,20 +256,21 @@ class StaffController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
-    public function generateStaffPdf(Request $request, string $reportID){ //Look into this a little more
+    public function generateStaffPdf(Request $request, string $reportID)
+    { //Look into this a little more
         // return public_path("/photos/5d0E3Hl44oGmfbFLxAuF.png");
 
         // Fetch data from MongoDB based on report ID
@@ -275,21 +282,7 @@ class StaffController extends Controller
         }
 
         // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();        
-
-        // Configure Dompdf options
-        // $options = new Options();
-        // $options->set('isHtml5ParserEnabled', true);
-        // $options->set('isPhpEnabled', true); // Enable PHP if needed
-        // $options->set('isRemoteEnabled', true); // Allow loading remote resources
-
-        // $dompdf = new Dompdf($options);
-
-        // Load view and generate PDF
-        // $pdfContent = view('staffReport', ['report' => $report, 'user' => $user])->render();
-        // $dompdf->loadHtml($pdfContent);
-        // $dompdf->setPaper('A4', 'portrait');
-        // $dompdf->render();
+        $user = User::where('email', $report->email)->first();
 
         // Generate PDF using data directly
         $pdf = PDF::loadView('staffReport', ['report' => $report, 'user' => $user, 'request' => $request]);
@@ -298,7 +291,8 @@ class StaffController extends Controller
         return $pdf->download('report_' . $report->id . '.pdf');
     }
 
-    public function viewStaffReport(Request $request, string $reportID){ //Look into this a little more
+    public function viewStaffReport(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = Staff::find($reportID);
@@ -308,14 +302,15 @@ class StaffController extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        $user = User::where('email', $report->email)->first();  
+        $user = User::where('email', $report->email)->first();
 
         return view('staffReport', ['report' => $report, 'user' => $user]);
-        
+
     }
 
 
-    public function getReportByUser(Request $request){
+    public function getReportByUser(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -328,12 +323,12 @@ class StaffController extends Controller
             $report = Staff::where('email', $user->email)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -344,13 +339,13 @@ class StaffController extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ],
                 ];
             }
 
         } catch (\Exception $e) {
-                // Exception occurred
+            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -362,4 +357,4 @@ class StaffController extends Controller
 
     }
 
-} 
+}

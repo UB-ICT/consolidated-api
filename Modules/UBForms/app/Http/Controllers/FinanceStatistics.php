@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Finance;
-use App\Models\User;
+use Modules\UBForms\Models\Finance;
+use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /*

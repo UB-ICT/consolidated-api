@@ -1,15 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace Modules\UBForms\Models;
 
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-// use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Illuminate\Foundation\Auth\User as Authenticatable;
 use MongoDB\Laravel\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use MongoDB\Laravel\Eloquent\Model; 
-use MongoDB\Laravel\Relations\HasMany;
 
 
 use LdapRecord\Laravel\Auth\LdapAuthenticatable;
@@ -24,13 +19,13 @@ use LdapRecord\Laravel\Auth\HasLdapUser;
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    protected $connection = 'mongodb';
+    protected $connection = 'pgsql';
     protected $collection = 'users'; // Specify the collection name if different from the default
 
     //use HasFactory, Notifiable;
     use Notifiable, AuthenticatesWithLdap, HasApiTokens;
-    
-    
+
+
 
     /**
      * The attributes that are mass assignable.
@@ -41,8 +36,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         'name',
         'email',
         'password',
-        // 'guid', //added
-        // 'domain', //added
+
     ];
 
     /**

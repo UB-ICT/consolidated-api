@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->id(); // Standard auto-incrementing primary key (no need for ->unique() as id() is already unique)
             $table->string('name');
             $table->string('email')->unique();
-            // $table->timestamp('email_verified_at')->nullable();
             $table->string('guid')->nullable();
             $table->string('domain')->default('ub.edu.bz');
             $table->string('password')->nullable();

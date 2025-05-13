@@ -1,12 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace Modules\UBForms\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-//use Illuminate\Database\Eloquent\Model;
 use MongoDB\Laravel\Eloquent\Model; //Needs this inorder to use MongoDB
-use MongoDB\Laravel\Relations\BelongsTo;
-use App\Models\User;
+use Modules\UBForms\Models\User; // Commented out as it may be incorrect
 
 
 /*

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Records;
-use App\Models\User;
+use Modules\UBForms\Models\Records;
+use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /*
