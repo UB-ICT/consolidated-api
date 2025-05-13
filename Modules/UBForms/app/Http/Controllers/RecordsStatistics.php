@@ -75,7 +75,7 @@ class RecordsStatistics extends Controller
             ),
             'studentOrigin' => ['Belize' => '', 'CentralAmericanCountries' => '', 'OtherCountries' => ''], //7.Origin of Students 
             'campusStatistics' => ['BelizeCity' => '', 'Belmopan' => '', 'PuntaGorda' => '', 'CentralFarm' => '', 'SatellitePrograms' => ''], //8.Campus Statistics
-            'graduates' => ['GraduatesByAge' => '', 'GraduatesByDistrict' => ''],//5 and 6 merged into one
+            'graduates' => ['graduatesByAge' => '', 'graduatesByDistrict' => ''],//5 and 6 merged into one
             'formSubmitted' => false,
         ]);
     }
@@ -126,8 +126,8 @@ class RecordsStatistics extends Controller
                 'studentEnrollmentTrend' => $data['studentEnrollmentTrend'],
                 'enrollmentTrendPerFaculty' => $data['enrollmentTrendPerFaculty'],
                 'graduationStatistics'=> $data['graduationStatistics'],
-                'graduatesByAge' => $data['graduatesByAge'], //New
-                'graduatesByDistricts' => $data['graduatesByDistricts'], //New
+                // 'graduatesByAge' => $data['graduatesByAge'], //New
+                // 'graduatesByDistricts' => $data['graduatesByDistricts'], //New
                 'studentOrigin' => $data['studentOrigin'],
                 'campusStatistics' => $data['campusStatistics'],
                 'graduates' => $data['graduates'],
