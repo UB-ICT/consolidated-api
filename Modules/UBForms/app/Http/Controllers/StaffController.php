@@ -48,7 +48,7 @@ class StaffController extends Controller
             'meetings' => array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => array(['meetingURL' => ''])]),
             'formSubmitted' => false,
             'otherComments' => "",
-            'formSubmitted' => false
+            // 'formSubmitted' => false
         ]);
     }
 
