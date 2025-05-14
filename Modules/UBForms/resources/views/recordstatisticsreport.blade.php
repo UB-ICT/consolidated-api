@@ -25,7 +25,7 @@
             </div>
             <br>
             <div>
-                <b>Report By: </b>{{ $user->name }}
+                <b>Report By: </b>{{ auth()->user()->name }}
             </div>
     </section>
     <div class="section-title">1. Students Enrolment for the Academic Year under review</div>
