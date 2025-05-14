@@ -4,7 +4,7 @@ namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Modules\UBForms\Models\Staff;
-use Modules\UBForms\Models\User;
+use Modules\PublicSafety\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
@@ -270,27 +270,28 @@ class StaffController extends Controller
     }
 
     public function generateStaffPdf(Request $request, string $reportID)
-    { //Look into this a little more
-        // return public_path("/photos/5d0E3Hl44oGmfbFLxAuF.png");
-
-        // Fetch data from MongoDB based on report ID
+    {
         $report = Staff::find($reportID);
 
-        // return $report;
         if (!$report) {
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        // Get the user based on the email from the report
         $user = User::where('email', $report->email)->first();
 
-        // Generate PDF using data directly
-        $pdf = PDF::loadView('staffReport', ['report' => $report, 'user' => $user, 'request' => $request]);
+        // Corrected view reference with module namespace
+        $pdf = PDF::loadView('UBForms::staffreport', [
+            'report' => $report,
+            'user' => $user,
+            'request' => $request
+        ]);
 
-        // Return PDF as a response
         return $pdf->download('report_' . $report->id . '.pdf');
     }
 
+
+
+    
     public function viewStaffReport(Request $request, string $reportID)
     { //Look into this a little more
 

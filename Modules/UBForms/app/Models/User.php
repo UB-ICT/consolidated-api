@@ -19,7 +19,7 @@ use LdapRecord\Laravel\Auth\HasLdapUser;
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    protected $connection = 'pgsql';
+    protected $connection = 'mongodb'; // Specify the MongoDB connection name
     protected $collection = 'users'; // Specify the collection name if different from the default
 
     //use HasFactory, Notifiable;
