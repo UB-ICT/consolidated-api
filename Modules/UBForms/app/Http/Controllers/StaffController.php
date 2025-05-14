@@ -291,7 +291,7 @@ class StaffController extends Controller
 
 
 
-    
+
     public function viewStaffReport(Request $request, string $reportID)
     { //Look into this a little more
 
@@ -313,10 +313,6 @@ class StaffController extends Controller
     public function getReportByUser(Request $request)
     {
         try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
             // Retrieve data based on conditions (assuming $request has the id parameter)
 
             $user = $request->user();

@@ -31,26 +31,28 @@ class FinanceStatistics extends Controller
 {
     //Initialize 
 
-    private function initializeReport(string $email){
+    private function initializeReport(string $email)
+    {
         return $reportData = Finance::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
             'department' => "",
             'deadline' => "",
-            'income' => ['fundingFromGoB' => '', 'tuitionFees' => '', 'contracts' => '', 'researchGrants' => '', 'endowmentAndInvestmentIncome' => '', 'other' => '', 'total' => ''],
-            'expenditure' => ['teachingStaffCosts' => '', 'nonTeachingStaffCosts' => '', 'administrationCosts' => '', 'capitalExpenditures' => '', 'otherExpenditures' => ''],
-            'investments' => ['projectInvestment1' => '', 'projectInvestment2' => '', 'projectInvestment3' => ''],
+            'income' => ['fundingFromGoB' => 0, 'tuitionFees' => 0, 'contracts' => 0, 'researchGrants' => 0, 'endowmentAndInvestmentIncome' => 0, 'other' => 0, 'total' => 0],
+            'expenditure' => ['teachingStaffCosts' => 0, 'nonTeachingStaffCosts' => 0, 'administrationCosts' => 0, 'capitalExpenditures' => 0, 'otherExpenditures' => 0],
+            'investments' => ['projectInvestment1' => 0, 'projectInvestment2' => 0, 'projectInvestment3' => 0],
             'formSubmitted' => false,
         ]);
     }
 
-    public function initialize(Request $request){
+    public function initialize(Request $request)
+    {
 
-        try{
+        try {
 
             $data = $request->all(); //Adding this in the event things need to be validated later on  
 
-            $user = $request->user();            
+            $user = $request->user();
 
             $reportData = $this->initializeReport($user->email);
 
@@ -60,16 +62,16 @@ class FinanceStatistics extends Controller
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
 
         return response($response, 201);
@@ -78,11 +80,12 @@ class FinanceStatistics extends Controller
 
     //Create 
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
 
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
-        try{
+        try {
 
             $reportData = Finance::create([
                 'academicYearID' => $data['academicYearID'],
@@ -98,38 +101,39 @@ class FinanceStatistics extends Controller
                 'success' => true,
                 'message' => "Finance Statistics Report Created Successfully",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-            
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
+
+        return response($response, 201);
 
     }
 
     //Read
 
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
 
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Finance::where('_id', $reportID)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -141,22 +145,23 @@ class FinanceStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Update 
 
-    public function updateReport(Request $request){
+    public function updateReport(Request $request)
+    {
         try {
 
             $data = $request->all();
@@ -176,7 +181,7 @@ class FinanceStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
@@ -191,22 +196,23 @@ class FinanceStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Delete
 
-    public function delReport(Request $request){
+    public function delReport(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -218,7 +224,7 @@ class FinanceStatistics extends Controller
             if ($report) {
 
                 $report->delete();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
@@ -233,55 +239,8 @@ class FinanceStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
-    }
-
-    public function getReportByUser(Request $request){
-        try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
-            $user = $request->user();
-
-            $report = Finance::where('email', $user->email)->first();
-
-            if ($report) {
-                    // Format success response
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data found successfully',
-                    'data' => [
-                        'reportData' => $report 
-                    ]
-                ];
-            } else {
-                $report = $this->initializeReport($user->email);
-
-                // Report not found
-                $response = [
-                    'success' => true,
-                    'message' => 'Report Initialized.',
-                    'data' => [
-                        'reportData' => $report 
-                    ],
-                ];
-            }
-
         } catch (\Exception $e) {
-                // Exception occurred
+            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -293,28 +252,98 @@ class FinanceStatistics extends Controller
 
     }
 
-    public function generateFinancePdf(Request $request, string $reportID){ //Look into this a little more
+    public function getReportByUser(Request $request)
+    {
+        try {
 
-        // Fetch data from MongoDB based on report ID
+            // Retrieve data based on conditions (assuming $request has the id parameter)
+
+            $user = $request->user();
+
+            $report = Finance::where('email', $user->email)->first();
+
+            if ($report) {
+                // Format success response
+                $response = [
+                    'success' => true,
+                    'message' => 'Report data found successfully',
+                    'data' => [
+                        'reportData' => $report
+                    ]
+                ];
+            } else {
+                $report = $this->initializeReport($user->email);
+
+                // Report not found
+                $response = [
+                    'success' => true,
+                    'message' => 'Report Initialized.',
+                    'data' => [
+                        'reportData' => $report
+                    ],
+                ];
+            }
+
+        } catch (\Exception $e) {
+            // Exception occurred
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
+
+    }
+
+    public function generateFinancePdf(Request $request, string $reportID)
+    {
         $report = Finance::find($reportID);
 
-        // return $report;
         if (!$report) {
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();        
+        // Ensure all array keys exist with default values
+        $defaultIncome = [
+            'fundingFromGoB' => 0,
+            'tuitionFees' => 0,
+            'contracts' => 0,
+            'researchGrants' => 0,
+            'endowmentAndInvestmentIncome' => 0,
+            'other' => 0,
+            'total' => 0
+        ];
 
-        // Generate PDF using data directly
-        // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
-        $pdf = PDF::loadView('FinanceStatisticsReport', ['report' => $report, 'user' => $user]);
+        $defaultExpenditure = [
+            'teachingStaffCosts' => 0,
+            'nonTeachingStaffCosts' => 0,
+            'administrationCosts' => 0,
+            'capitalExpenditures' => '',
+            'otherExpenditures' => ''
+        ];
 
-        // Return PDF as a response
+        // Merge with existing data
+        $report->income = array_merge($defaultIncome, $report->income ?? []);
+        $report->expenditure = array_merge($defaultExpenditure, $report->expenditure ?? []);
+
+        // Handle potential null user
+        $user = User::where('email', $report->email)->first() ?? new User([
+            'name' => 'Unknown User',
+            'email' => $report->email
+        ]);
+
+        $pdf = PDF::loadView('UBForms::financestatisticsreport', [
+            'report' => $report,
+            'user' => $user
+        ]);
+
         return $pdf->download('report_' . $report->id . '.pdf');
     }
 
-    public function viewFinanceReport(Request $request, string $reportID){ //Look into this a little more
+    public function viewFinanceReport(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = Finance::find($reportID);
@@ -324,10 +353,10 @@ class FinanceStatistics extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        $user = User::where('email', $report->email)->first();  
+        $user = User::where('email', $report->email)->first();
 
         return view('FinanceStatisticsReport', ['report' => $report, 'user' => $user]);
-        
+
     }
 
 }

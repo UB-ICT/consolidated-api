@@ -37,7 +37,7 @@ class FacultyController extends Controller
             'email' => $email,
             'academicYearID' => "2023-2024",
             'faculty' =>  "",
-            'units' =>  "",
+            'units' =>  [],
             'deadline' =>  "",
             'departmentList' => '',
             'missionStatement' =>  "",
@@ -152,10 +152,6 @@ class FacultyController extends Controller
 
     public function getReport(Request $request, string $reportID){
         try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Faculty::where('_id', $reportID)->first();
 
@@ -301,9 +297,6 @@ class FacultyController extends Controller
     public function getReportByUser(Request $request){
         try {
 
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
             // Retrieve data based on conditions (assuming $request has the id parameter)
 
             $user = $request->user();
@@ -348,28 +341,26 @@ class FacultyController extends Controller
 
     }
 
-    public function generateFacultyPdf(Request $request, string $reportID){ //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = Faculty::find($reportID);
-    
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-
-        // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();     
-
-        // Generate PDF using data directly
-        // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
-        $pdf = PDF::loadView('facultyReport', ['report' => $report, 'user' => $user]);
-
-
-        // Return PDF as a response
-        return $pdf->download('report_' . $report->id . '.pdf');
+   public function generateFacultyPdf(Request $request, string $reportID){
+    $report = Faculty::find($reportID);
+    if (!$report) {
+        return response()->json(['error' => 'Report not found'], 404);
     }
+
+    $user = User::where('email', $report->email)->first();     
+
+    // Ensure all array fields are properly initialized
+    if (!isset($report->units)) $report->units = [];
+    if (!isset($report->activities)) $report->activities = [];
+    // ... other array fields ...
+
+    $pdf = PDF::loadView('UBForms::facultyreport', [
+        'report' => $report, 
+        'user' => $user
+    ]);
+
+    return $pdf->download('report_' . $report->id . '.pdf');
+}
 
     public function viewFacultyReport(Request $request, string $reportID){ //Look into this a little more
 

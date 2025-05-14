@@ -31,7 +31,8 @@ class HRStatistics extends Controller
 {
     //Initialize
 
-    private function initializeReport(string $email){
+    private function initializeReport(string $email)
+    {
         return $reportData = HumanResources::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
@@ -41,19 +42,20 @@ class HRStatistics extends Controller
                 'FulltimeFaculty' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => ''],
                 'AdjunctFaculty' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => ''],
                 'NonTeachingStaff' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => '']
-              ],
+            ],
             'formSubmitted' => false,
         ]);
     }
 
-    public function initialize(Request $request){
+    public function initialize(Request $request)
+    {
 
-        try{
+        try {
             // return "Testing initialize";
 
             $data = $request->all(); //Adding this in the event things need to be validated later on  
 
-            $user = $request->user();            
+            $user = $request->user();
 
             $reportData = $this->initializeReport($user->email);
 
@@ -61,16 +63,16 @@ class HRStatistics extends Controller
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
 
         return response($response, 201);
@@ -79,11 +81,12 @@ class HRStatistics extends Controller
 
     //Create function doesn't pass the user email
 
-    public function store(Request $request){ 
+    public function store(Request $request)
+    {
 
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
-        try{
+        try {
 
             $reportData = HumanResources::create([
                 'academicYearID' => $data['academicYearID'],
@@ -97,38 +100,39 @@ class HRStatistics extends Controller
                 'success' => true,
                 'message' => "HR Statistics Report Created Successfully",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-            
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
+
+        return response($response, 201);
 
     }
 
     //Read
 
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
 
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = HumanResources::where('_id', $reportID)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -140,22 +144,23 @@ class HRStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Update
 
-    public function updateReport(Request $request){
+    public function updateReport(Request $request)
+    {
         try {
 
             $data = $request->all();
@@ -173,7 +178,7 @@ class HRStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
@@ -188,22 +193,23 @@ class HRStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Delete
 
-    public function delReport(Request $request){
+    public function delReport(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -215,7 +221,7 @@ class HRStatistics extends Controller
             if ($report) {
 
                 $report->delete();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
@@ -230,20 +236,21 @@ class HRStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
-    public function getReportByUser(Request $request){
+    public function getReportByUser(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -256,12 +263,12 @@ class HRStatistics extends Controller
             $report = HumanResources::where('email', $user->email)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -272,13 +279,13 @@ class HRStatistics extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ],
                 ];
             }
 
         } catch (\Exception $e) {
-                // Exception occurred
+            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -290,30 +297,50 @@ class HRStatistics extends Controller
 
     }
 
-    // Original GenerateHRPdf function
-    public function generateHRPdf(Request $request, string $reportID){ //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
+    public function generateHRPdf(Request $request, string $reportID)
+    {
         $report = HumanResources::find($reportID);
 
-        // return $report;
         if (!$report) {
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();        
+        $user = User::where('email', $report->email)->first();
 
-        // Generate PDF using data directly
-        // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
-        $pdf = PDF::loadView('HRStatisticsReport', ['report' => $report, 'user' => $user]);
+        // Ensure numberOfStaff has the correct structure
+        if (!isset($report->numberOfStaff['FulltimeFaculty'])) {
+            $report->numberOfStaff = [
+                'FulltimeFaculty' => [
+                    'EducationAndArts' => 0,
+                    'ManagementAndSocialSciences' => 0,
+                    'HealthSciences' => 0,
+                    'ScienceAndTechnology' => 0,
+                    'Total' => 0,
+                ],
+                'AdjunctFaculty' => [
+                    'EducationAndArts' => 0,
+                    'ManagementAndSocialSciences' => 0,
+                    'HealthSciences' => 0,
+                    'ScienceAndTechnology' => 0,
+                    'Total' => 0,
+                ],
+                'NonTeachingStaff' => [
+                    'EducationAndArts' => 0,
+                    'ManagementAndSocialSciences' => 0,
+                    'HealthSciences' => 0,
+                    'ScienceAndTechnology' => 0,
+                    'Total' => 0,
+                ],
+            ];
+        }
 
-        // Return PDF as a response
+        $pdf = PDF::loadView('UBForms::hrstatisticsreport', ['report' => $report, 'user' => $user]);
         return $pdf->download('report_' . $report->id . '.pdf');
     }
-    
 
-    public function viewFacultyReport(Request $request, string $reportID){ //Look into this a little more
+
+    public function viewFacultyReport(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = HumanResources::find($reportID);
@@ -323,10 +350,10 @@ class HRStatistics extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        $user = User::where('email', $report->email)->first();  
+        $user = User::where('email', $report->email)->first();
 
         return view('HRStatisticsReport', ['report' => $report, 'user' => $user]);
-        
+
     }
 
     //Working on calculating the totals, will do this last

@@ -1,4 +1,3 @@
-<div>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Annual Report PDF</title>
-    <link rel="stylesheet" href="{{ public_path('/css/staffStyle.css') }}">
+    <link rel="stylesheet" href="{{ public_path('./../../ub-api/Modules/UBForms/public/css/staffStyle.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div class="header-content">
                 <div class="header-logo">
-                    <img src="{{public_path('/images/UB-Logo.png')}}" alt="University Logo">
+                    <img src="{{public_path('./../../ub-api/Modules/UBForms/public/images/UB-Logo.png')}}" alt="University Logo">
                 </div>
                 <div class="header-text">
                     <h1>University of Belize Annual Report</h1>
@@ -156,4 +155,3 @@
     </div>
 </body>
 </html>
-</div>

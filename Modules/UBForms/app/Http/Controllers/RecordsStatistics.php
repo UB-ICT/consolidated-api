@@ -353,7 +353,7 @@ class RecordsStatistics extends Controller
 
         // Generate PDF using data directly
         // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
-        $pdf = PDF::loadView('RecordsStatisticsReport', ['report' => $report, 'user' => $user])
+        $pdf = PDF::loadView('UBForms::recordstatisticsreport', ['report' => $report, 'user' => $user])
                     ->setPaper('a4', 'landscape'); // Set the paper size to A4 and orientation to landscape
 
         // Return PDF as a response
