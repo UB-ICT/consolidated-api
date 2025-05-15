@@ -79,7 +79,7 @@
             <p><b>Scholarships:</b> {{ $report->researchPartnerships['scholarships'] }}</p>
         </section>
 
-        < class="content">
+        <section class="content">
             <h2>V. Student Success</h2>
             <p><b>Student Learning:</b> {{ $report->studentSuccess['studentLearning'] }}</p>
             <p><b>Student Clubs:</b> {{ $report->studentSuccess['studentClubs'] }}</p>
