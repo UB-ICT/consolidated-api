@@ -31,47 +31,52 @@ class RecordsStatistics extends Controller
 {
     //Initialize function
     //Updated from Github
-    private function initializeReport(string $email){
+    private function initializeReport(string $email)
+    {
         return $reportData = Records::create([
             'email' => $email,
             'academicYearID' => "2023-2024", //temporary
             'department' => "",
             'deadline' => "",
-            'currentStudentEnrollmentTrend' => ['associates' => '', 'undergraduate' => '', 'graduate' => '','Total' => ''], //Added Total to the array
-            'studentEnrollmentTrend' => Array(
-              ['academicYear' => '2021/2022', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
-              ['academicYear' => '2022/2023', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
-              ['academicYear' => '2023/2024', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
+            'currentStudentEnrollmentTrend' => ['associates' => 0, 'undergraduate' => 0, 'graduate' => 0, 'Total' => 0],
+            'studentEnrollmentTrend' => array(
+                ['academicYear' => '2021/2022', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
+                ['academicYear' => '2022/2023', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
+                ['academicYear' => '2023/2024', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
             ),
-            'enrollmentTrendPerFaculty' => Array(
-              ['academicYear' => '2021/2022', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
-              ['academicYear' => '2022/2023', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
-              ['academicYear' => '2023/2024', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
+            'enrollmentTrendPerFaculty' => array(
+                ['academicYear' => '2021/2022', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2022/2023', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2023/2024', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
             ),
-            'graduationStatistics'=> Array(
-              [
-              'academicYear' => "2021/2022",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ], //A little ocd about this part but its okay
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )],
-              [
-              'academicYear' => "2022/2023",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )],
-              ['academicYear' => "2023/2024",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )]
+            'graduationStatistics' => array(
+                [
+                    'academicYear' => "2021/2022",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''], //A little ocd about this part but its okay
+                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                    )
+                ],
+                [
+                    'academicYear' => "2022/2023",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                    )
+                ],
+                [
+                    'academicYear' => "2023/2024",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                    )
+                ]
             ),
             'studentOrigin' => ['Belize' => '', 'CentralAmericanCountries' => '', 'OtherCountries' => ''], //7.Origin of Students 
             'campusStatistics' => ['BelizeCity' => '', 'Belmopan' => '', 'PuntaGorda' => '', 'CentralFarm' => '', 'SatellitePrograms' => ''], //8.Campus Statistics
@@ -80,13 +85,14 @@ class RecordsStatistics extends Controller
         ]);
     }
 
-    public function initialize(Request $request){
+    public function initialize(Request $request)
+    {
 
-        try{
+        try {
 
             $data = $request->all(); //Adding this in the event things need to be validated later on  
 
-            $user = $request->user();            
+            $user = $request->user();
 
             $reportData = $this->initializeReport($user->email);
 
@@ -94,16 +100,16 @@ class RecordsStatistics extends Controller
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-        }catch(\Exception $e){
+                    'reportID' => $reportData->_id
+                ],
+            ];
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
 
         return response($response, 201);
@@ -112,11 +118,29 @@ class RecordsStatistics extends Controller
 
     //Create
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
+        $data = $request->all();
 
-        $data = $request->all(); //Adding this in the event things need to be validated later on    
+        try {
+            // Ensure currentStudentEnrollmentTrend has Total
+            if (isset($data['currentStudentEnrollmentTrend'])) {
+                $data['currentStudentEnrollmentTrend']['Total'] = $data['currentStudentEnrollmentTrend']['Total'] ??
+                    (($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                        ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
+                        ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
+            }
 
-        try{
+            // Ensure each studentEnrollmentTrend item has Total
+            if (isset($data['studentEnrollmentTrend'])) {
+                foreach ($data['studentEnrollmentTrend'] as &$trend) {
+                    $trend['Total'] = $trend['Total'] ??
+                        (($trend['associate'] ?? 0) +
+                            ($trend['undergraduate'] ?? 0) +
+                            ($trend['graduate'] ?? 0) +
+                            ($trend['other'] ?? 0));
+                }
+            }
 
             $reportData = Records::create([
                 'academicYearID' => $data['academicYearID'],
@@ -125,9 +149,7 @@ class RecordsStatistics extends Controller
                 'currentStudentEnrollmentTrend' => $data['currentStudentEnrollmentTrend'],
                 'studentEnrollmentTrend' => $data['studentEnrollmentTrend'],
                 'enrollmentTrendPerFaculty' => $data['enrollmentTrendPerFaculty'],
-                'graduationStatistics'=> $data['graduationStatistics'],
-                // 'graduatesByAge' => $data['graduatesByAge'], //New
-                // 'graduatesByDistricts' => $data['graduatesByDistricts'], //New
+                'graduationStatistics' => $data['graduationStatistics'],
                 'studentOrigin' => $data['studentOrigin'],
                 'campusStatistics' => $data['campusStatistics'],
                 'graduates' => $data['graduates'],
@@ -137,39 +159,36 @@ class RecordsStatistics extends Controller
             $response = [
                 'success' => true,
                 'message' => "Records Statistics Report Created Successfully",
-                'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-            
-        }catch(\Exception $e){
-            // If an error occurs, create an error response
+                'data' => ['reportID' => $reportData->_id],
+            ];
+
+        } catch (\Exception $e) {
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
 
+        return response($response, 201);
     }
 
     //Read
 
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
 
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Records::where('_id', $reportID)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -181,38 +200,56 @@ class RecordsStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Update
 
-    public function updateReport(Request $request){
+    public function updateReport(Request $request)
+    {
         try {
-
             $data = $request->all();
-            // $id = $request->input('reportID');
 
-            // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Records::where('email', $data['email'])->first();
 
-            //updated from git
             if ($report) {
+                // Update currentStudentEnrollmentTrend with Total if it exists in request
+                if ($request->has('currentStudentEnrollmentTrend')) {
+                    $currentTrend = $data['currentStudentEnrollmentTrend'];
+                    $currentTrend['Total'] = $currentTrend['Total'] ??
+                        (($currentTrend['associates'] ?? 0) +
+                            ($currentTrend['undergraduate'] ?? 0) +
+                            ($currentTrend['graduate'] ?? 0));
+                    $report->currentStudentEnrollmentTrend = $currentTrend;
+                }
 
+                // Update studentEnrollmentTrend with Totals if it exists in request
+                if ($request->has('studentEnrollmentTrend')) {
+                    $trends = $data['studentEnrollmentTrend'];
+                    foreach ($trends as &$trend) {
+                        $trend['Total'] = $trend['Total'] ??
+                            (($trend['associate'] ?? 0) +
+                                ($trend['undergraduate'] ?? 0) +
+                                ($trend['graduate'] ?? 0) +
+                                ($trend['other'] ?? 0));
+                    }
+                    $report->studentEnrollmentTrend = $trends;
+                }
+
+                // Update other fields
                 $report->academicYearID = $request->has('academicYearID') ? $data['academicYearID'] : $report->academicYearID;
                 $report->department = $request->has('department') ? $data['department'] : $report->department;
                 $report->deadline = $request->has('deadline') ? $data['deadline'] : $report->deadline;
-                $report->currentStudentEnrollmentTrend = $request->has('currentStudentEnrollmentTrend') ? $data['currentStudentEnrollmentTrend'] : $report->currentStudentEnrollmentTrend;
-                $report->studentEnrollmentTrend = $request->has('studentEnrollmentTrend') ? $data['studentEnrollmentTrend'] : $report->studentEnrollmentTrend;
                 $report->enrollmentTrendPerFaculty = $request->has('enrollmentTrendPerFaculty') ? $data['enrollmentTrendPerFaculty'] : $report->enrollmentTrendPerFaculty;
                 $report->graduationStatistics = $request->has('graduationStatistics') ? $data['graduationStatistics'] : $report->graduationStatistics;
                 $report->studentOrigin = $request->has('studentOrigin') ? $data['studentOrigin'] : $report->studentOrigin;
@@ -221,14 +258,13 @@ class RecordsStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
-                    // Format success response
+
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
@@ -236,22 +272,20 @@ class RecordsStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        return response($response, 200);
     }
 
     //Delete
-    
-    public function delReport(Request $request){
+
+    public function delReport(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -263,7 +297,7 @@ class RecordsStatistics extends Controller
             if ($report) {
 
                 $report->delete();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
@@ -278,20 +312,21 @@ class RecordsStatistics extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
-    public function getReportByUser(Request $request){
+    public function getReportByUser(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -304,12 +339,12 @@ class RecordsStatistics extends Controller
             $report = Records::where('email', $user->email)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -320,13 +355,13 @@ class RecordsStatistics extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ],
                 ];
             }
 
         } catch (\Exception $e) {
-                // Exception occurred
+            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -338,7 +373,8 @@ class RecordsStatistics extends Controller
 
     }
 
-    public function generateRecordsPdf(Request $request, string $reportID){ //Look into this a little more
+    public function generateRecordsPdf(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = Records::find($reportID);
@@ -349,18 +385,18 @@ class RecordsStatistics extends Controller
         }
 
         // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();        
+        $user = User::where('email', $report->email)->first();
 
         // Generate PDF using data directly
-        // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
         $pdf = PDF::loadView('UBForms::recordstatisticsreport', ['report' => $report, 'user' => $user])
-                    ->setPaper('a4', 'landscape'); // Set the paper size to A4 and orientation to landscape
+            ->setPaper('a4', 'landscape');
 
         // Return PDF as a response
         return $pdf->download('report_' . $report->id . '.pdf');
     }
 
-    public function viewFacultyReport(Request $request, string $reportID){ //Look into this a little more
+    public function viewFacultyReport(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = Records::find($reportID);
@@ -370,11 +406,11 @@ class RecordsStatistics extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        $user = User::where('email', $report->email)->first();  
+        $user = User::where('email', $report->email)->first();
 
         return view('RecordsStatisticsReport', ['report' => $report, 'user' => $user]);
-        
+
     }
-    
+
 
 }
