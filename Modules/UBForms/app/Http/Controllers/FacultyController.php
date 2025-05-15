@@ -100,6 +100,8 @@ class FacultyController extends Controller
 
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
+
+
         try{
 
             $reportData = Faculty::create([

@@ -27,11 +27,7 @@
         <section class="content">
             <h2>Report Details</h2>
             <div>
-                <b>Faculty:</b> {{ $report->faculty ?? 'No data available' }}
-            </div>
-            <br>
-            <div>
-                <b>Report By:</b> {{ $user->name ?? 'No data available' }}
+                <b>Report By: </b>{{ auth()->user()->name }}
             </div>
             <br>
             <div>
@@ -113,9 +109,19 @@
 
         <section class="content">
             <h2>V. Number of New and Revised Academic Programs</h2>
-            <p>{{ $report->revisedAcademics['programsOffered'] ?? 'No data available' }}</p>
-            <p>{{ $report->revisedAcademics['newProgrammesAdded'] ?? 'No data available' }}</p>
-            <p>{{ $report->revisedAcademics['revisedPrograms'] ?? 'No data available' }}</p>
+            @if(isset($report->revisedAcademics))
+                @if(isset($report->revisedAcademics['programsOffered']) && $report->revisedAcademics['programsOffered'] != '')
+                    <p><b>Programs Offered:</b> {{ $report->revisedAcademics['programsOffered'] }}</p>
+                @endif
+                @if(isset($report->revisedAcademics['newProgrammesAdded']) && $report->revisedAcademics['newProgrammesAdded'] != '')
+                    <p><b>New Programs Added:</b> {{ $report->revisedAcademics['newProgrammesAdded'] }}</p>
+                @endif
+                @if(isset($report->revisedAcademics['revisedPrograms']) && $report->revisedAcademics['revisedPrograms'] != '')
+                    <p><b>Revised Programs:</b> {{ $report->revisedAcademics['revisedPrograms'] }}</p>
+                @endif
+            @else
+                <p>No revised course data reported.</p>
+            @endif
         </section>
 
         <section class="content">
@@ -155,9 +161,11 @@
         </section>
 
         <section class="content">
-            <h2>Student Internships</h2>
+            <h2>VI. Student Internships</h2>
             <p>{{ $report->studentInternships ?? 'No data available' }}</p>
         </section>
+
+
 
         <section class="content">
             <h2>Degrees Conferred</h2>

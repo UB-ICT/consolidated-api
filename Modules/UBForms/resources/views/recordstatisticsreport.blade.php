@@ -111,7 +111,7 @@
     </table>
     @endif
         
-     @if(isset($report->graduationStatistics))
+    <!-- @if(isset($report->graduationStatistics))
     <div class="section-title">4. Graduation Statistics</div>
     <table>
         <thead>
@@ -163,8 +163,8 @@
             @endif
         </tbody>
     </table>
-    @endif 
-    <!-- @if(isset($report->graduationStatistics))
+    @endif -->
+    @if(isset($report->graduationStatistics))
     <div class="section-title">4. Graduation Statistics</div>
     <table>
         <thead>
@@ -183,9 +183,10 @@
                     <td>{{ $faculty['Bachelors'] ?? 0 }}</td>
                     <td>{{ $faculty['Honors'] ?? 0 }}</td>
                 </tr>
+                
             @endforeach
         </tbody>
-    </table> 
+    </table>
 
     @if(isset($report->graduates['GraduatesByAge']))
     <div class="section-title">5. Graduates by Age</div>
