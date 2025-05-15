@@ -59,6 +59,7 @@
                 <th>Degree Program</th>
                 @foreach (($report->studentEnrollmentTrend ?? []) as $trend)
                     <th>{{ $trend['academicYear'] ?? 'N/A' }}</th>
+
                 @endforeach
             </tr>
         </thead>
@@ -110,7 +111,7 @@
     </table>
     @endif
         
-    @if(isset($report->graduationStatistics))
+     @if(isset($report->graduationStatistics))
     <div class="section-title">4. Graduation Statistics</div>
     <table>
         <thead>
@@ -162,7 +163,29 @@
             @endif
         </tbody>
     </table>
-    @endif
+    @endif 
+    <!-- @if(isset($report->graduationStatistics))
+    <div class="section-title">4. Graduation Statistics</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Faculty</th>
+                @foreach (['2021/2022', '2022/2023', '2023/2024'] as $year)
+                    <th>{{ $year['academicYear'] }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($report->graduationStatistics as $faculty)
+                <tr>
+                    <td>{{ $faculty['degree'] ?? 'N/A' }}</td>
+                    <td>{{ $faculty['Associates'] ?? 0 }}</td>
+                    <td>{{ $faculty['Bachelors'] ?? 0 }}</td>
+                    <td>{{ $faculty['Honors'] ?? 0 }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table> 
 
     @if(isset($report->graduates['GraduatesByAge']))
     <div class="section-title">5. Graduates by Age</div>

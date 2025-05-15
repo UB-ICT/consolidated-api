@@ -3,6 +3,7 @@
 namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
+// use Illuminate\Routing\Controller;
 use Modules\UBForms\Models\Staff;
 use Modules\PublicSafety\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -42,7 +43,7 @@ class StaffController extends Controller
             'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
             'studentSuccess' => ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => ''],
-            'activities' => array(['eventId' => 0, 'eventName' => '', 'personsInPicture' => '', 'pictureURL' => array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
+            'activities' => array(['eventId' => 0, 'eventName' => "", 'personsInPicture' => '', 'pictureURL' => array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
             'administrativeData' => ['fullTimeStaff' => '', 'partTimeStaff' => '', 'significantStaffChanges' => ''],
             'financialBudget' => ['fundingSources' => '', 'significantBudgetChanges' => ''],
             'meetings' => array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => array(['meetingURL' => ''])]),
@@ -84,14 +85,23 @@ class StaffController extends Controller
 
     }
 
+    // function test(Request $request)
+    // {
+    //     var_dump($request->all());
+    // }
+
 
     public function store(Request $request)
     {
 
 
-        $data = $request->all(); //Adding this in the event things need to be validated later on    
+        $data = $request->post(); //Adding this in the event things need to be validated later on
+
 
         try {
+            // var_dump($data); return;
+
+            $data = $request->all();
 
             $reportData = Staff::create([
                 'academicYearID' => $data['academicYearID'],

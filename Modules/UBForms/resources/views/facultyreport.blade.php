@@ -36,7 +36,7 @@
             <br>
             <div>
                 <b>List all units/departments/centers/institutes within the Faculty:</b>
-                {{ $report->units ?? 'No data available' }}
+                {{ is_array($report->units) ? implode(', ', $report->units) : ($report->units ?? 'No data available') }}
             </div>
         </section>
 

@@ -53,34 +53,34 @@ class RecordsStatistics extends Controller
                 [
                     'academicYear' => "2021/2022",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''], //A little ocd about this part but its okay
-                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0], //A little ocd about this part but its okay
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                     )
                 ],
                 [
                     'academicYear' => "2022/2023",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                     )
                 ],
                 [
                     'academicYear' => "2023/2024",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
-                        ['degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => ''],
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                     )
                 ]
             ),
-            'studentOrigin' => ['Belize' => '', 'CentralAmericanCountries' => '', 'OtherCountries' => ''], //7.Origin of Students 
-            'campusStatistics' => ['BelizeCity' => '', 'Belmopan' => '', 'PuntaGorda' => '', 'CentralFarm' => '', 'SatellitePrograms' => ''], //8.Campus Statistics
-            'graduates' => ['graduatesByAge' => '', 'graduatesByDistrict' => ''],//5 and 6 merged into one
+            'studentOrigin' => ['Belize' => 0, 'CentralAmericanCountries' => 0, 'OtherCountries' => 0], //7.Origin of Students 
+            'campusStatistics' => ['BelizeCity' => 0, 'Belmopan' => 0, 'PuntaGorda' => 0, 'CentralFarm' => 0, 'SatellitePrograms' => 0], //8.Campus Statistics
+            'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0],//5 and 6 merged into one
             'formSubmitted' => false,
         ]);
     }
@@ -126,19 +126,18 @@ class RecordsStatistics extends Controller
             // Ensure currentStudentEnrollmentTrend has Total
             if (isset($data['currentStudentEnrollmentTrend'])) {
                 $data['currentStudentEnrollmentTrend']['Total'] = $data['currentStudentEnrollmentTrend']['Total'] ??
-                    (($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
-                        ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
-                        ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
+                    ((int) ($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                        (int) ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
+                        (int) ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
             }
 
-            // Ensure each studentEnrollmentTrend item has Total
             if (isset($data['studentEnrollmentTrend'])) {
                 foreach ($data['studentEnrollmentTrend'] as &$trend) {
                     $trend['Total'] = $trend['Total'] ??
-                        (($trend['associate'] ?? 0) +
-                            ($trend['undergraduate'] ?? 0) +
-                            ($trend['graduate'] ?? 0) +
-                            ($trend['other'] ?? 0));
+                        ((int) ($trend['associate'] ?? 0) +
+                            (int) ($trend['undergraduate'] ?? 0) +
+                            (int) ($trend['graduate'] ?? 0) +
+                            (int) ($trend['other'] ?? 0));
                 }
             }
 
