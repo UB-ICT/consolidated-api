@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Annual Report PDF</title>
-    <link rel="stylesheet" href="{{ public_path('./../../ub-api/Modules/UBForms/public/css/facultyStyle.css') }}">
+    <link rel="stylesheet" href="{{ public_path('public/css/facultyStyle.css') }}">
 </head>
 
 <body>
@@ -14,7 +14,7 @@
         <div class="header">
             <div class="header-content">
                 <div class="header-logo">
-                    <img src="{{public_path('./../../ub-api/Modules/UBForms/public/images/UB-Logo.png')}}"
+                    <img src="{{public_path('UBForms/public/images/UB-Logo.png')}}"
                         alt="University Logo">
                 </div>
                 <div class="header-text">
