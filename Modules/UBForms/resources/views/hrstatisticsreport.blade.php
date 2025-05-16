@@ -52,35 +52,34 @@
                 <tbody>
                     <tr>
                         <td>Education and Arts</td>
-                        <td>{{ $report->numberOfStaff['FulltimeFaculty']['EducationAndArts'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['AdjunctFaculty']['EducationAndArts'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['NonTeachingStaff']['EducationAndArts'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['fulltimeFaculty']['educationAndArts'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['adjunctFaculty']['educationAndArts'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['nonTeachingStaff']['educationAndArts'] ?? 0 }}</td>
                     </tr>
                     <tr>
                         <td>Management and Social Sciences</td>
-                        <td>{{ $report->numberOfStaff['FulltimeFaculty']['ManagementAndSocialSciences'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['AdjunctFaculty']['ManagementAndSocialSciences'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['NonTeachingStaff']['ManagementAndSocialSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['fulltimeFaculty']['managementAndSocialSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['adjunctFaculty']['managementAndSocialSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['nonTeachingStaff']['managementAndSocialSciences'] ?? 0 }}</td>
                     </tr>
                     <tr>
                         <td>Health Sciences</td>
-                        <td>{{ $report->numberOfStaff['FulltimeFaculty']['HealthSciences'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['AdjunctFaculty']['HealthSciences'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['NonTeachingStaff']['HealthSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['fulltimeFaculty']['healthSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['adjunctFaculty']['healthSciences'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['nonTeachingStaff']['healthSciences'] ?? 0 }}</td>
                     </tr>
                     <tr>
                         <td>Science and Technology</td>
-                        <td>{{ $report->numberOfStaff['FulltimeFaculty']['ScienceAndTechnology'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['AdjunctFaculty']['ScienceAndTechnology'] ?? 0 }}</td>
-                        <td>{{ $report->numberOfStaff['NonTeachingStaff']['ScienceAndTechnology'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['fulltimeFaculty']['scienceAndTechnology'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['adjunctFaculty']['scienceAndTechnology'] ?? 0 }}</td>
+                        <td>{{ $report->numberOfStaff['nonTeachingStaff']['scienceAndTechnology'] ?? 0 }}</td>
                     </tr>
-                    <!-- Total Row -->
+                    <!-- total Row -->
                     <tr class="total-row">
                         <td>Total</td>
-                        <td>{{ $report->numberOfStaff['FulltimeFaculty']['Total'] }}</td>
-                        </td>
-                        <td>{{ $report->numberOfStaff['AdjunctFaculty']['Total'] }}</td>
-                        <td>{{ $report->numberOfStaff['NonTeachingStaff']['Total'] }}</td>
+                        <td>{{ $report->numberOfStaff['fulltimeFaculty']['total'] }}</td>
+                        <td>{{ $report->numberOfStaff['adjunctFaculty']['total'] }}</td>
+                        <td>{{ $report->numberOfStaff['nonTeachingStaff']['total'] }}</td>
                     </tr>
                 </tbody>
             </table>

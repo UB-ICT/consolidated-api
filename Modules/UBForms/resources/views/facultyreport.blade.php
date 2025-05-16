@@ -125,7 +125,12 @@
         </section>
 
         <section class="content">
-            <h2>Courses</h2>
+            <h2>Academic Programs</h2>
+            <p>{{ $report->academicPrograms ?? 'No data available' }}</p>
+        </section>
+
+        <section class="content">
+            Sexctourses</h2>
             @if(isset($report->courses))
                 @if(isset($report->courses['totalNewCourses']) && $report->courses['totalNewCourses'] != '')
                     <p><b>Total New Courses:</b> {{ $report->courses['totalNewCourses'] }}</p>

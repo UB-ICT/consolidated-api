@@ -39,9 +39,9 @@ class HRStatistics extends Controller
             'department' => "",
             'deadline' => "",
             'numberOfStaff' => [ //From Github
-                'FulltimeFaculty' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => ''],
-                'AdjunctFaculty' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => ''],
-                'NonTeachingStaff' => ['EducationAndArts' => '', 'ManagementAndSocialSciences' => '', 'HealthSciences' => '', 'ScienceAndTechnology' => '', 'Total' => '']
+                'fulltimeFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
+                'adjunctFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
+                'nonTeachingStaff' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0]
             ],
             'formSubmitted' => false,
         ]);
@@ -308,28 +308,28 @@ class HRStatistics extends Controller
         $user = User::where('email', $report->email)->first();
 
         // Ensure numberOfStaff has the correct structure
-        if (!isset($report->numberOfStaff['FulltimeFaculty'])) {
+        if (!isset($report->numberOfStaff['fulltimeFaculty'])) {
             $report->numberOfStaff = [
-                'FulltimeFaculty' => [
-                    'EducationAndArts' => 0,
-                    'ManagementAndSocialSciences' => 0,
-                    'HealthSciences' => 0,
-                    'ScienceAndTechnology' => 0,
-                    'Total' => 0,
+                'fulltimeFaculty' => [
+                    'educationAndArts' => 0,
+                    'managementAndSocialSciences' => 0,
+                    'healthSciences' => 0,
+                    'scienceAndTechnology' => 0,
+                    'total' => 0
                 ],
-                'AdjunctFaculty' => [
-                    'EducationAndArts' => 0,
-                    'ManagementAndSocialSciences' => 0,
-                    'HealthSciences' => 0,
-                    'ScienceAndTechnology' => 0,
-                    'Total' => 0,
+                'adjunctFaculty' => [
+                    'educationAndArts' => 0,
+                    'managementAndSocialSciences' => 0,
+                    'healthSciences' => 0,
+                    'scienceAndTechnology' => 0,
+                    'total' => 0,
                 ],
-                'NonTeachingStaff' => [
-                    'EducationAndArts' => 0,
-                    'ManagementAndSocialSciences' => 0,
-                    'HealthSciences' => 0,
-                    'ScienceAndTechnology' => 0,
-                    'Total' => 0,
+                'nonTeachingStaff' => [
+                    'educationAndArts' => 0,
+                    'managementAndSocialSciences' => 0,
+                    'healthSciences' => 0,
+                    'scienceAndTechnology' => 0,
+                    'total' => 0,
                 ],
             ];
         }
