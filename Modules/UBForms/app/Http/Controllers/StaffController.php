@@ -3,10 +3,10 @@
 namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-// use Illuminate\Routing\Controller;
 use Modules\UBForms\Models\Staff;
 use Modules\PublicSafety\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Events\MongoDocumentCreated;
 
 
 /*
@@ -65,6 +65,10 @@ class StaffController extends Controller
 
             $reportData = $this->initializeReport($user->email);
 
+            // Dispatch the event
+            event(new MongoDocumentCreated('staff', $reportData->toArray(), (string) $reportData->_id));
+
+
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
@@ -84,11 +88,6 @@ class StaffController extends Controller
         return response($response, 201);
 
     }
-
-    // function test(Request $request)
-    // {
-    //     var_dump($request->all());
-    // }
 
 
     public function store(Request $request)
@@ -120,6 +119,9 @@ class StaffController extends Controller
                 'otherComments' => $data['otherComments'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
+
+            // Dispatch the event
+            event(new MongoDocumentCreated('staff', $reportData->toArray(), (string) $reportData->_id));
 
             $response = [
                 'success' => true,
@@ -251,6 +253,10 @@ class StaffController extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
+
+                // Dispatch the event for updates
+                event(args: new MongoDocumentCreated('staff', $report->toArray(), (string) $report->_id));
+
                 // Format success response
                 $response = [
                     'success' => true,

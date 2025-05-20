@@ -6,6 +6,7 @@ namespace Modules\UBForms\Http\Controllers;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Modules\UBForms\Models\Staff;
+use App\Events\MongoDocumentCreated;
 
 class GeneratePdf extends Controller
 {

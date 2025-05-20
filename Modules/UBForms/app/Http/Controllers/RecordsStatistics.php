@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Modules\UBForms\Models\Records;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Events\MongoDocumentCreated;
+
 
 /*
 This is the Records Statistics Controller responsible for doing 5 functions. 
@@ -96,6 +98,8 @@ class RecordsStatistics extends Controller
 
             $reportData = $this->initializeReport($user->email);
 
+            event(new MongoDocumentCreated('records', $reportData->toArray(), (string) $reportData->_id));
+
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
@@ -154,6 +158,9 @@ class RecordsStatistics extends Controller
                 'graduates' => $data['graduates'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
+
+            event(new MongoDocumentCreated('records', $reportData->toArray(), (string) $reportData->_id));
+
 
             $response = [
                 'success' => true,
@@ -257,6 +264,9 @@ class RecordsStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
+
+                event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
+
 
                 $response = [
                     'success' => true,

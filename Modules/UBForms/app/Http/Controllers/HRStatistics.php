@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Modules\UBForms\Models\HumanResources;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Events\MongoDocumentCreated;
+
 
 /*
 This is the HR Statistics Controller responsible for doing 5 functions. 
@@ -59,6 +61,9 @@ class HRStatistics extends Controller
 
             $reportData = $this->initializeReport($user->email);
 
+            event(new MongoDocumentCreated('hrstatistics', $reportData->toArray(), (string) $reportData->_id));
+
+
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
@@ -95,6 +100,9 @@ class HRStatistics extends Controller
                 'numberOfStaff' => $data['numberOfStaff'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
+
+            event(new MongoDocumentCreated('hrstatistics', $reportData->toArray(), (string) $reportData->_id));
+
 
             $response = [
                 'success' => true,
@@ -178,6 +186,10 @@ class HRStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
+
+
+                event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
+
                 // Format success response
                 $response = [
                     'success' => true,

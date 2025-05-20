@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Modules\UBForms\Models\Finance;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Events\MongoDocumentCreated;
+
 
 /*
 This is the Finance Statistics Controller responsible for doing 5 functions. 
@@ -56,6 +58,9 @@ class FinanceStatistics extends Controller
 
             $reportData = $this->initializeReport($user->email);
 
+            event(args: new MongoDocumentCreated('financeStatistics', $reportData->toArray(), (string) $reportData->_id));
+
+
             //removed part of the original initialization function that was not needed
 
             $response = [
@@ -96,6 +101,8 @@ class FinanceStatistics extends Controller
                 'investments' => $data['investments'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
+
+            event(args: new MongoDocumentCreated('financeStatistics', $reportData->toArray(), (string) $reportData->_id));
 
             $response = [
                 'success' => true,
@@ -181,6 +188,9 @@ class FinanceStatistics extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
+
+                event(args: new MongoDocumentCreated('financeStatistics', $report->toArray(), (string) $report->_id));
+
                 // Format success response
                 $response = [
                     'success' => true,

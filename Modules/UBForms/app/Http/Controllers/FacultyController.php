@@ -7,6 +7,7 @@ use Modules\UBForms\Models\Faculty;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
+use App\Events\MongoDocumentCreated;
 
 
 /*
@@ -32,62 +33,67 @@ class FacultyController extends Controller
 {
     //Initialize 
 
-    private function initializeReport(string $email){
+    private function initializeReport(string $email)
+    {
         return $reportData = Faculty::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
-            'faculty' =>  "",
-            'units' =>  [],
-            'deadline' =>  "",
+            'faculty' => "",
+            'units' => [],
+            'deadline' => "",
             'departmentList' => '',
-            'missionStatement' =>  "",
-            'strategicGoals' =>  ['previousAcademicYear' => '', 'plans' => '', 'completionRate'=>''],
-            'accomplishments'=>  ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'mostImpactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
-            'researchPartnerships' =>  ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
+            'missionStatement' => "",
+            'strategicGoals' => ['previousAcademicYear' => '', 'plans' => '', 'completionRate' => ''],
+            'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'mostImpactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
+            'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
             'revisedAcademics' => ['programsOffered' => '', 'newProgrammesAdded' => '', 'revisedPrograms' => ''],
-            'academicPrograms' =>  "",
-            'courses' =>  ['totalNewCourses' => '', 'totalCoursesOnline' => '', 'totalCourseFaceToFace' => ''],
-            'eliminatedAcademicPrograms' =>  "",
-            'retentionOfStudents' =>  ['currentStudents' => '', 'transferStudents' => ''],
-            'studentInternships' =>  "",
-            'degreesConferred' =>  ['degreesConferredForMostRecentAcademicYear' => '', 'degreesConferredForMostRecentAcademicYearPerDepartment' => ''],
-            'studentSuccess' =>  ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => ''],
-            'activities' => Array(['eventId' =>  0, 'eventName' => '', 'personsInPicture' => '', 'pictureURL' => Array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
-            'administrativeData' =>  ['fullTimeStaff' => '', 'partTimeStaff' => '', 'significantStaffChanges' => ''],
-            'financialBudget' =>  ['fundingSources' => '', 'impactfulChanges' => ''],
-            'meetings'=> Array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => Array(['meetingURL' => ''])]),
+            'academicPrograms' => "",
+            'courses' => ['totalNewCourses' => '', 'totalCoursesOnline' => '', 'totalCourseFaceToFace' => ''],
+            'eliminatedAcademicPrograms' => "",
+            'retentionOfStudents' => ['currentStudents' => '', 'transferStudents' => ''],
+            'studentInternships' => "",
+            'degreesConferred' => ['degreesConferredForMostRecentAcademicYear' => '', 'degreesConferredForMostRecentAcademicYearPerDepartment' => ''],
+            'studentSuccess' => ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => ''],
+            'activities' => array(['eventId' => 0, 'eventName' => '', 'personsInPicture' => '', 'pictureURL' => array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
+            'administrativeData' => ['fullTimeStaff' => '', 'partTimeStaff' => '', 'significantStaffChanges' => ''],
+            'financialBudget' => ['fundingSources' => '', 'impactfulChanges' => ''],
+            'meetings' => array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => array(['meetingURL' => ''])]),
             'formSubmitted' => false,
-            'otherComments' =>  "",
+            'otherComments' => "",
         ]);
     }
 
-    public function initialize(Request $request){
+    public function initialize(Request $request)
+    {
 
-        try{
+        try {
 
             $data = $request->all(); //Adding this in the event things need to be validated later on  
 
             $user = $request->user();
 
-            if(!$user || !$user->email)
-              return response (['success' => false, 'message' =>'User\'s email not found on AD.', 'data' => null], 400);
+            if (!$user || !$user->email)
+                return response(['success' => false, 'message' => 'User\'s email not found on AD.', 'data' => null], 400);
 
             $reportData = $this->initializeReport($user->email);
+            // Dispatch the event
+            event(new MongoDocumentCreated('faculty', $reportData->toArray(), (string) $reportData->_id));
+
 
             $response = [
-              'success' => true,
-              'message' => "Initialization Successfull",
-              'data' => [
-                  'reportID' => $reportData->_id
-              ],            
+                'success' => true,
+                'message' => "Initialization Successfull",
+                'data' => [
+                    'reportID' => $reportData->_id
+                ],
             ];
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
 
         return response($response, 201);
@@ -96,14 +102,11 @@ class FacultyController extends Controller
 
     //Create 
 
-    public function store(Request $request){
-
+    public function store(Request $request)
+    {
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
-
-
-        try{
-
+        try {
             $reportData = Faculty::create([
                 'academicYearID' => $data['academicYearID'],
                 'faculty' => $data['faculty'],
@@ -112,7 +115,7 @@ class FacultyController extends Controller
                 'departmentList' => $data['departmentList'],
                 'missionStatement' => $data['missionStatement'],
                 'strategicGoals' => $data['strategicGoals'],
-                'accomplishments'=> $data['accomplishments'],
+                'accomplishments' => $data['accomplishments'],
                 'researchPartnerships' => $data['researchPartnerships'],
                 'revisedAcademics' => $data['revisedAcademics'],
                 'academicPrograms' => $data['academicPrograms'],
@@ -125,45 +128,49 @@ class FacultyController extends Controller
                 'activities' => $data['activities'],
                 'administrativeData' => $data['administrativeData'],
                 'financialBudget' => $data['financialBudget'],
-                'meetings'=> $data['meetings'],
+                'meetings' => $data['meetings'],
                 'otherComments' => $data['otherComments'],
                 'formSubmitted' => $data['formSubmitted']
             ]);
+
+            // Dispatch the event
+            event(new MongoDocumentCreated('faculty', $reportData->toArray(), (string) $reportData->_id));
 
             $response = [
                 'success' => true,
                 'message' => "Faculty Report Created Successfully",
                 'data' => [
                     'reportID' => $reportData->_id
-                ],            
-            ]; 
+                ],
+            ];
 
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
+
+        return response($response, 201);
     }
 
     //Read 
 
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
             // Retrieve data based on conditions (assuming $request has the id parameter)
             $report = Faculty::where('_id', $reportID)->first();
 
             if ($report) {
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'reportData' => $report
                     ]
                 ];
             } else {
@@ -175,22 +182,23 @@ class FacultyController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Update
 
-    public function updateReport(Request $request){
+    public function updateReport(Request $request)
+    {
         try {
 
             $data = $request->all();
@@ -226,7 +234,11 @@ class FacultyController extends Controller
                 $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
 
                 $report->save();
-                    // Format success response
+
+                event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
+
+
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
@@ -241,22 +253,23 @@ class FacultyController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
 
     }
 
     //Delete
 
-    public function delReport(Request $request){
+    public function delReport(Request $request)
+    {
         try {
 
             // $data = $request->all();
@@ -268,7 +281,7 @@ class FacultyController extends Controller
             if ($report) {
 
                 $report->delete();
-                    // Format success response
+                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
@@ -283,55 +296,8 @@ class FacultyController extends Controller
                 ];
             }
 
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
-    }
-
-    public function getReportByUser(Request $request){
-        try {
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
-            $user = $request->user();
-
-            if(!$user || !$user->email)
-              return response (['success' => false, 'message' =>'User\'s email not found on AD.', 'data' => null], 400);
-
-            $report = Faculty::where('email', $user->email)->first();
-
-            if ($report) {
-                    // Format success response
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data found successfully',
-                    'data' => [
-                        'reportData' => $report 
-                    ]
-                ];
-            } else {
-                $report = $this->initializeReport($user->email);
-
-                // Report not found
-                $response = [
-                    'success' => true,
-                    'message' => 'Report Initialized.',
-                    'data' => [
-                        'reportData' => $report 
-                    ],
-                ];
-            }
-
         } catch (\Exception $e) {
-                // Exception occurred
+            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -343,28 +309,80 @@ class FacultyController extends Controller
 
     }
 
-   public function generateFacultyPdf(Request $request, string $reportID){
-    $report = Faculty::find($reportID);
-    if (!$report) {
-        return response()->json(['error' => 'Report not found'], 404);
+    public function getReportByUser(Request $request)
+    {
+        try {
+
+            // Retrieve data based on conditions (assuming $request has the id parameter)
+
+            $user = $request->user();
+
+            if (!$user || !$user->email)
+                return response(['success' => false, 'message' => 'User\'s email not found on AD.', 'data' => null], 400);
+
+            $report = Faculty::where('email', $user->email)->first();
+
+            if ($report) {
+                // Format success response
+                $response = [
+                    'success' => true,
+                    'message' => 'Report data found successfully',
+                    'data' => [
+                        'reportData' => $report
+                    ]
+                ];
+            } else {
+                $report = $this->initializeReport($user->email);
+
+                // Report not found
+                $response = [
+                    'success' => true,
+                    'message' => 'Report Initialized.',
+                    'data' => [
+                        'reportData' => $report
+                    ],
+                ];
+            }
+
+        } catch (\Exception $e) {
+            // Exception occurred
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
+
     }
 
-    $user = User::where('email', $report->email)->first();     
+    public function generateFacultyPdf(Request $request, string $reportID)
+    {
+        $report = Faculty::find($reportID);
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
 
-    // Ensure all array fields are properly initialized
-    if (!isset($report->units)) $report->units = [];
-    if (!isset($report->activities)) $report->activities = [];
-    // ... other array fields ...
+        $user = User::where('email', $report->email)->first();
 
-    $pdf = PDF::loadView('UBForms::facultyreport', [
-        'report' => $report, 
-        'user' => $user
-    ]);
+        // Ensure all array fields are properly initialized
+        if (!isset($report->units))
+            $report->units = [];
+        if (!isset($report->activities))
+            $report->activities = [];
+        // ... other array fields ...
 
-    return $pdf->download('report_' . $report->id . '.pdf');
-}
+        $pdf = PDF::loadView('UBForms::facultyreport', [
+            'report' => $report,
+            'user' => $user
+        ]);
 
-    public function viewFacultyReport(Request $request, string $reportID){ //Look into this a little more
+        return $pdf->download('report_' . $report->id . '.pdf');
+    }
+
+    public function viewFacultyReport(Request $request, string $reportID)
+    { //Look into this a little more
 
         // Fetch data from MongoDB based on report ID
         $report = Faculty::find($reportID);
@@ -374,9 +392,9 @@ class FacultyController extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
-        $user = User::where('email', $report->email)->first();  
+        $user = User::where('email', $report->email)->first();
 
         return view('facultyReport', ['report' => $report, 'user' => $user]);
-        
+
     }
 }
