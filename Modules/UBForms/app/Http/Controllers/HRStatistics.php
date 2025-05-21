@@ -35,7 +35,7 @@ class HRStatistics extends Controller
 
     private function initializeReport(string $email)
     {
-        return $reportData = HumanResources::create([
+        return $report = HumanResources::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
             'department' => "",
@@ -59,16 +59,16 @@ class HRStatistics extends Controller
 
             $user = $request->user();
 
-            $reportData = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email);
 
-            event(new MongoDocumentCreated('hrstatistics', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
 
 
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
         } catch (\Exception $e) {
@@ -93,7 +93,7 @@ class HRStatistics extends Controller
 
         try {
 
-            $reportData = HumanResources::create([
+            $report = HumanResources::create([
                 'academicYearID' => $data['academicYearID'],
                 'department' => $data['department'],
                 'deadline' => $data['deadline'],
@@ -101,14 +101,14 @@ class HRStatistics extends Controller
                 'formSubmitted' => $data['formSubmitted']
             ]);
 
-            event(new MongoDocumentCreated('hrstatistics', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
 
 
             $response = [
                 'success' => true,
                 'message' => "HR Statistics Report Created Successfully",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
 
@@ -140,7 +140,7 @@ class HRStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -280,7 +280,7 @@ class HRStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -291,7 +291,7 @@ class HRStatistics extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ],
                 ];
             }

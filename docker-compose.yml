@@ -1,11 +1,11 @@
 services:
     laravel.test:
         build:
-            context: ./vendor/laravel/sail/runtimes/8.3
+            context: ./vendor/laravel/sail/runtimes/8.2
             dockerfile: Dockerfile
             args:
                 WWWGROUP: "${WWWGROUP}"
-        image: sail-8.3/app
+        image: sail-8.2/app
         container_name: api-web
         extra_hosts:
             - "host.docker.internal:host-gateway"
@@ -21,6 +21,7 @@ services:
             IGNITION_LOCAL_SITES_PATH: "${PWD}"
         volumes:
             - ".:/var/www/html"
+            # - "./docker-config/php.ini:/etc/php/8.2/cli/php.ini"
         networks:
             - sail
         depends_on:
@@ -61,6 +62,8 @@ services:
             MONGO_INITDB_ROOT_USERNAME: root
             MONGO_INITDB_ROOT_PASSWORD: password
             # MONGO_INITDB_DATABASE: "${MONGO_INITDB_DATABASE:-test}"
+        volumes:
+            - "sail-mongo:/data/db"
         networks:
             - sail
     redis:

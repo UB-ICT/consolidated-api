@@ -35,7 +35,7 @@ class FacultyController extends Controller
 
     private function initializeReport(string $email)
     {
-        return $reportData = Faculty::create([
+        return $report = Faculty::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
             'faculty' => "",
@@ -75,16 +75,16 @@ class FacultyController extends Controller
             if (!$user || !$user->email)
                 return response(['success' => false, 'message' => 'User\'s email not found on AD.', 'data' => null], 400);
 
-            $reportData = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email);
             // Dispatch the event
-            event(new MongoDocumentCreated('faculty', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
 
 
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
         } catch (\Exception $e) {
@@ -107,7 +107,7 @@ class FacultyController extends Controller
         $data = $request->all(); //Adding this in the event things need to be validated later on    
 
         try {
-            $reportData = Faculty::create([
+            $report = Faculty::create([
                 'academicYearID' => $data['academicYearID'],
                 'faculty' => $data['faculty'],
                 'units' => $data['units'],
@@ -134,13 +134,13 @@ class FacultyController extends Controller
             ]);
 
             // Dispatch the event
-            event(new MongoDocumentCreated('faculty', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
 
             $response = [
                 'success' => true,
                 'message' => "Faculty Report Created Successfully",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
 
@@ -170,7 +170,7 @@ class FacultyController extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -328,7 +328,7 @@ class FacultyController extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -339,7 +339,7 @@ class FacultyController extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ],
                 ];
             }

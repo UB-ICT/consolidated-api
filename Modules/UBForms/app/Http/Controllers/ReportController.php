@@ -17,16 +17,16 @@ class ReportController extends Controller
     {
         $reportTypes = explode("-", $reportTypes);       
 
-        $reportData = [];
+        $report = [];
 
-        // Get Faculty Report and add data to $reportData
+        // Get Faculty Report and add data to $report
         if(in_array('faculty', $reportTypes)){
            
             $facultyData = Faculty::all();
 
             foreach($facultyData as $faculty){
                 // $faculty->userData = $faculty->user();
-                array_push($reportData, [
+                array_push($report, [
                     "reportType" => 'faculty',
                     "_id" => $faculty->_id,
                     "name" => $faculty->user()->name,
@@ -37,13 +37,13 @@ class ReportController extends Controller
             // return $facultyData;
         }
 
-        // Get Finance Report and add data to $reportData
+        // Get Finance Report and add data to $report
         if(in_array('finance', $reportTypes)){
            
             $financeData = Finance::all();
 
             foreach($financeData as $finance){
-                array_push($reportData, [
+                array_push($report, [
                     "reportType" => 'finance',
                     "_id" => $finance->_id,
                     "name" => $finance->user()->name,
@@ -54,13 +54,13 @@ class ReportController extends Controller
             // return $financeData;
         }
   
-        // Get Human Resources Report and add data to $reportData
+        // Get Human Resources Report and add data to $report
         if(in_array('human_resources', $reportTypes)){
            
             $HumanResourcesData = HumanResources::all();
 
             foreach($HumanResourcesData as $HumanResources){
-                array_push($reportData, [
+                array_push($report, [
                     "reportType" => 'HumanResources',
                     "_id" => $HumanResources->_id,
                     "name" => $HumanResources->user()->name,
@@ -71,13 +71,13 @@ class ReportController extends Controller
             // return $HumanResourcesData;
         }
   
-        // Get Records Report and add data to $reportData
+        // Get Records Report and add data to $report
         if(in_array('records', $reportTypes)){
            
             $recordsData = Records::all();
 
             foreach($recordsData as $records){
-                array_push($reportData, [
+                array_push($report, [
                     "reportType" => 'records',
                     "_id" => $records->_id,
                     "name" => $records->user()->name,
@@ -88,13 +88,13 @@ class ReportController extends Controller
             // return $recordsData;
         }
 
-        // Get Staff Report and add data to $reportData
+        // Get Staff Report and add data to $report
         if(in_array('staff', $reportTypes)){
            
             $staffData = Staff::all();
 
             foreach($staffData as $staff){
-                array_push($reportData, [
+                array_push($report, [
                     "reportType" => 'staff',
                     "_id" => $staff->_id,
                     "name" => $staff->user()->name,
@@ -110,7 +110,7 @@ class ReportController extends Controller
             'success' => true,
             'message' => 'Reports Retrieved.',
             'data' => [
-                'reportData' => $reportData 
+                'report' => $report 
             ],
         ];
 

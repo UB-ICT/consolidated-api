@@ -35,7 +35,7 @@ class FinanceStatistics extends Controller
 
     private function initializeReport(string $email)
     {
-        return $reportData = Finance::create([
+        return $report = Finance::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
             'department' => "",
@@ -56,9 +56,9 @@ class FinanceStatistics extends Controller
 
             $user = $request->user();
 
-            $reportData = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email);
 
-            event(args: new MongoDocumentCreated('financeStatistics', $reportData->toArray(), (string) $reportData->_id));
+            event(args: new MongoDocumentCreated('financeStatistics', $report->toArray(), (string) $report->_id));
 
 
             //removed part of the original initialization function that was not needed
@@ -67,7 +67,7 @@ class FinanceStatistics extends Controller
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
         } catch (\Exception $e) {
@@ -92,7 +92,7 @@ class FinanceStatistics extends Controller
 
         try {
 
-            $reportData = Finance::create([
+            $report = Finance::create([
                 'academicYearID' => $data['academicYearID'],
                 'department' => $data['department'],
                 'deadline' => $data['deadline'],
@@ -102,13 +102,13 @@ class FinanceStatistics extends Controller
                 'formSubmitted' => $data['formSubmitted']
             ]);
 
-            event(args: new MongoDocumentCreated('financeStatistics', $reportData->toArray(), (string) $reportData->_id));
+            event(args: new MongoDocumentCreated('financeStatistics', $report->toArray(), (string) $report->_id));
 
             $response = [
                 'success' => true,
                 'message' => "Finance Statistics Report Created Successfully",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
 
@@ -140,7 +140,7 @@ class FinanceStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -278,7 +278,7 @@ class FinanceStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -289,7 +289,7 @@ class FinanceStatistics extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ],
                 ];
             }

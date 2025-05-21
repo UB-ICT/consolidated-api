@@ -32,7 +32,7 @@ class StaffController extends Controller
 {
     private function initializeReport(string $email)
     {
-        return $reportData = Staff::create([
+        return $report = Staff::create([
             'email' => $email,
             'academicYearID' => "2023-2024",
             'department' => "",
@@ -63,17 +63,17 @@ class StaffController extends Controller
 
             $user = $request->user();
 
-            $reportData = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email);
 
             // Dispatch the event
-            event(new MongoDocumentCreated('staff', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('staff', $report->toArray(), (string) $report->_id));
 
 
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
         } catch (\Exception $e) {
@@ -92,7 +92,7 @@ class StaffController extends Controller
 
     public function store(Request $request)
     {
-
+ 
 
         $data = $request->post(); //Adding this in the event things need to be validated later on
 
@@ -102,7 +102,7 @@ class StaffController extends Controller
 
             $data = $request->all();
 
-            $reportData = Staff::create([
+            $report = Staff::create([
                 'academicYearID' => $data['academicYearID'],
                 'department' => $data['department'],
                 'reportsTo' => $data['reportsTo'],
@@ -121,13 +121,15 @@ class StaffController extends Controller
             ]);
 
             // Dispatch the event
-            event(new MongoDocumentCreated('staff', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated(collectionName: 'staff', documentData: $report->toArray(), documentId: (string) $report->_id));
+
+
 
             $response = [
                 'success' => true,
                 'message' => "Staff Report Created Successfully",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
 
@@ -157,7 +159,7 @@ class StaffController extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -341,7 +343,7 @@ class StaffController extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -352,7 +354,7 @@ class StaffController extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ],
                 ];
             }

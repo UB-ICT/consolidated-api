@@ -35,7 +35,7 @@ class RecordsStatistics extends Controller
     //Updated from Github
     private function initializeReport(string $email)
     {
-        return $reportData = Records::create([
+        return $report = Records::create([
             'email' => $email,
             'academicYearID' => "2023-2024", //temporary
             'department' => "",
@@ -96,15 +96,15 @@ class RecordsStatistics extends Controller
 
             $user = $request->user();
 
-            $reportData = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email);
 
-            event(new MongoDocumentCreated('records', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
 
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $reportData->_id
+                    'reportID' => $report->_id
                 ],
             ];
         } catch (\Exception $e) {
@@ -145,7 +145,7 @@ class RecordsStatistics extends Controller
                 }
             }
 
-            $reportData = Records::create([
+            $report = Records::create([
                 'academicYearID' => $data['academicYearID'],
                 'department' => $data['department'],
                 'deadline' => $data['deadline'],
@@ -159,13 +159,13 @@ class RecordsStatistics extends Controller
                 'formSubmitted' => $data['formSubmitted']
             ]);
 
-            event(new MongoDocumentCreated('records', $reportData->toArray(), (string) $reportData->_id));
+            event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
 
 
             $response = [
                 'success' => true,
                 'message' => "Records Statistics Report Created Successfully",
-                'data' => ['reportID' => $reportData->_id],
+                'data' => ['reportID' => $report->_id],
             ];
 
         } catch (\Exception $e) {
@@ -194,7 +194,7 @@ class RecordsStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -353,7 +353,7 @@ class RecordsStatistics extends Controller
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ]
                 ];
             } else {
@@ -364,7 +364,7 @@ class RecordsStatistics extends Controller
                     'success' => true,
                     'message' => 'Report Initialized.',
                     'data' => [
-                        'reportData' => $report
+                        'report' => $report
                     ],
                 ];
             }
