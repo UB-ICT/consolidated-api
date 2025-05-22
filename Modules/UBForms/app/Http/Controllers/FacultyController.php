@@ -8,6 +8,8 @@ use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
 use App\Events\MongoDocumentCreated;
+use App\Services\FirestoreService;
+use App\Jobs\SyncToFirestoreJob;
 
 
 /*
@@ -35,7 +37,7 @@ class FacultyController extends Controller
 
     private function initializeReport(string $email)
     {
-        return $report = Faculty::create([
+        $report = [
             'email' => $email,
             'academicYearID' => "2023-2024",
             'faculty' => "",
@@ -60,92 +62,58 @@ class FacultyController extends Controller
             'meetings' => array(['meetingId' => 0, 'meetingType' => '', 'meetingDate' => '', 'meetingMinutesURL' => array(['meetingURL' => ''])]),
             'formSubmitted' => false,
             'otherComments' => "",
-        ]);
+        ];
+        // Store in Firestore and get document ID
+        $documentRef = FirestoreService::syncDocumentAndGetRef('faculty', $report);
+        return [
+            'data' => $report,
+            'id' => $documentRef->id()
+        ];
     }
 
     public function initialize(Request $request)
     {
-
         try {
-
-            $data = $request->all(); //Adding this in the event things need to be validated later on  
-
-            $user = $request->user();
-
-            if (!$user || !$user->email)
-                return response(['success' => false, 'message' => 'User\'s email not found on AD.', 'data' => null], 400);
-
+            $user = $request->user(); //Adding this in the event things need to be validated later on  
             $report = $this->initializeReport($user->email);
-            // Dispatch the event
-            event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
-
-
             $response = [
                 'success' => true,
-                'message' => "Initialization Successfull",
+                'message' => "Initialization Successful",
                 'data' => [
-                    'reportID' => $report->_id
+                    'reportID' => $report['id']
                 ],
             ];
         } catch (\Exception $e) {
-            // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-
         return response($response, 201);
-
     }
 
     //Create 
 
     public function store(Request $request)
     {
-        $data = $request->all(); //Adding this in the event things need to be validated later on    
-
         try {
-            $report = Faculty::create([
-                'academicYearID' => $data['academicYearID'],
-                'faculty' => $data['faculty'],
-                'units' => $data['units'],
-                'deadline' => $data['deadline'],
-                'departmentList' => $data['departmentList'],
-                'missionStatement' => $data['missionStatement'],
-                'strategicGoals' => $data['strategicGoals'],
-                'accomplishments' => $data['accomplishments'],
-                'researchPartnerships' => $data['researchPartnerships'],
-                'revisedAcademics' => $data['revisedAcademics'],
-                'academicPrograms' => $data['academicPrograms'],
-                'courses' => $data['courses'],
-                'eliminatedAcademicPrograms' => $data['eliminatedAcademicPrograms'],
-                'retentionOfStudents' => $data['retentionOfStudents'],
-                'studentInternships' => $data['studentInternships'],
-                'degreesConferred' => $data['degreesConferred'],
-                'studentSuccess' => $data['studentSuccess'],
-                'activities' => $data['activities'],
-                'administrativeData' => $data['administrativeData'],
-                'financialBudget' => $data['financialBudget'],
-                'meetings' => $data['meetings'],
-                'otherComments' => $data['otherComments'],
-                'formSubmitted' => $data['formSubmitted']
-            ]);
+            $data = $request->all();
 
-            // Dispatch the event
-            event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
+            // Add timestamps
+            $data['created_at'] = now()->toDateTimeString();
+            $data['updated_at'] = now()->toDateTimeString();
+
+            $documentRef = FirestoreService::syncDocumentAndGetRef('faculty', $data);
 
             $response = [
                 'success' => true,
-                'message' => "Faculty Report Created Successfully",
+                'message' => "faculty Report Created Successfully",
                 'data' => [
-                    'reportID' => $report->_id
-                ],
+                    'reportID' => $documentRef->id()
+                ]
             ];
-
         } catch (\Exception $e) {
-            // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -161,11 +129,8 @@ class FacultyController extends Controller
     public function getReport(Request $request, string $reportID)
     {
         try {
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Faculty::where('_id', $reportID)->first();
-
+            $report = FirestoreService::getDocument('faculty', $reportID);
             if ($report) {
-                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
@@ -174,16 +139,13 @@ class FacultyController extends Controller
                     ]
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -192,7 +154,6 @@ class FacultyController extends Controller
         }
         // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     //Update
@@ -200,61 +161,31 @@ class FacultyController extends Controller
     public function updateReport(Request $request)
     {
         try {
-
             $data = $request->all();
-            // $id = $request->input('reportID');
 
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Faculty::where('_id', $data['_id'])->first();
+            if (!isset($data['id'])) {
+                throw new \Exception('Report ID is required');
+            }
 
-            if ($report) {
+            // Add updated timestamp
+            $data['updated_at'] = now()->toDateTimeString();
 
-                $report->academicYearID = $request->has('academicYearID') ? $data['academicYearID'] : $report->academicYearID;
-                $report->faculty = $request->has('faculty') ? $data['faculty'] : $report->faculty;
-                $report->units = $request->has('units') ? $data['units'] : $report->units;
-                $report->deadline = $request->has('deadline') ? $data['deadline'] : $report->deadline;
-                $report->missionStatement = $request->has('missionStatement') ? $data['missionStatement'] : $report->missionStatement;
-                $report->strategicGoals = $request->has('strategicGoals') ? $data['strategicGoals'] : $report->strategicGoals;
-                $report->accomplishments = $request->has('accomplishments') ? $data['accomplishments'] : $report->accomplishments;
-                $report->researchPartnerships = $request->has('researchPartnerships') ? $data['researchPartnerships'] : $report->researchPartnerships;
-                $report->revisedAcademics = $request->has('revisedAcademics') ? $data['revisedAcademics'] : $report->revisedAcademics;
-                $report->academicPrograms = $request->has('academicPrograms') ? $data['academicPrograms'] : $report->academicPrograms;
-                $report->courses = $request->has('courses') ? $data['courses'] : $report->courses;
-                $report->eliminatedAcademicPrograms = $request->has('eliminatedAcademicPrograms') ? $data['eliminatedAcademicPrograms'] : $report->eliminatedAcademicPrograms;
-                $report->retentionOfStudents = $request->has('retentionOfStudents') ? $data['retentionOfStudents'] : $report->retentionOfStudents;
-                $report->studentInternships = $request->has('studentInternships') ? $data['studentInternships'] : $report->studentInternships;
-                $report->degreesConferred = $request->has('degreesConferred') ? $data['degreesConferred'] : $report->degreesConferred;
-                $report->studentSuccess = $request->has('studentSuccess') ? $data['studentSuccess'] : $report->studentSuccess;
-                $report->activities = $request->has('activities') ? $data['activities'] : $report->activities;
-                $report->administrativeData = $request->has('administrativeData') ? $data['administrativeData'] : $report->administrativeData;
-                $report->financialBudget = $request->has('financialBudget') ? $data['financialBudget'] : $report->financialBudget;
-                $report->meetings = $request->has('meetings') ? $data['meetings'] : $report->meetings;
-                $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
-                $report->otherComments = $request->has('otherComments') ? $data['otherComments'] : $report->otherComments;
-                $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
+            $success = FirestoreService::updateDocument('faculty', $data['id'], $data);
 
-                $report->save();
-
-                event(new MongoDocumentCreated('faculty', $report->toArray(), (string) $report->_id));
-
-
-                // Format success response
+            if ($success) {
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -271,33 +202,23 @@ class FacultyController extends Controller
     public function delReport(Request $request)
     {
         try {
-
-            // $data = $request->all();
             $id = $request->input('reportID');
+            $success = FirestoreService::deleteDocument('faculty', $id);
 
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Faculty::where('_id', $id)->first();
-
-            if ($report) {
-
-                $report->delete();
-                // Format success response
+            if ($success) {
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -312,18 +233,13 @@ class FacultyController extends Controller
     public function getReportByUser(Request $request)
     {
         try {
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
             $user = $request->user();
+            $reports = FirestoreService::queryCollection('faculty', 'email', '==', $user->email);
 
-            if (!$user || !$user->email)
-                return response(['success' => false, 'message' => 'User\'s email not found on AD.', 'data' => null], 400);
+            if (!empty($reports)) {
+                // Assuming we want the first report if multiple exist
+                $report = $reports[0];
 
-            $report = Faculty::where('email', $user->email)->first();
-
-            if ($report) {
-                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
@@ -334,7 +250,6 @@ class FacultyController extends Controller
             } else {
                 $report = $this->initializeReport($user->email);
 
-                // Report not found
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
@@ -343,16 +258,13 @@ class FacultyController extends Controller
                     ],
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
 
     }
