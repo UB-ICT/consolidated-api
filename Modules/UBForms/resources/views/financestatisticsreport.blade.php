@@ -27,7 +27,7 @@
         <section class="content">
             <h2>Report Details</h2>
             <div>
-                <b>Department:</b> {{ $report->department }}
+                <b>Department:</b> {{ $report['department'] }}
             </div>
             <br>
             <div>
@@ -35,7 +35,7 @@
             </div>
         </section>
 
-        <div class="section-title">1. Finance – Income (Bz$)</div>
+        <div class="section-title">1. Finance - Income (Bz$)</div>
         <table>
             <thead>
                 <tr>
@@ -46,31 +46,31 @@
             <tbody>
                 <tr>
                     <td>Funding from Government of Belize (GoB)</td>
-                    <td>{{ number_format($report->income['fundingFromGoB'], 2) }}</td>
+                    <td>{{ number_format($report['income']['fundingFromGoB'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Tuition Fees by Faculty</td>
-                    <td>{{ number_format($report->income['tuitionFees'], 2) }}</td>
+                    <td>{{ number_format($report['income']['tuitionFees'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Contracts</td>
-                    <td>{{ number_format($report->income['contracts'], 2) }}</td>
+                    <td>{{ number_format($report['income']['contracts'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Research Grants</td>
-                    <td>{{ number_format($report->income['researchGrants'], 2) }}</td>
+                    <td>{{ number_format($report['income']['researchGrants'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Endowment and Investment Income</td>
-                    <td>{{ number_format($report->income['endowmentAndInvestmentIncome'], 2) }}</td>
+                    <td>{{ number_format($report['income']['endowmentAndInvestmentIncome'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Other</td>
-                    <td>{{ number_format($report->income['other'], 2) }}</td>
+                    <td>{{ number_format($report['income']['other'], 2) }}</td>
                 </tr>
                 <tr>
                     <th>Total</th>
-                    <th>{{ number_format($report->income['total'], 2) }}</th>
+                    <th>{{ number_format($report['income']['total'], 2) }}</th>
                 </tr>
             </tbody>
         </table>
@@ -86,34 +86,34 @@
             <tbody>
                 <tr>
                     <td>Teaching Staff Costs</td>
-                    <td>{{ number_format($report->expenditure['teachingStaffCosts'], 2) }}</td>
+                    <td>{{ number_format($report['expenditure']['teachingStaffCosts'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Non-Teaching Staff Costs</td>
-                    <td>{{ number_format($report->expenditure['nonTeachingStaffCosts'], 2) }}</td>
+                    <td>{{ number_format($report['expenditure']['nonTeachingStaffCosts'], 2) }}</td>
                 </tr>
                 <tr>
                     <td>Administration Costs</td>
-                    <td>{{ number_format($report->expenditure['administrationCosts'], 2) }}</td>
+                    <td>{{ number_format($report['expenditure']['administrationCosts'], 2) }}</td>
                 </tr>
             </tbody>
         </table>
 
         <div class="section-title">3. Capital Expenditures (Bz$)</div>
         <div class="text-box">
-            {{ $report->expenditure['capitalExpenditures'] }}
+            {{ $report['expenditure']['capitalExpenditures'] }}
         </div>
 
         <div class="section-title">4. Major Capital Expenditure Projects / Investments (buildings etc.)</div>
         <ul>
-            @foreach (explode('; ', $report->expenditure['capitalExpenditures']) as $project)
+            @foreach (explode('; ', $report['expenditure']['capitalExpenditures']) as $project)
                 <li>{{ $project }}</li>
             @endforeach
         </ul>
 
         <div class="section-title">5. Other Expenditures (Bz$)</div>
         <div class="text-box">
-            {{ $report->expenditure['otherExpenditures'] }}
+            {{ $report['expenditure']['otherExpenditures'] }}
         </div>
 
         <footer class="footer">

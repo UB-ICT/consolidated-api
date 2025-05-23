@@ -1,35 +1,10 @@
 <?php
 
 namespace Modules\UBForms\Http\Controllers;
-
 use Illuminate\Http\Request;
-use Modules\UBForms\Models\Faculty;
-use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
-use App\Events\MongoDocumentCreated;
 use App\Services\FirestoreService;
-use App\Jobs\SyncToFirestoreJob;
-
-
-/*
-This is the Faculty Controller responsible for doing 5 functions. 
-
-The function initialize() creates the fields in mongo db for all academic annual reports 
-that are to be submitted by Faculty.
-
-The function store(), is similar but you would need to pass in all the fields with the 
-information to properly create it in the database. 
-
-The function getReport() retrieves the report based on the report ID. 
-
-The function delReport() deleted the report based on the report ID. 
-
-The last function updateReport() updates a report, it only updates the fields that are passed. 
-
-Author: SW
-
-*/
 
 class FacultyController extends Controller
 {
@@ -271,42 +246,25 @@ class FacultyController extends Controller
 
     public function generateFacultyPdf(Request $request, string $reportID)
     {
-        $report = Faculty::find($reportID);
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+        try {
+            $user = $request->user();
+            // Get report from Firestore
+            $report = FirestoreService::getDocument('faculty', $reportID);
+            if (!$report) {
+                return response()->json(['error' => 'Report not found'], 404);
+            }
+            // Generate PDF
+            $pdf = PDF::loadView('UBForms::facultyreport', [
+                'report' => $report,
+                'user' => $user,
+                'request' => $request
+            ]);
+            return $pdf->download('faculty_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user = User::where('email', $report->email)->first();
-
-        // Ensure all array fields are properly initialized
-        if (!isset($report->units))
-            $report->units = [];
-        if (!isset($report->activities))
-            $report->activities = [];
-        // ... other array fields ...
-
-        $pdf = PDF::loadView('UBForms::facultyreport', [
-            'report' => $report,
-            'user' => $user
-        ]);
-
-        return $pdf->download('report_' . $report->id . '.pdf');
-    }
-
-    public function viewFacultyReport(Request $request, string $reportID)
-    { //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = Faculty::find($reportID);
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-
-        $user = User::where('email', $report->email)->first();
-
-        return view('facultyReport', ['report' => $report, 'user' => $user]);
-
     }
 }

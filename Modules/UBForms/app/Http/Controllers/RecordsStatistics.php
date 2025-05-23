@@ -319,35 +319,26 @@ class RecordsStatistics extends Controller
     }
 
     public function generateRecordsPdf(Request $request, string $reportID)
-    { //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = Records::find($reportID);
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+    {
+        try {
+            $user = $request->user();
+            // Get report from Firestore
+            $report = FirestoreService::getDocument('records', $reportID);
+            if (!$report) {
+                return response()->json(['error' => 'Report not found'], 404);
+            }
+            // Generate PDF
+            $pdf = PDF::loadView('UBForms::recordstatisticsreport', [
+                'report' => $report,
+                'user' => $user,
+                'request' => $request
+            ]);
+            return $pdf->download('records_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
         }
-        // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();
-        // Generate PDF using data directly
-        $pdf = PDF::loadView('UBForms::recordstatisticsreport', ['report' => $report, 'user' => $user])
-            ->setPaper('a4', 'landscape');
-        // Return PDF as a response
-        return $pdf->download('report_' . $report->id . '.pdf');
     }
-
-    public function viewFacultyReport(Request $request, string $reportID)
-    { //Look into this a little more
-        // Fetch data from MongoDB based on report ID
-        $report = Records::find($reportID);
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-        $user = User::where('email', $report->email)->first();
-        return view('RecordsStatisticsReport', ['report' => $report, 'user' => $user]);
-    }
-
-
 }

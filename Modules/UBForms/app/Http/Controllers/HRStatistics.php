@@ -216,63 +216,25 @@ class HRStatistics extends Controller
 
     public function generateHRPdf(Request $request, string $reportID)
     {
-        $report = HumanResources::find($reportID);
-
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+        try {
+            $user = $request->user();
+            // Get report from Firestore
+            $report = FirestoreService::getDocument('humanResources', $reportID);
+            if (!$report) {
+                return response()->json(['error' => 'Report not found'], 404);
+            }
+            // Generate PDF
+            $pdf = PDF::loadView('UBForms::hrstatisticsreport', [
+                'report' => $report,
+                'user' => $user,
+                'request' => $request
+            ]);
+            return $pdf->download('human_resources_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user = User::where('email', $report->email)->first();
-
-        // Ensure numberOfStaff has the correct structure
-        if (!isset($report->numberOfStaff['fulltimeFaculty'])) {
-            $report->numberOfStaff = [
-                'fulltimeFaculty' => [
-                    'educationAndArts' => 0,
-                    'managementAndSocialSciences' => 0,
-                    'healthSciences' => 0,
-                    'scienceAndTechnology' => 0,
-                    'total' => 0
-                ],
-                'adjunctFaculty' => [
-                    'educationAndArts' => 0,
-                    'managementAndSocialSciences' => 0,
-                    'healthSciences' => 0,
-                    'scienceAndTechnology' => 0,
-                    'total' => 0,
-                ],
-                'nonTeachingStaff' => [
-                    'educationAndArts' => 0,
-                    'managementAndSocialSciences' => 0,
-                    'healthSciences' => 0,
-                    'scienceAndTechnology' => 0,
-                    'total' => 0,
-                ],
-            ];
-        }
-
-        $pdf = PDF::loadView('UBForms::hrstatisticsreport', ['report' => $report, 'user' => $user]);
-        return $pdf->download('report_' . $report->id . '.pdf');
     }
-
-
-    public function viewFacultyReport(Request $request, string $reportID)
-    { //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = HumanResources::find($reportID);
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-
-        $user = User::where('email', $report->email)->first();
-
-        return view('HRStatisticsReport', ['report' => $report, 'user' => $user]);
-
-    }
-
-    //Working on calculating the totals, will do this last
-
 }

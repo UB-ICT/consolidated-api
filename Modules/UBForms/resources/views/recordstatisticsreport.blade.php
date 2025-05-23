@@ -14,14 +14,14 @@
             </div>
             <div class="header-text">
                 <h1>University of Belize Annual Report</h1>
-                <p class="academic-year">Academic Year: {{ $report->academicYearID ?? 'N/A' }}</p>
+                <p class="academic-year">Academic Year: {{ $report['academicYearID'] }}</p>
             </div>
         </div>
     </div>
     <section class="content">
         <h2>Report Details</h2>
         <div>
-            <b>Department:</b> {{ $report->department ?? 'N/A' }}
+            <b>Department:</b> {{ $report['department'] }}
         </div>
         <br>
         <div>
@@ -29,7 +29,7 @@
         </div>
     </section>
 
-    @if(isset($report->currentStudentEnrollmentTrend))
+    @if(isset($report['currentStudentEnrollmentTrend']))
     <div class="section-title">1. Students Enrolment for the Academic Year under review</div>
     <table>
         <thead>
@@ -42,22 +42,22 @@
         </thead>
         <tbody>
             <tr>
-                <td>{{ $report->currentStudentEnrollmentTrend['associates'] ?? 0 }}</td>
-                <td>{{ $report->currentStudentEnrollmentTrend['undergraduate'] ?? 0 }}</td>
-                <td>{{ $report->currentStudentEnrollmentTrend['graduate'] ?? 0 }}</td>
-                <td>{{ $report->currentStudentEnrollmentTrend['Total'] ?? 0 }}</td>
+                <td>{{ $report['currentStudentEnrollmentTrend']['associates'] ?? 0 }}</td>
+                <td>{{ $report['currentStudentEnrollmentTrend']['undergraduate'] ?? 0 }}</td>
+                <td>{{ $report['currentStudentEnrollmentTrend']['graduate'] ?? 0 }}</td>
+                <td>{{ $report['currentStudentEnrollmentTrend']['Total'] ?? 0 }}</td>
             </tr>
         </tbody>
     </table>
     @endif
 
-    @if(isset($report->studentEnrollmentTrend))
+    @if(isset($report['studentEnrollmentTrend']))
     <div class="section-title">2. Student Enrolment Trend (Academic Level)</div>
     <table>
         <thead>
             <tr>
                 <th>Degree Program</th>
-                @foreach (($report->studentEnrollmentTrend ?? []) as $trend)
+                @foreach (($report['studentEnrollmentTrend'] ?? []) as $trend)
                     <th>{{ $trend['academicYear'] ?? 'N/A' }}</th>
 
                 @endforeach
@@ -67,14 +67,14 @@
             @foreach (['associate', 'undergraduate', 'graduate', 'other'] as $category)
                 <tr>
                     <td>{{ ucfirst($category) }}</td>
-                    @foreach (($report->studentEnrollmentTrend ?? []) as $trend)
+                    @foreach (($report['studentEnrollmentTrend'] ?? []) as $trend)
                         <td>{{ $trend[$category] ?? 0 }}</td>
                     @endforeach
                 </tr>
             @endforeach
             <tr>
                 <td><strong>Total</strong></td>
-                @foreach (($report->studentEnrollmentTrend ?? []) as $trend)
+                @foreach (($report['studentEnrollmentTrend'] ?? []) as $trend)
                     <td>{{ $trend['Total'] ?? 0 }}</td>
                 @endforeach
             </tr>
@@ -82,13 +82,13 @@
     </table>
     @endif
 
-    @if(isset($report->enrollmentTrendPerFaculty))
+    @if(isset($report['enrollmentTrendPerFaculty']))
     <div class="section-title">3. Student Enrolment Trend (Per Faculty)</div>
     <table>
         <thead>
             <tr>
                 <th>Faculty</th>
-                @foreach (($report->enrollmentTrendPerFaculty ?? []) as $yearData)
+                @foreach (($report['enrollmentTrendPerFaculty'] ?? []) as $yearData)
                     <th>{{ $yearData['academicYear'] ?? 'N/A' }}</th>
                 @endforeach
             </tr>
@@ -102,7 +102,7 @@
             ] as $facultyKey => $facultyName)
                 <tr>
                     <td>{{ $facultyName }}</td>
-                    @foreach (($report->enrollmentTrendPerFaculty ?? []) as $yearData)
+                    @foreach (($report['enrollmentTrendPerFaculty'] ?? []) as $yearData)
                         <td>{{ $yearData[$facultyKey] ?? '' }}</td>
                     @endforeach
                 </tr>
@@ -111,7 +111,7 @@
     </table>
     @endif
         
-     @if(isset($report->graduationStatistics))
+     @if(isset($report['graduationStatistics']))
     <div class="section-title">4. Graduation Statistics</div>
     <table>
         <thead>
@@ -138,7 +138,7 @@
             @php
                 // Prepare a mapping of faculties by academic year
                 $facultiesByYear = [];
-                foreach (($report->graduationStatistics ?? []) as $yearData) {
+                foreach (($report['graduationStatistics'] ?? []) as $yearData) {
                     if (isset($yearData['academicYear'])) {
                         $facultiesByYear[$yearData['academicYear']] = $yearData['faculties'] ?? [];
                     }
@@ -165,25 +165,25 @@
     </table>
     @endif
 
-    @if(isset($report->graduates['GraduatesByAge']))
+    @if(isset($report['graduates']['GraduatesByAge']))
     <div class="section-title">5. Graduates by Age</div>
     <table class="table-left-align">
         <tr>
-            <td>{{ $report->graduates['GraduatesByAge'] ?? 'N/A' }}</td>
+            <td>{{ $report['graduates']['GraduatesByAge'] ?? 'N/A' }}</td>
         </tr>
     </table>
     @endif
 
-    @if(isset($report->graduates['GraduatesByDistrict']))
+    @if(isset($report['graduates']['GraduatesByDistrict']))
     <div class="section-title">6. Graduates by Districts</div>
     <table class="table-left-align">
         <tr>
-            <td>{{ $report->graduates['GraduatesByDistrict'] ?? 'N/A' }}</td>
+            <td>{{ $report['graduates']['GraduatesByDistrict'] ?? 'N/A' }}</td>
         </tr>
     </table>
     @endif
     
-    @if(isset($report->studentOrigin))
+    @if(isset($report['studentOrigin']))
     <div class="section-title">7. Origin of Students</div>
     <table>
         <thead>
@@ -195,21 +195,21 @@
         <tbody>
             <tr>
                 <td>Belize</td>
-                <td>{{ $report->studentOrigin['Belize'] ?? 0 }}</td>
+                <td>{{ $report['studentOrigin']['Belize'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Central American Countries</td>
-                <td>{{ $report->studentOrigin['CentralAmericanCountries'] ?? 0 }}</td>
+                <td>{{ $report['studentOrigin']['CentralAmericanCountries'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Other Countries</td>
-                <td>{{ $report->studentOrigin['OtherCountries'] ?? 0 }}</td>
+                <td>{{ $report['studentOrigin']['OtherCountries'] ?? 0 }}</td>
             </tr>
         </tbody>
     </table>
     @endif
 
-    @if(isset($report->campusStatistics))
+    @if(isset($report['campusStatistics']))
     <div class="section-title">8. Campus Statistics</div>
     <table>
         <thead>
@@ -221,23 +221,23 @@
         <tbody>
             <tr>
                 <td>Belize City</td>
-                <td>{{ $report->campusStatistics['BelizeCity'] ?? 0 }}</td>
+                <td>{{ $report['campusStatistics']['BelizeCity'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Belmopan</td>
-                <td>{{ $report->campusStatistics['Belmopan'] ?? 0 }}</td>
+                <td>{{ $report['campusStatistics']['Belmopan'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Punta Gorda</td>
-                <td>{{ $report->campusStatistics['PuntaGorda'] ?? 0 }}</td>
+                <td>{{ $report['campusStatistics']['PuntaGorda'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Central Farm</td>
-                <td>{{ $report->campusStatistics['CentralFarm'] ?? 0 }}</td>
+                <td>{{ $report['campusStatistics']['CentralFarm'] ?? 0 }}</td>
             </tr>
             <tr>
                 <td>Satellite Programs</td>
-                <td>{{ $report->campusStatistics['SatellitePrograms'] ?? 0 }}</td>
+                <td>{{ $report['campusStatistics']['SatellitePrograms'] ?? 0 }}</td>
             </tr>
         </tbody>
     </table>

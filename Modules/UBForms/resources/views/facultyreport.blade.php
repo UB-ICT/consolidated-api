@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Annual Report PDF</title>
-    <link rel="stylesheet" href="{{ public_path('public/css/facultyStyle.css') }}">
+    <img src="{{public_path('UBForms/public/images/UB-Logo.png')}}">
 </head>
 
 <body>
@@ -14,12 +14,11 @@
         <div class="header">
             <div class="header-content">
                 <div class="header-logo">
-                    <img src="{{public_path('UBForms/public/images/UB-Logo.png')}}"
-                        alt="University Logo">
+                    <img src="{{public_path('UBForms/public/images/UB-Logo.png')}}" alt="University Logo">
                 </div>
                 <div class="header-text">
                     <h1>University of Belize Annual Report</h1>
-                    <p class="academic-year">Academic Year: {{$report->academicYearID}}</p>
+                    <p class="academic-year">Academic Year: {{$report['academicYearID']}}</p>
                 </div>
             </div>
         </div>
@@ -32,7 +31,7 @@
             <br>
             <div>
                 <b>List all units/departments/centers/institutes within the Faculty:</b>
-                {{ is_array($report->units) ? implode(', ', $report->units) : ($report->units ?? 'No data available') }}
+                {{ is_array($report['units']) ? implode(', ', $report['units']) : ($report['units'] ?? 'No data available') }}
             </div>
         </section>
 
@@ -223,31 +222,28 @@
 
         <section class="content">
             <h2>XII. Activities for the Year</h2>
-            @foreach ($report->activities as $activity)
-                <p><strong>Event Name:</strong> {{ $activity['eventName'] }}</p>
-                <p><strong>Persons in Picture:</strong> {{ $activity['personsInPicture'] }}</p>
-                <p><strong>Event Summary:</strong> {{ $activity['eventSummary'] }}</p>
-                <p><strong>Event Month:</strong> {{ $activity['eventMonth'] }}</p>
+            @if(isset($report['activities']) && is_array($report['activities']))
+                @foreach ($report['activities'] as $activity)
+                    @if(is_array($activity))
+                        <div class="activity">
+                            <p><strong>Event Name:</strong> {{ $activity['eventName'] ?? '' }}</p>
+                            <p><strong>Persons in Picture:</strong> {{ $activity['personsInPicture'] ?? '' }}</p>
 
-                <!-- Use public_path for PDF generation -->
-                @if (isset($activity['pictureURL']) && is_array($activity['pictureURL']))
-                    @foreach ($activity['pictureURL'] as $pictureURL)
-                        @if (isset($pictureURL['eventPicture']) && !empty($pictureURL['eventPicture']))
-                            @php
-                                $baseUrl = request()->getSchemeAndHttpHost();
-                            @endphp
-                            <!-- Ensure to use public_path to generate the correct file path -->
-                            <img src="{{ public_path($pictureURL['eventPicture']) }}" alt="Event Picture"
-                                style="max-width: 100%; height: auto;">
-                            <p><a href="{{ $baseUrl . $pictureURL['eventPicture'] }}"><b>Download Image</b></a></p>
-                        @endif
-                    @endforeach
-                @else
-                    <p>No pictures available for this event.</p>
-                @endif
-
-                <hr>
-            @endforeach
+                            @if(isset($activity['pictureURL']) && is_array($activity['pictureURL']))
+                                @foreach ($activity['pictureURL'] as $picture)
+                                    @if(isset($picture['eventPicture']))
+                                        <img src="{{ public_path($picture['eventPicture']) }}" alt="Event Picture"
+                                            style="max-width: 200px; height: auto;">
+                                    @endif
+                                @endforeach
+                            @endif
+                        </div>
+                        <hr>
+                    @endif
+                @endforeach
+            @else
+                <p>No activities reported.</p>
+            @endif
         </section>
 
 

@@ -210,64 +210,25 @@ class FinanceStatistics extends Controller
 
     public function generateFinancePdf(Request $request, string $reportID)
     {
-        $report = Finance::find($reportID);
-
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+        try {
+            $user = $request->user();
+            // Get report from Firestore
+            $report = FirestoreService::getDocument('finance', $reportID);
+            if (!$report) {
+                return response()->json(['error' => 'Report not found'], 404);
+            }
+            // Generate PDF
+            $pdf = PDF::loadView('UBForms::financestatisticsreport', [
+                'report' => $report,
+                'user' => $user,
+                'request' => $request
+            ]);
+            return $pdf->download('finance_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Ensure all array keys exist with default values
-        $defaultIncome = [
-            'fundingFromGoB' => 0,
-            'tuitionFees' => 0,
-            'contracts' => 0,
-            'researchGrants' => 0,
-            'endowmentAndInvestmentIncome' => 0,
-            'other' => 0,
-            'total' => 0
-        ];
-
-        $defaultExpenditure = [
-            'teachingStaffCosts' => 0,
-            'nonTeachingStaffCosts' => 0,
-            'administrationCosts' => 0,
-            'capitalExpenditures' => '',
-            'otherExpenditures' => ''
-        ];
-
-        // Merge with existing data
-        $report->income = array_merge($defaultIncome, $report->income ?? []);
-        $report->expenditure = array_merge($defaultExpenditure, $report->expenditure ?? []);
-
-        // Handle potential null user
-        $user = User::where('email', $report->email)->first() ?? new User([
-            'name' => 'Unknown User',
-            'email' => $report->email
-        ]);
-
-        $pdf = PDF::loadView('UBForms::financestatisticsreport', [
-            'report' => $report,
-            'user' => $user
-        ]);
-
-        return $pdf->download('report_' . $report->id . '.pdf');
     }
-
-    public function viewFinanceReport(Request $request, string $reportID)
-    { //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = Finance::find($reportID);
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-
-        $user = User::where('email', $report->email)->first();
-
-        return view('FinanceStatisticsReport', ['report' => $report, 'user' => $user]);
-
-    }
-
 }
