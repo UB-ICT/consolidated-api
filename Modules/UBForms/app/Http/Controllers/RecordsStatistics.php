@@ -6,36 +6,14 @@ use Illuminate\Http\Request;
 use Modules\UBForms\Models\Records;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Events\MongoDocumentCreated;
-
-
-/*
-This is the Records Statistics Controller responsible for doing 5 functions. 
-
-The function initialize() creates the fields in mongo db for all  annual reports 
-that are to be submitted by Staff.
-
-The function store(), is similar but you would need to pass in all the fields with the 
-information to properly create it in the database. 
-
-The function getReport() retrieves the report based on the report ID. 
-
-The function delReport() deleted the report based on the report ID. 
-
-The last function updateReport() updates a report, it only updates the fields that are passed. 
-
-
-Author: SW
-
-*/
+use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Log;
 
 class RecordsStatistics extends Controller
 {
-    //Initialize function
-    //Updated from Github
     private function initializeReport(string $email)
     {
-        return $report = Records::create([
+        $report = [
             'email' => $email,
             'academicYearID' => "2023-2024", //temporary
             'department' => "",
@@ -84,57 +62,51 @@ class RecordsStatistics extends Controller
             'campusStatistics' => ['BelizeCity' => 0, 'Belmopan' => 0, 'PuntaGorda' => 0, 'CentralFarm' => 0, 'SatellitePrograms' => 0], //8.Campus Statistics
             'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0],//5 and 6 merged into one
             'formSubmitted' => false,
-        ]);
+        ];
+        // Store in Firestore and get document ID
+        $documentRef = FirestoreService::syncDocumentAndGetRef('staff', $report);
+
+        return [
+            'data' => $report,
+            'id' => $documentRef->id()
+        ];
     }
 
     public function initialize(Request $request)
     {
-
         try {
-
-            $data = $request->all(); //Adding this in the event things need to be validated later on  
-
             $user = $request->user();
-
             $report = $this->initializeReport($user->email);
-
-            event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
-
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                    'reportID' => $report->_id
+                    'reportID' => $report['id']
                 ],
             ];
         } catch (\Exception $e) {
-            // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-
         return response($response, 201);
-
     }
 
     //Create
 
     public function store(Request $request)
     {
-        $data = $request->all();
 
         try {
-            // Ensure currentStudentEnrollmentTrend has Total
+            $data = $request->all();
             if (isset($data['currentStudentEnrollmentTrend'])) {
                 $data['currentStudentEnrollmentTrend']['Total'] = $data['currentStudentEnrollmentTrend']['Total'] ??
                     ((int) ($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
                         (int) ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
                         (int) ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
             }
-
             if (isset($data['studentEnrollmentTrend'])) {
                 foreach ($data['studentEnrollmentTrend'] as &$trend) {
                     $trend['Total'] = $trend['Total'] ??
@@ -144,30 +116,17 @@ class RecordsStatistics extends Controller
                             (int) ($trend['other'] ?? 0));
                 }
             }
-
-            $report = Records::create([
-                'academicYearID' => $data['academicYearID'],
-                'department' => $data['department'],
-                'deadline' => $data['deadline'],
-                'currentStudentEnrollmentTrend' => $data['currentStudentEnrollmentTrend'],
-                'studentEnrollmentTrend' => $data['studentEnrollmentTrend'],
-                'enrollmentTrendPerFaculty' => $data['enrollmentTrendPerFaculty'],
-                'graduationStatistics' => $data['graduationStatistics'],
-                'studentOrigin' => $data['studentOrigin'],
-                'campusStatistics' => $data['campusStatistics'],
-                'graduates' => $data['graduates'],
-                'formSubmitted' => $data['formSubmitted']
-            ]);
-
-            event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
-
-
+            // Add timestamps
+            $data['created_at'] = now()->toDateTimeString();
+            $data['updated_at'] = now()->toDateTimeString();
+            $documentRef = FirestoreService::syncDocumentAndGetRef('records', $data);
             $response = [
                 'success' => true,
-                'message' => "Records Statistics Report Created Successfully",
-                'data' => ['reportID' => $report->_id],
+                'message' => "record Report Created Successfully",
+                'data' => [
+                    'reportID' => $documentRef->id()
+                ]
             ];
-
         } catch (\Exception $e) {
             $response = [
                 'success' => false,
@@ -175,21 +134,16 @@ class RecordsStatistics extends Controller
                 'data' => null,
             ];
         }
-
         return response($response, 201);
     }
 
     //Read
-
     public function getReport(Request $request, string $reportID)
     {
         try {
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Records::where('_id', $reportID)->first();
+            $report = FirestoreService::getDocument('records', $reportID);
 
             if ($report) {
-                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
@@ -198,25 +152,20 @@ class RecordsStatistics extends Controller
                     ]
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     //Update
@@ -225,130 +174,122 @@ class RecordsStatistics extends Controller
     {
         try {
             $data = $request->all();
+            Log::info('Update Report Request:', $data);
 
-            $report = Records::where('email', $data['email'])->first();
+            // Validate required fields
+            if (!isset($data['id'])) {
+                throw new \Exception('Report ID is required');
+            }
 
-            if ($report) {
-                // Update currentStudentEnrollmentTrend with Total if it exists in request
-                if ($request->has('currentStudentEnrollmentTrend')) {
-                    $currentTrend = $data['currentStudentEnrollmentTrend'];
-                    $currentTrend['Total'] = $currentTrend['Total'] ??
-                        (($currentTrend['associates'] ?? 0) +
-                            ($currentTrend['undergraduate'] ?? 0) +
-                            ($currentTrend['graduate'] ?? 0));
-                    $report->currentStudentEnrollmentTrend = $currentTrend;
-                }
+            // Get existing document
+            $existingDoc = FirestoreService::getDocument('records', $data['id']);
+            Log::debug('Existing Document:', $existingDoc);
 
-                // Update studentEnrollmentTrend with Totals if it exists in request
-                if ($request->has('studentEnrollmentTrend')) {
-                    $trends = $data['studentEnrollmentTrend'];
-                    foreach ($trends as &$trend) {
-                        $trend['Total'] = $trend['Total'] ??
-                            (($trend['associate'] ?? 0) +
-                                ($trend['undergraduate'] ?? 0) +
-                                ($trend['graduate'] ?? 0) +
-                                ($trend['other'] ?? 0));
-                    }
-                    $report->studentEnrollmentTrend = $trends;
-                }
+            if (empty($existingDoc)) {
+                throw new \Exception('Report not found in Firestore');
+            }
 
-                // Update other fields
-                $report->academicYearID = $request->has('academicYearID') ? $data['academicYearID'] : $report->academicYearID;
-                $report->department = $request->has('department') ? $data['department'] : $report->department;
-                $report->deadline = $request->has('deadline') ? $data['deadline'] : $report->deadline;
-                $report->enrollmentTrendPerFaculty = $request->has('enrollmentTrendPerFaculty') ? $data['enrollmentTrendPerFaculty'] : $report->enrollmentTrendPerFaculty;
-                $report->graduationStatistics = $request->has('graduationStatistics') ? $data['graduationStatistics'] : $report->graduationStatistics;
-                $report->studentOrigin = $request->has('studentOrigin') ? $data['studentOrigin'] : $report->studentOrigin;
-                $report->campusStatistics = $request->has('campusStatistics') ? $data['campusStatistics'] : $report->campusStatistics;
-                $report->graduates = $request->has('graduates') ? $data['graduates'] : $report->graduates;
-                $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
+            // Prepare updated data - merge existing with new updates
+            $updatedData = array_merge($existingDoc, $data);
 
-                $report->save();
-
-                event(new MongoDocumentCreated('records', $report->toArray(), (string) $report->_id));
-
-
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data updated successfully',
-                    'data' => null
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Report not found',
-                    'data' => null
+            // Handle currentStudentEnrollmentTrend
+            if (isset($data['currentStudentEnrollmentTrend'])) {
+                $current = $data['currentStudentEnrollmentTrend'];
+                $updatedData['currentStudentEnrollmentTrend'] = [
+                    'associates' => (int) ($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0),
+                    'undergraduate' => (int) ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0),
+                    'graduate' => (int) ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0),
+                    'Total' => (int) ($current['Total'] ??
+                        (($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                            ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
+                            ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0)))
                 ];
             }
 
+            // Handle studentEnrollmentTrend
+            if (isset($data['studentEnrollmentTrend'])) {
+                foreach ($data['studentEnrollmentTrend'] as $key => $trend) {
+                    if (isset($existingDoc['studentEnrollmentTrend'][$key])) {
+                        $updatedData['studentEnrollmentTrend'][$key] = [
+                            'academicYear' => $trend['academicYear'] ?? $existingDoc['studentEnrollmentTrend'][$key]['academicYear'],
+                            'associate' => (int) ($trend['associate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['associate'] ?? 0),
+                            'undergraduate' => (int) ($trend['undergraduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['undergraduate'] ?? 0),
+                            'graduate' => (int) ($trend['graduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['graduate'] ?? 0),
+                            'other' => (int) ($trend['other'] ?? $existingDoc['studentEnrollmentTrend'][$key]['other'] ?? 0),
+                            'Total' => (int) ($trend['Total'] ??
+                                (($trend['associate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['associate'] ?? 0) +
+                                    ($trend['undergraduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['undergraduate'] ?? 0) +
+                                    ($trend['graduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['graduate'] ?? 0) +
+                                    ($trend['other'] ?? $existingDoc['studentEnrollmentTrend'][$key]['other'] ?? 0)))
+                        ];
+                    }
+                }
+            }
+
+            // Update timestamp
+            $updatedData['updated_at'] = now()->toDateTimeString();
+
+            // Update in Firestore
+            $success = FirestoreService::updateDocument('records', $data['id'], $updatedData);
+
+            if (!$success) {
+                throw new \Exception('Firestore update operation failed');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Report updated successfully',
+                'data' => null
+            ]);
+
         } catch (\Exception $e) {
-            $response = [
+            Log::error('Update Report Error: ' . $e->getMessage());
+            return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
-            ];
+            ], 400);
         }
-        return response($response, 200);
     }
 
     //Delete
-
     public function delReport(Request $request)
     {
         try {
-
-            // $data = $request->all();
             $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Records::where('_id', $id)->first();
-
-            if ($report) {
-
-                $report->delete();
-                // Format success response
+            $success = FirestoreService::deleteDocument('records', $id);
+            if ($success) {
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     public function getReportByUser(Request $request)
     {
         try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
             $user = $request->user();
+            $reports = FirestoreService::queryCollection('records', 'email', '==', $user->email);
+            if (!empty($reports)) {
+                // Assuming we want the first report if multiple exist
+                $report = $reports[0];
 
-            $report = Records::where('email', $user->email)->first();
-
-            if ($report) {
-                // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
@@ -359,7 +300,6 @@ class RecordsStatistics extends Controller
             } else {
                 $report = $this->initializeReport($user->email);
 
-                // Report not found
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
@@ -368,18 +308,14 @@ class RecordsStatistics extends Controller
                     ],
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     public function generateRecordsPdf(Request $request, string $reportID)
@@ -392,33 +328,25 @@ class RecordsStatistics extends Controller
         if (!$report) {
             return response()->json(['error' => 'Report not found'], 404);
         }
-
         // Get the user based on the email from the report
         $user = User::where('email', $report->email)->first();
-
         // Generate PDF using data directly
         $pdf = PDF::loadView('UBForms::recordstatisticsreport', ['report' => $report, 'user' => $user])
             ->setPaper('a4', 'landscape');
-
         // Return PDF as a response
         return $pdf->download('report_' . $report->id . '.pdf');
     }
 
     public function viewFacultyReport(Request $request, string $reportID)
     { //Look into this a little more
-
         // Fetch data from MongoDB based on report ID
         $report = Records::find($reportID);
-
         // return $report;
         if (!$report) {
             return response()->json(['error' => 'Report not found'], 404);
         }
-
         $user = User::where('email', $report->email)->first();
-
         return view('RecordsStatisticsReport', ['report' => $report, 'user' => $user]);
-
     }
 
 

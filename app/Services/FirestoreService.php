@@ -18,35 +18,6 @@ class FirestoreService
     {
     }
 
-    // This method is responsible for syncing a document to Firestore
-    // It takes the collection name, document data, and an optional document ID
-
-    // public static function syncDocument(string $collection, array $data, string $documentId = null)
-    // {
-    //     try {
-    //         if (is_null(self::$firestore)) {
-    //             // Initialize Firestore client if not already initialized
-    //             self::$firestore = new FirestoreClient([
-    //                 'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
-    //                 'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS'))
-    //             ]);
-    //         }
-    //         // Get a reference to the Firestore collection
-    //         $collectionRef = self::$firestore->collection($collection);
-
-    //         // If a document ID is provided, it updates the existing document
-    //         // If not, it creates a new document in the specified collection
-    //         // It uses the FirestoreClient to interact with Firestore
-    //         if ($documentId) {
-    //             $collectionRef->document($documentId)->set($data);
-    //         } else {
-    //             $collectionRef->add($data);
-    //         }
-    //         // It also handles exceptions and logs errors if any occur during the sync process
-    //     } catch (\Exception $e) {
-    //         \Log::error('Firestore sync failed: ' . $e->getMessage());
-    //     }
-    // }
 
     private static function initializeFirestore()
     {

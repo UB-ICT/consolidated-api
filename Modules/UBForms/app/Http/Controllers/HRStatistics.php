@@ -6,28 +6,7 @@ use Illuminate\Http\Request;
 use Modules\UBForms\Models\HumanResources;
 use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Events\MongoDocumentCreated;
-
-
-/*
-This is the HR Statistics Controller responsible for doing 5 functions. 
-
-The function initialize() creates the fields in mongo db for all  annual reports 
-that are to be submitted by Staff.
-
-The function store(), is similar but you would need to pass in all the fields with the 
-information to properly create it in the database. 
-
-The function getReport() retrieves the report based on the report ID. 
-
-The function delReport() deleted the report based on the report ID. 
-
-The last function updateReport() updates a report, it only updates the fields that are passed. 
-
-
-Author: SW
-
-*/
+use App\Services\FirestoreService;
 
 class HRStatistics extends Controller
 {
@@ -35,7 +14,7 @@ class HRStatistics extends Controller
 
     private function initializeReport(string $email)
     {
-        return $report = HumanResources::create([
+        $report = [
             'email' => $email,
             'academicYearID' => "2023-2024",
             'department' => "",
@@ -46,94 +25,68 @@ class HRStatistics extends Controller
                 'nonTeachingStaff' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0]
             ],
             'formSubmitted' => false,
-        ]);
+        ];
+        // Store in Firestore and get document ID
+        $documentRef = FirestoreService::syncDocumentAndGetRef('humanResources', $report);
+        return [
+            'data' => $report,
+            'id' => $documentRef->id()
+        ];
     }
 
     public function initialize(Request $request)
     {
-
         try {
-            // return "Testing initialize";
-
-            $data = $request->all(); //Adding this in the event things need to be validated later on  
-
             $user = $request->user();
-
             $report = $this->initializeReport($user->email);
-
-            event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
-
 
             $response = [
                 'success' => true,
-                'message' => "Initialization Successfull",
+                'message' => "Initialization Successful",
                 'data' => [
-                    'reportID' => $report->_id
+                    'reportID' => $report['id']
                 ],
             ];
         } catch (\Exception $e) {
-            // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-
         return response($response, 201);
-
     }
 
     //Create function doesn't pass the user email
-
     public function store(Request $request)
     {
-
-        $data = $request->all(); //Adding this in the event things need to be validated later on    
-
         try {
-
-            $report = HumanResources::create([
-                'academicYearID' => $data['academicYearID'],
-                'department' => $data['department'],
-                'deadline' => $data['deadline'],
-                'numberOfStaff' => $data['numberOfStaff'],
-                'formSubmitted' => $data['formSubmitted']
-            ]);
-
-            event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
-
-
+            $data = $request->all(); //Adding this in the event things need to be validated later on    
+            $data['created_at'] = now()->toDateTimeString();
+            $data['updated_at'] = now()->toDateTimeString();
+            $documentRef = FirestoreService::syncDocumentAndGetRef('humanResources', $data);
             $response = [
                 'success' => true,
-                'message' => "HR Statistics Report Created Successfully",
+                'message' => "humanResources Report Created Successfully",
                 'data' => [
-                    'reportID' => $report->_id
-                ],
+                    'reportID' => $documentRef->id()
+                ]
             ];
-
         } catch (\Exception $e) {
-            // If an error occurs, create an error response
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-
         return response($response, 201);
-
     }
 
     //Read
-
     public function getReport(Request $request, string $reportID)
     {
         try {
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = HumanResources::where('_id', $reportID)->first();
-
+            $report = FirestoreService::getDocument('humanResources', $reportID);
             if ($report) {
                 // Format success response
                 $response = [
@@ -151,7 +104,6 @@ class HRStatistics extends Controller
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
             // Exception occurred
             $response = [
@@ -162,120 +114,78 @@ class HRStatistics extends Controller
         }
         // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     //Update
-
     public function updateReport(Request $request)
     {
         try {
-
             $data = $request->all();
-            // $id = $request->input('reportID');
-            // return $data;
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = HumanResources::where('_id', $data['_id'])->first();
-
-            if ($report) {
-
-                $report->academicYearID = $request->has('academicYearID') ? $data['academicYearID'] : $report->academicYearID;
-                $report->department = $request->has('department') ? $data['department'] : $report->department;
-                $report->deadline = $request->has('deadline') ? $data['deadline'] : $report->deadline;
-                $report->numberOfStaff = $request->has('numberOfStaff') ? $data['numberOfStaff'] : $report->numberOfStaff;
-                $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
-
-                $report->save();
-
-
-                event(new MongoDocumentCreated('hrstatistics', $report->toArray(), (string) $report->_id));
-
-                // Format success response
+            if (!isset($data['id'])) {
+                throw new \Exception('Report ID is required');
+            }
+            // Add updated timestamp
+            $data['updated_at'] = now()->toDateTimeString();
+            $success = FirestoreService::updateDocument('humanResources', $data['id'], $data);
+            if ($success) {
                 $response = [
                     'success' => true,
                     'message' => 'Report data updated successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     //Delete
-
     public function delReport(Request $request)
     {
         try {
-
-            // $data = $request->all();
             $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = HumanResources::where('_id', $id)->first();
-
-            if ($report) {
-
-                $report->delete();
-                // Format success response
+            $success = FirestoreService::deleteDocument('humanResources', $id);
+            if ($success) {
                 $response = [
                     'success' => true,
                     'message' => 'Report data deleted successfully',
                     'data' => null
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     public function getReportByUser(Request $request)
     {
         try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
             $user = $request->user();
-
-            $report = HumanResources::where('email', $user->email)->first();
-
-            if ($report) {
-                // Format success response
+            $reports = FirestoreService::queryCollection('humanResources', 'email', '==', $user->email);
+            if (!empty($reports)) {
+                $report = $reports[0];
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
@@ -286,7 +196,6 @@ class HRStatistics extends Controller
             } else {
                 $report = $this->initializeReport($user->email);
 
-                // Report not found
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
@@ -295,18 +204,14 @@ class HRStatistics extends Controller
                     ],
                 ];
             }
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     public function generateHRPdf(Request $request, string $reportID)
