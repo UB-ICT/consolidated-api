@@ -2,5 +2,6 @@
     "Auth": true,
     "Message": true,
     "PublicSafety": true,
-    "UBForms": true
+    "UBForms": true,
+    "UBFormBuilder": true
 }
