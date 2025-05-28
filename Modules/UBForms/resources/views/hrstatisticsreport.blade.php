@@ -31,7 +31,7 @@
             </div>
             <br>
             <div>
-                <b>Report By: </b>{{ auth()->user()->name }}
+                <b>Report By: </b>{{ $user->name }}
             </div>
         </section>
 
@@ -77,9 +77,9 @@
                     <!-- total Row -->
                     <tr class="total-row">
                         <td>Total</td>
-                        <td>{{ $report['numberOfStaff']['fulltimeFaculty']['total'] }}</td>
-                        <td>{{ $report['numberOfStaff']['adjunctFaculty']['total'] }}</td>
-                        <td>{{ $report['numberOfStaff']['nonTeachingStaff']['total'] }}</td>
+                        <td>{{ $report['numberOfStaff']['fulltimeFaculty']['total'] ?? 0 }}</td>
+                        <td>{{ $report['numberOfStaff']['adjunctFaculty']['total'] ?? 0 }}</td>
+                        <td>{{ $report['numberOfStaff']['nonTeachingStaff']['total'] ?? 0 }}</td>
                     </tr>
                 </tbody>
             </table>

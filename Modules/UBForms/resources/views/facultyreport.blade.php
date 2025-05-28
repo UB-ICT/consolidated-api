@@ -26,7 +26,7 @@
         <section class="content">
             <h2>Report Details</h2>
             <div>
-                <b>Report By: </b>{{ auth()->user()->name }}
+                <b>Report By: </b>{{ $user->name }}
             </div>
             <br>
             <div>

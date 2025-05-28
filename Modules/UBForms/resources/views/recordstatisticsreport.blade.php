@@ -25,7 +25,7 @@
         </div>
         <br>
         <div>
-            <b>Report By: </b>{{ auth()->user()->name ?? 'N/A' }}
+            <b>Report By: </b>{{ $user->name ?? 'N/A' }}
         </div>
     </section>
 

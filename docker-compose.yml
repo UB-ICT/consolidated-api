@@ -27,7 +27,6 @@ services:
         depends_on:
             - pgsql
             - redis
-            - mongodb
     pgsql:
         image: "postgres:15"
         container_name: api-db
@@ -53,19 +52,6 @@ services:
                 - "${PGSQL_USERNAME}"
             retries: 3
             timeout: 5s
-    mongodb:
-        image: "mongo:latest"
-        container_name: api-mongo
-        ports:
-            - "${FORWARD_MONGO_PORT:-27017}:27017"
-        environment:
-            MONGO_INITDB_ROOT_USERNAME: root
-            MONGO_INITDB_ROOT_PASSWORD: password
-            # MONGO_INITDB_DATABASE: "${MONGO_INITDB_DATABASE:-test}"
-        volumes:
-            - "sail-mongo:/data/db"
-        networks:
-            - sail
     redis:
         image: "redis:alpine"
         container_name: api-cache
@@ -89,6 +75,4 @@ volumes:
     sail-pgsql:
         driver: local
     sail-redis:
-        driver: local
-    sail-mongo:
         driver: local
