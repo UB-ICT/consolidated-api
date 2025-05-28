@@ -39,7 +39,7 @@ class FacultyController extends Controller
             'otherComments' => "",
         ];
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef('faculty', $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef('faculties', $report);
         return [
             'data' => $report,
             'id' => $documentRef->id()
@@ -79,7 +79,7 @@ class FacultyController extends Controller
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
 
-            $documentRef = FirestoreService::syncDocumentAndGetRef('faculty', $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef('faculties', $data);
 
             $response = [
                 'success' => true,
@@ -104,7 +104,7 @@ class FacultyController extends Controller
     public function getReport(Request $request, string $reportID)
     {
         try {
-            $report = FirestoreService::getDocument('faculty', $reportID);
+            $report = FirestoreService::getDocument('faculties', $reportID);
             if ($report) {
                 $response = [
                     'success' => true,
@@ -145,7 +145,7 @@ class FacultyController extends Controller
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
 
-            $success = FirestoreService::updateDocument('faculty', $data['id'], $data);
+            $success = FirestoreService::updateDocument('faculties', $data['id'], $data);
 
             if ($success) {
                 $response = [
@@ -178,7 +178,7 @@ class FacultyController extends Controller
     {
         try {
             $id = $request->input('reportID');
-            $success = FirestoreService::deleteDocument('faculty', $id);
+            $success = FirestoreService::deleteDocument('faculties', $id);
 
             if ($success) {
                 $response = [
@@ -209,7 +209,7 @@ class FacultyController extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('faculty', 'email', '==', $user->email);
+            $reports = FirestoreService::queryCollection('faculties', 'email', '==', $user->email);
 
             if (!empty($reports)) {
                 // Assuming we want the first report if multiple exist
@@ -249,7 +249,7 @@ class FacultyController extends Controller
         try {
             $user = $request->user();
             // Get report from Firestore
-            $report = FirestoreService::getDocument('faculty', $reportID);
+            $report = FirestoreService::getDocument('faculties', $reportID);
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }

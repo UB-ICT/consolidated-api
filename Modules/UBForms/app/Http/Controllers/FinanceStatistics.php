@@ -25,7 +25,7 @@ class FinanceStatistics extends Controller
             'formSubmitted' => false,
         ];
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef('finance', $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef('FinanceStatistics', $report);
         return [
             'data' => $report,
             'id' => $documentRef->id()
@@ -62,7 +62,7 @@ class FinanceStatistics extends Controller
             $data = $request->all();
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreService::syncDocumentAndGetRef('finance', $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef('FinanceStatistics', $data);
             $response = [
                 'success' => true,
                 'message' => "finance Report Created Successfully",
@@ -84,7 +84,7 @@ class FinanceStatistics extends Controller
     public function getReport(Request $request, string $reportID)
     {
         try {
-            $report = FirestoreService::getDocument('finance', $reportID);
+            $report = FirestoreService::getDocument('FinanceStatistics', $reportID);
             if ($report) {
                 $response = [
                     'success' => true,
@@ -120,7 +120,7 @@ class FinanceStatistics extends Controller
                 throw new \Exception('Report ID is required');
             }
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreService::updateDocument('finance', $data['id'], $data);
+            $success = FirestoreService::updateDocument('FinanceStatistics', $data['id'], $data);
             if ($success) {
                 $response = [
                     'success' => true,
@@ -149,7 +149,7 @@ class FinanceStatistics extends Controller
     {
         try {
             $id = $request->input('reportID');
-            $success = FirestoreService::deleteDocument('finance', $id);
+            $success = FirestoreService::deleteDocument('FinanceStatistics', $id);
             if ($success) {
                 $response = [
                     'success' => true,
@@ -177,7 +177,7 @@ class FinanceStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('finance', 'email', '==', $user->email);
+            $reports = FirestoreService::queryCollection('FinanceStatistics', 'email', '==', $user->email);
             if (!empty($reports)) {
                 // Assuming we want the first report if multiple exist
                 $report = $reports[0];
@@ -213,7 +213,7 @@ class FinanceStatistics extends Controller
         try {
             $user = $request->user();
             // Get report from Firestore
-            $report = FirestoreService::getDocument('finance', $reportID);
+            $report = FirestoreService::getDocument('FinanceStatistics', $reportID);
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }

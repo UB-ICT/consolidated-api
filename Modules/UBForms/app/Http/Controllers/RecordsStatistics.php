@@ -64,7 +64,7 @@ class RecordsStatistics extends Controller
             'formSubmitted' => false,
         ];
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef('staff', $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef('recordsStatistics', $report);
 
         return [
             'data' => $report,
@@ -119,7 +119,7 @@ class RecordsStatistics extends Controller
             // Add timestamps
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreService::syncDocumentAndGetRef('records', $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef('recordsStatistics', $data);
             $response = [
                 'success' => true,
                 'message' => "record Report Created Successfully",
@@ -141,7 +141,7 @@ class RecordsStatistics extends Controller
     public function getReport(Request $request, string $reportID)
     {
         try {
-            $report = FirestoreService::getDocument('records', $reportID);
+            $report = FirestoreService::getDocument('recordsStatistics', $reportID);
 
             if ($report) {
                 $response = [
@@ -182,7 +182,7 @@ class RecordsStatistics extends Controller
             }
 
             // Get existing document
-            $existingDoc = FirestoreService::getDocument('records', $data['id']);
+            $existingDoc = FirestoreService::getDocument('recordsStatistics', $data['id']);
             Log::debug('Existing Document:', $existingDoc);
 
             if (empty($existingDoc)) {
@@ -230,7 +230,7 @@ class RecordsStatistics extends Controller
             $updatedData['updated_at'] = now()->toDateTimeString();
 
             // Update in Firestore
-            $success = FirestoreService::updateDocument('records', $data['id'], $updatedData);
+            $success = FirestoreService::updateDocument('recordsStatistics', $data['id'], $updatedData);
 
             if (!$success) {
                 throw new \Exception('Firestore update operation failed');
@@ -257,7 +257,7 @@ class RecordsStatistics extends Controller
     {
         try {
             $id = $request->input('reportID');
-            $success = FirestoreService::deleteDocument('records', $id);
+            $success = FirestoreService::deleteDocument('recordsStatistics', $id);
             if ($success) {
                 $response = [
                     'success' => true,
@@ -285,7 +285,7 @@ class RecordsStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('records', 'email', '==', $user->email);
+            $reports = FirestoreService::queryCollection('recordsStatistics', 'email', '==', $user->email);
             if (!empty($reports)) {
                 // Assuming we want the first report if multiple exist
                 $report = $reports[0];
@@ -323,7 +323,7 @@ class RecordsStatistics extends Controller
         try {
             $user = $request->user();
             // Get report from Firestore
-            $report = FirestoreService::getDocument('records', $reportID);
+            $report = FirestoreService::getDocument('recordsStatistics', $reportID);
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }

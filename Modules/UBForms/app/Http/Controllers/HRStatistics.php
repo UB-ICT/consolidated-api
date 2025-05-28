@@ -27,7 +27,7 @@ class HRStatistics extends Controller
             'formSubmitted' => false,
         ];
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef('humanResources', $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef('HRStatistics', $report);
         return [
             'data' => $report,
             'id' => $documentRef->id()
@@ -64,7 +64,7 @@ class HRStatistics extends Controller
             $data = $request->all(); //Adding this in the event things need to be validated later on    
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreService::syncDocumentAndGetRef('humanResources', $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef('HRStatistics', $data);
             $response = [
                 'success' => true,
                 'message' => "humanResources Report Created Successfully",
@@ -86,7 +86,7 @@ class HRStatistics extends Controller
     public function getReport(Request $request, string $reportID)
     {
         try {
-            $report = FirestoreService::getDocument('humanResources', $reportID);
+            $report = FirestoreService::getDocument('HRStatistics', $reportID);
             if ($report) {
                 // Format success response
                 $response = [
@@ -126,7 +126,7 @@ class HRStatistics extends Controller
             }
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreService::updateDocument('humanResources', $data['id'], $data);
+            $success = FirestoreService::updateDocument('HRStatistics', $data['id'], $data);
             if ($success) {
                 $response = [
                     'success' => true,
@@ -155,7 +155,7 @@ class HRStatistics extends Controller
     {
         try {
             $id = $request->input('reportID');
-            $success = FirestoreService::deleteDocument('humanResources', $id);
+            $success = FirestoreService::deleteDocument('HRStatistics', $id);
             if ($success) {
                 $response = [
                     'success' => true,
@@ -183,7 +183,7 @@ class HRStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('humanResources', 'email', '==', $user->email);
+            $reports = FirestoreService::queryCollection('HRStatistics', 'email', '==', $user->email);
             if (!empty($reports)) {
                 $report = $reports[0];
                 $response = [
@@ -219,7 +219,7 @@ class HRStatistics extends Controller
         try {
             $user = $request->user();
             // Get report from Firestore
-            $report = FirestoreService::getDocument('humanResources', $reportID);
+            $report = FirestoreService::getDocument('HRStatistics', $reportID);
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }

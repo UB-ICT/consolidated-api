@@ -16,7 +16,6 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         \App\Events\MongoDocumentCreated::class => [
-            \App\Listeners\SyncToFirestore::class,
         ],
         
         // You can add more events and listeners here
