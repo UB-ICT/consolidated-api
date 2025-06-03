@@ -14,6 +14,3 @@ use Modules\UBForms\Http\Controllers\UBFormsController;
 |
 */
 
-Route::group([], function () {
-    Route::resource('ubforms', UBFormsController::class)->names('ubforms');
-});

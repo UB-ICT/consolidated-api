@@ -8,6 +8,7 @@ use Modules\UBForms\Http\Controllers\FinanceStatistics;
 use Modules\UBForms\Http\Controllers\RecordsStatistics;
 use Modules\UBForms\Http\Controllers\FileUploadsController;
 use Modules\UBForms\Http\Controllers\ReportController;
+use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
 
 /*
  *--------------------------------------------------------------------------
@@ -27,7 +28,7 @@ use Modules\UBForms\Http\Controllers\ReportController;
 Route::group([
     'prefix' => 'v1/UBForms',
     'namespace' => 'Modules\UBForms\Http\Controllers',
-    'middleware' => 'auth:sanctum'
+    'middleware' => ['auth:sanctum', CheckUBFormsAccess::class],
 ], function () {
 
     //Initialize
@@ -122,9 +123,4 @@ Route::group([
 
     /*Return list of Reports*/
     Route::get('/allReports/{reportTypes}', [ReportController::class, 'getReports']);
-
-
 });
-
-
-

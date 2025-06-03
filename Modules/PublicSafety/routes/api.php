@@ -42,7 +42,7 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',
-    'middleware' => 'auth:sanctum'
+    'middleware' => 'auth:sanctum',
 ], function () {
     // Existing routes
     Route::apiResource('roles', RoleController::class);

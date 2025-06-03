@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 
 
 use Exception;
-
+use GPBMetadata\Google\Api\Log;
 
 class AuthController extends Controller
 {
@@ -31,7 +31,7 @@ class AuthController extends Controller
             if (Auth::validate($credentials)) {
                 $user = Auth::getLastAttempted();
 
-             
+
 
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
 
@@ -55,7 +55,6 @@ class AuthController extends Controller
                     'data' => null,
                 ];
             }
-
         } catch (Exception $e) {
             $response = [
                 'success' => false,
@@ -66,5 +65,4 @@ class AuthController extends Controller
 
         return response($response, 200);
     }
-
 }
