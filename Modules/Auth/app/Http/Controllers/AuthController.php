@@ -8,7 +8,6 @@ use Illuminate\Routing\Controller;
 
 
 use Exception;
-use GPBMetadata\Google\Api\Log;
 
 class AuthController extends Controller
 {
@@ -27,11 +26,10 @@ class AuthController extends Controller
                 'password' => $fields['password'],
             ];
 
+            
 
             if (Auth::validate($credentials)) {
                 $user = Auth::getLastAttempted();
-
-
 
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
 

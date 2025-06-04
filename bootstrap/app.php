@@ -22,11 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
         // $middleware->append(ForceJsonRequestHeader::class);
         $middleware->append(Cors::class);
-        $middleware->append(CheckUBFormsAccess::class);
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'ubforms.user' => CheckUBFormsAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

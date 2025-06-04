@@ -15,3 +15,6 @@ use Modules\Auth\Http\Controllers\AuthController;
 */
 
 Route::post('/auth/login', [AuthController::class, 'login']);
+
+// Route::post('/auth/login', [AuthController::class, 'login'])
+//     ->middleware('ubforms.user');

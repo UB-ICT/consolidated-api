@@ -12,14 +12,12 @@ use App\Jobs\SyncToFirestoreJob;
 
 class FirestoreService
 {
-    private static $firestore;
+    protected static $firestore;
 
-    private final function __construct()
-    {
-    }
+    private final function __construct() {}
 
 
-    private static function initializeFirestore()
+    protected static function initializeFirestore()
     {
         if (is_null(self::$firestore)) {
             self::$firestore = new FirestoreClient([
@@ -28,6 +26,25 @@ class FirestoreService
             ]);
         }
     }
+
+    public static function getCollection(string $collectionName): array
+    {
+        self::initializeFirestore();
+        $collection = self::$firestore->collection($collectionName);
+        $documents = $collection->documents();
+
+        $result = [];
+        foreach ($documents as $document) {
+            if ($document->exists()) {
+                $data = $document->data();
+                $data['id'] = $document->id(); // Add the document ID
+                $result[] = $data;
+            }
+        }
+
+        return $result;
+    }
+
 
     public static function syncDocumentAndGetRef(string $collection, array $data): DocumentReference
     {
@@ -98,5 +115,4 @@ class FirestoreService
         }
         return $documents;
     }
-
 }

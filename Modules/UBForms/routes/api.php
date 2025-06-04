@@ -28,7 +28,7 @@ use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
 Route::group([
     'prefix' => 'v1/UBForms',
     'namespace' => 'Modules\UBForms\Http\Controllers',
-    'middleware' => ['auth:sanctum', CheckUBFormsAccess::class],
+    'middleware' => ['auth:sanctum', 'ubforms.user'],
 ], function () {
 
     //Initialize
