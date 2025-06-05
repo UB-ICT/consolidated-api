@@ -18,7 +18,7 @@ class ReportController extends Controller
                 array_push($report, [
                     "reportType" => 'faculties',
                     "id" => $faculty['_id'] ?? $faculty['id'] ?? null,
-                    "name" => $faculty['user']['name'] ?? $faculty['name'] ?? 'N/A',
+                    "name" => $faculty['user']['name'] ?? $faculty['user'] ?? 'N/A',
                     "formSubmitted" => $faculty['formSubmitted'] ?? []
                 ]);
             }

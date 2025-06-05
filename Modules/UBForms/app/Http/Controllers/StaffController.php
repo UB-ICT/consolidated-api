@@ -15,6 +15,7 @@ class StaffController extends Controller
     {
         $report = [
             'email' => $email,
+            'name' => "",
             'academicYearID' => "2023-2024",
             'department' => "",
             'reportsTo' => "",
@@ -77,7 +78,8 @@ class StaffController extends Controller
                 'success' => true,
                 'message' => "Staff Report Created Successfully",
                 'data' => [
-                    'reportID' => $documentRef->id()
+                    'reportID' => $documentRef->id(),
+                    'name' => $data['name'] ?? 'N/A',
                 ]
             ];
         } catch (\Exception $e) {

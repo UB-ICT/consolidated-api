@@ -19,12 +19,13 @@ class Staff extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mongodb';
+    protected $connection = 'firestore'; // Specify the Firestore connection if needed
     protected $collection = 'staff'; // Specify the collection name if different from the default
 
     protected $fillable = [
         'email',
         'userID',
+        'name',
         'academicYearID',
         'department',
         'reportsTo',
