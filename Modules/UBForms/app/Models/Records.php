@@ -19,12 +19,13 @@ class Records extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mongodb';
+    protected $connection = 'firestore';
     protected $collection = 'recordsStatistics'; // Specify the collection name if different from the default
 
     //updated from Github
     protected $fillable = [
         'email',
+        'name',
         'userID',
         'academicYearID',
         'department',

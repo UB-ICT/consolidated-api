@@ -183,7 +183,7 @@ class RecordsStatistics extends Controller
 
             // Get existing document
             $existingDoc = FirestoreService::getDocument('recordsStatistics', $data['id']);
-            Log::debug('Existing Document:', $existingDoc);
+            // Log::debug('Existing Document:', $existingDoc);
 
             if (empty($existingDoc)) {
                 throw new \Exception('Report not found in Firestore');
