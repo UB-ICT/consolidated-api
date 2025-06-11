@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\UBForms\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
@@ -10,10 +11,11 @@ class FacultyController extends Controller
 {
     //Initialize 
 
-    private function initializeReport(string $email)
+    private function initializeReport(string $email, string $name)
     {
         $report = [
             'email' => $email,
+            'name' => $name,
             'academicYearID' => "2023-2024",
             'faculty' => "",
             'units' => [],
@@ -50,7 +52,7 @@ class FacultyController extends Controller
     {
         try {
             $user = $request->user(); //Adding this in the event things need to be validated later on  
-            $report = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email, $user->name);
             $response = [
                 'success' => true,
                 'message' => "Initialization Successful",
@@ -169,7 +171,6 @@ class FacultyController extends Controller
         }
         // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     //Delete
@@ -202,7 +203,6 @@ class FacultyController extends Controller
         }
         // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
     public function getReportByUser(Request $request)
@@ -223,7 +223,7 @@ class FacultyController extends Controller
                     ]
                 ];
             } else {
-                $report = $this->initializeReport($user->email);
+                $report = $this->initializeReport($user->email, $user->name);
 
                 $response = [
                     'success' => true,
@@ -241,7 +241,6 @@ class FacultyController extends Controller
             ];
         }
         return response($response, 200);
-
     }
 
     public function generateFacultyPdf(Request $request, string $reportID)

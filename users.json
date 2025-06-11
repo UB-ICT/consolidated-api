@@ -1,0 +1,278 @@
+{
+    "__collections__": {
+        "users": {
+            "66eb4d454a5b652ac10c7c62": {
+                "id": {
+                    "$oid": "66eb4d454a5b652ac10c7c62"
+                },
+                "guid": "00c55f2b-f685-4df6-8b1a-21c0f061f1e4",
+                "domain": "default",
+                "password": "$2y$12$iO9wyVzen7U.upILFqpokevSjQuboEWus0OloiPr99yydnscCmOWS",
+                "name": "James Faber",
+                "email": "james.faber@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-18T21:59:33.676Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-18T21:59:33.676Z"
+                }
+            },
+            "66ec72b64a5b652ac10c7c69": {
+                "id": {
+                    "$oid": "66ec72b64a5b652ac10c7c69"
+                },
+                "guid": "2846bcc0-9fcb-4e8d-adce-feaf7a21c215",
+                "domain": "default",
+                "password": "$2y$12$XUgkC7o4ZXZyzrKLPM/Tf.zu01U9B/61avKki5YDJHQVZSYRBXFpe",
+                "name": "John Salam",
+                "email": "jsalam@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-19T18:51:34.463Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-19T18:51:34.463Z"
+                }
+            },
+            "66f0d2894a5b652ac10c7c7d": {
+                "id": {
+                    "$oid": "66f0d2894a5b652ac10c7c7d"
+                },
+                "guid": "a87aab7e-74fe-404f-a212-833fd7167b4e",
+                "domain": "default",
+                "password": "$2y$12$5twWxIzMw8W/vPlRquGN8uHVPbQyddKnSCD.5S8YtABTE/rd2rSRm",
+                "name": "Caryn Guerrero",
+                "email": "cguerrero@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-23T02:29:29.125Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-23T02:29:29.125Z"
+                }
+            },
+            "66f18d534a5b652ac10c7c84": {
+                "id": {
+                    "$oid": "66f18d534a5b652ac10c7c84"
+                },
+                "guid": "ab7561ac-3f3f-4fdf-8358-96169fb9e4f6",
+                "domain": "default",
+                "password": "$2y$12$Wfx7BjzV/uqtU7i4zj4muufp/UBkGHu7HMpSdAe8qy1Rg.MmaO6d6",
+                "name": "Lugie Cruz",
+                "email": "lcruz@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-23T15:46:27.987Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-23T15:46:27.987Z"
+                }
+            },
+            "66f2e903c66909703abc89d2": {
+                "id": {
+                    "$oid": "66f2e903c66909703abc89d2"
+                },
+                "guid": "da525ef2-9942-4151-8aef-b2bcd5d85e79",
+                "domain": "default",
+                "password": "$2y$12$BCGjJq/RP5RuVEmC.h4P9.k35hTrlnLa4Z.owQnDhXwS6PvwlDUpO",
+                "name": "Bernard Watler",
+                "email": "bwatler@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-08-28T17:50:12.289Z"
+                },
+                "created_at": {
+                    "$date": "2024-08-28T17:50:12.289Z"
+                }
+            },
+            "66f2e964c66909703abc89d6": {
+                "id": {
+                    "$oid": "66f2e964c66909703abc89d6"
+                },
+                "guid": "99b703b7-d700-458b-85d9-61e1aeabc21c",
+                "domain": "default",
+                "password": "$2y$12$BkP6fGpTpOKsYX8T3nFleeQgDpfVlG2IiFUXCJh4ePNsrDmXLOYiy",
+                "name": "Thisbe Usher",
+                "email": "tusher@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-08-27T19:43:18.106Z"
+                },
+                "created_at": {
+                    "$date": "2024-08-27T19:43:18.106Z"
+                }
+            },
+            "66f2e942c66909703abc89d4": {
+                "id": {
+                    "$oid": "66f2e942c66909703abc89d4"
+                },
+                "guid": "7b6cf12d-6da1-45d9-85d5-8e1abdc22a83",
+                "domain": "default",
+                "password": "$2y$12$LDSpXadoTJRK/6xJDKJHNe2Xr1wntfxtrt1qfeP9CK0ry0sxs4XjC",
+                "name": "Apolonio Aguilar",
+                "email": "aaguilar@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-08-27T19:27:06.676Z"
+                },
+                "created_at": {
+                    "$date": "2024-08-27T19:27:06.676Z"
+                }
+            },
+            "66f2ea93c66909703abc89de": {
+                "id": {
+                    "$oid": "66f2ea93c66909703abc89de"
+                },
+                "guid": "b68a9152-ba9a-4b9d-864c-b81604d98761",
+                "domain": "default",
+                "password": "$2y$12$cx2W5XHrOPhJNK2xirMrm.WNveFWk6Jbn0XqedBab7ld8uuRjbGbK",
+                "name": "Freida Palma",
+                "email": "fpalma@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-08-28T21:40:28.627Z"
+                },
+                "created_at": {
+                    "$date": "2024-08-28T21:40:28.627Z"
+                }
+            },
+            "66f2f1dac66909703abc89ec": {
+                "id": {
+                    "$oid": "66f2f1dac66909703abc89ec"
+                },
+                "guid": "6653d597-83ee-44e2-b600-66b9d664d9fc",
+                "domain": "default",
+                "password": "$2y$12$9nJQKIZnIYvnLt4tPmsT3.bkd8xG7wrNOBRRtZdbUh.fTeKcuyeH6",
+                "name": "Joyanne Babb",
+                "email": "jbabb@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-02T15:02:09.484Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-02T15:02:09.484Z"
+                }
+            },
+            "66f2f26dc66909703abc89ee": {
+                "id": {
+                    "$oid": "66f2f26dc66909703abc89ee"
+                },
+                "guid": "bcf2cad8-5f64-48fb-b304-096f0355788c",
+                "domain": "default",
+                "password": "$2y$12$HsBd9HbKKQ0.LJR4xb6hBOHdUl3czFF/Zzh90mxdOV4jFtUASQMXu",
+                "name": "Trevelee S. Williams",
+                "email": "twilliams@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-02T15:37:54.685Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-02T15:37:54.685Z"
+                }
+            },
+            "66f43cc64a5b652ac10c7c9c": {
+                "id": {
+                    "$oid": "66f43cc64a5b652ac10c7c9c"
+                },
+                "guid": "0c66b4e9-8cd0-4462-b404-ad184e9de4ff",
+                "domain": "default",
+                "password": "$2y$12$u5fwz16l6E0oAuzYg3cUN.k6kBAO6GCP8Z/lL.i7kVw/Ux0nqooGi",
+                "name": "Ian Sangster",
+                "email": "isangster@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-25T16:39:34.873Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-25T16:39:34.873Z"
+                }
+            },
+            "66f2efbbc66909703abc89e4": {
+                "id": {
+                    "$oid": "66f2efbbc66909703abc89e4"
+                },
+                "guid": "580cfcc4-97ad-4fa7-82e4-16f0a1921610",
+                "domain": "default",
+                "password": "$2y$12$7ErmSP6dtGCm4p1LUkatbewwd8DE39F5FaCKD0gviQYMQTK4JNetG",
+                "name": "Rose Pineda",
+                "email": "rpineda@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-08-29T22:29:51.031Z"
+                },
+                "created_at": {
+                    "$date": "2024-08-29T22:29:51.031Z"
+                }
+            },
+            "66f48f824a5b652ac10c7cad": {
+                "id": {
+                    "$oid": "66f48f824a5b652ac10c7cad"
+                },
+                "guid": "9d9319fd-ce90-42db-969d-46ce805c07d5",
+                "domain": "default",
+                "password": "$2y$12$H.fBDq.bH/x2QED0j//UVeXg.QmmPp6HRsIYL/uxJD0aDeuKqt1Qu",
+                "name": "myrna teck",
+                "email": "mteck@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-09-25T22:32:34.286Z"
+                },
+                "created_at": {
+                    "$date": "2024-09-25T22:32:34.286Z"
+                }
+            },
+            "670815a54a5b652ac10c7cbf": {
+                "id": {
+                    "$oid": "670815a54a5b652ac10c7cbf"
+                },
+                "guid": "6296f769-aad8-49dc-a7b5-538cb65acc5b",
+                "domain": "default",
+                "password": "$2y$12$Xb3qg5YbvmrBwYAOeSnfm.HAzHyozPT2GjFVbyGqJ1Y.9gS.MvNtq",
+                "name": "Luis Herrera",
+                "email": "luis.herrera@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-10-10T17:57:57.207Z"
+                },
+                "created_at": {
+                    "$date": "2024-10-10T17:57:57.207Z"
+                }
+            },
+            "671be30d5704bd7b8e0cc8d4": {
+                "id": {
+                    "$oid": "671be30d5704bd7b8e0cc8d4"
+                },
+                "guid": "38096821-0d80-4790-8f17-be8d0a827f0b",
+                "domain": "default",
+                "password": "$2y$12$pSmk1Bq.Tx3WTuaq1XSJ6uxEND48DOLV/vh852WKEio8yJUTp4jD2",
+                "name": "Delmar Tzib",
+                "email": "delmer.tzib@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2024-10-25T18:27:25.251Z"
+                },
+                "created_at": {
+                    "$date": "2024-10-25T18:27:25.251Z"
+                }
+            },
+            "67770af193ab2a3581045e65": {
+                "id": {
+                    "$oid": "67770af193ab2a3581045e65"
+                },
+                "guid": "7b69414a-b642-42aa-8a12-734fe81f7bef",
+                "domain": "default",
+                "password": "$2y$12$Ujt5m9/Xpt2T1YRw4zp7HukGdVOnciQtf.kEapUVawbvZmS6X2/am",
+                "name": "Martin Cuellar",
+                "email": "mcuellar@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2025-01-02T21:53:53.830Z"
+                },
+                "created_at": {
+                    "$date": "2025-01-02T21:53:53.830Z"
+                }
+            },
+            "67b4c708c04dcbec08013da2": {
+                "id": {
+                    "$oid": "67b4c708c04dcbec08013da2"
+                },
+                "guid": "5513c882-9f8f-44c1-a142-e06275e738cc",
+                "domain": "default",
+                "password": "$2y$12$l6msa3Y7pGFXdlQLI58FWeLyTqtCQK35z67BtAElvVhqHbVkQ6uHa",
+                "name": "Jake Snaddon",
+                "email": "jsnaddon@ub.edu.bz",
+                "updated_at": {
+                    "$date": "2025-02-18T17:44:40.358Z"
+                },
+                "created_at": {
+                    "$date": "2025-02-18T17:44:40.358Z"
+                }
+            }
+        }
+    }
+}

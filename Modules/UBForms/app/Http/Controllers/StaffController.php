@@ -15,7 +15,6 @@ class StaffController extends Controller
     {
         $report = [
             'email' => $email,
-            'name' => "",
             'academicYearID' => "2023-2024",
             'department' => "",
             'reportsTo' => "",
