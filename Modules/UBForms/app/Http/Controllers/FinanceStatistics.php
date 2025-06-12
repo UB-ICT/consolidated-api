@@ -16,6 +16,7 @@ class FinanceStatistics extends Controller
     {
         $report = [
             'email' => $email,
+            'name' => User::where('email', $email)->value('name') ?? 'Unknown User',
             'academicYearID' => "2023-2024",
             'department' => "",
             'deadline' => "",
@@ -89,9 +90,9 @@ class FinanceStatistics extends Controller
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
-                    'data' => [
-                        'report' => $report
-                    ]
+                    // 'data' => [
+                    //     'report' => $report
+                    // ]
                 ];
             } else {
                 $response = [
