@@ -5,11 +5,7 @@ namespace Modules\Auth\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
-
-
 use Exception;
-
-
 class AuthController extends Controller
 {
     public function login(Request $request)
@@ -27,11 +23,8 @@ class AuthController extends Controller
                 'password' => $fields['password'],
             ];
 
-
-            if (Auth::validate($credentials)) {
-                $user = Auth::getLastAttempted();
-
-             
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
 
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
 
