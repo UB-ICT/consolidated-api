@@ -1,12 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace Modules\UBForms\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-//use Illuminate\Database\Eloquent\Model;
 use MongoDB\Laravel\Eloquent\Model; //Needs this inorder to use MongoDB
-use MongoDB\Laravel\Relations\BelongsTo;
-use App\Models\User;
+use Modules\UBForms\Models\User; // Commented out as it may be incorrect
 
 
 /*
@@ -21,12 +19,13 @@ class Staff extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mongodb';
+    protected $connection = 'firestore'; // Specify the Firestore connection if needed
     protected $collection = 'staff'; // Specify the collection name if different from the default
 
     protected $fillable = [
         'email',
         'userID',
+        'name',
         'academicYearID',
         'department',
         'reportsTo',

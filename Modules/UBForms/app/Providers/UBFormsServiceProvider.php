@@ -62,7 +62,7 @@ class UBFormsServiceProvider extends ServiceProvider
      */
     public function registerTranslations(): void
     {
-        $langPath = resource_path('lang/modules/'.$this->nameLower);
+        $langPath = resource_path('lang/modules/' . $this->nameLower);
 
         if (is_dir($langPath)) {
             $this->loadTranslationsFrom($langPath, $this->nameLower);
@@ -100,17 +100,31 @@ class UBFormsServiceProvider extends ServiceProvider
     /**
      * Register views.
      */
-    public function registerViews(): void
+    // public function registerViews(): void
+    // {
+    //     $viewPath = resource_path('views/modules/'.$this->nameLower);
+    //     $sourcePath = module_path($this->name, 'resources/views');
+
+    //     $this->publishes([$sourcePath => $viewPath], ['views', $this->nameLower.'-module-views']);
+
+    //     $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->nameLower);
+
+    //     $componentNamespace = $this->module_namespace($this->name, $this->app_path(config('modules.paths.generator.component-class.path')));
+    //     Blade::componentNamespace($componentNamespace, $this->nameLower);
+    // }
+
+    public function registerViews()
     {
-        $viewPath = resource_path('views/modules/'.$this->nameLower);
-        $sourcePath = module_path($this->name, 'resources/views');
+        $viewPath = resource_path('views/modules/ubforms');
+        $sourcePath = module_path('UBForms') . '/resources/views';
 
-        $this->publishes([$sourcePath => $viewPath], ['views', $this->nameLower.'-module-views']);
+        $this->publishes([
+            $sourcePath => $viewPath
+        ], 'views');
 
-        $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->nameLower);
-
-        $componentNamespace = $this->module_namespace($this->name, $this->app_path(config('modules.paths.generator.component-class.path')));
-        Blade::componentNamespace($componentNamespace, $this->nameLower);
+        $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [
+            $sourcePath
+        ]), 'UBForms'); // ← Use exact module name here
     }
 
     /**
@@ -125,8 +139,8 @@ class UBFormsServiceProvider extends ServiceProvider
     {
         $paths = [];
         foreach (config('view.paths') as $path) {
-            if (is_dir($path.'/modules/'.$this->nameLower)) {
-                $paths[] = $path.'/modules/'.$this->nameLower;
+            if (is_dir($path . '/modules/' . $this->nameLower)) {
+                $paths[] = $path . '/modules/' . $this->nameLower;
             }
         }
 

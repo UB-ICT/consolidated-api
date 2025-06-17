@@ -12,13 +12,16 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "directorytree/ldaprecord-laravel": "^3.3",
         "google/apiclient": "^2.18",
+        "google/cloud-firestore": "^1.50",
+        "grpc/grpc": "^1.38",
         "inertiajs/inertia-laravel": "^2.0",
         "kreait/firebase-php": "^7.15",
         "laravel/framework": "^11.9",
         "laravel/passport": "^12.0",
-        "laravel/sanctum": "^4.0",
+        "laravel/sanctum": "^4.1",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
+        "laravel/ui": "^4.6",
         "mongodb/laravel-mongodb": "^5.4",
         "nwidart/laravel-modules": "^11.1",
         "php-open-source-saver/jwt-auth": "^2.7",
@@ -39,7 +42,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Modules\\": "Modules/"
+            "Modules\\": "modules/"
         }
     },
     "autoload-dev": {

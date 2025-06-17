@@ -18,6 +18,9 @@ class Campus extends Model
      *
      * @var array
      */
+
+    protected $connection = 'pgsql';
+
     protected $fillable = [
         'campus',
     ];

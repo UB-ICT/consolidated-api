@@ -1,0 +1,155 @@
+/* Basic Reset */
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background for PDF */
+body {
+    color: #333333;
+    font-family: Arial, sans-serif;
+    margin: 40px;
+}
+
+/* Page Container */
+.container {
+    width: 100%;
+}
+
+/* New header Styling */
+.header {
+    padding: 15px;
+    background-color: #3d004a;
+    color: #ffffff;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Centering the container for logo and text */
+.header-content {
+    display: inline-block;
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Header Logo Styling */
+.header-logo {
+    display: inline-block;
+    margin-right: 15px;
+    vertical-align: middle;
+}
+
+.header-logo img {
+    max-width: 100px;
+    height: auto;
+    margin-top: 10px;
+}
+
+/* Header Text Styling */
+.header-text {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.header-text h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.header-text p {
+    margin: 0;
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Academic Year Styling */
+.academic-year {
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Content Styles */
+.content {
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.content h2 {
+    color: #000000;
+    font-size: 24px;
+    border-bottom: 2px solid #7e317b;
+    padding-bottom: 10px;
+    margin-top: 0;
+    background-color: gold;
+}
+
+.content p {
+    margin: 10px 0;
+}
+
+.content p strong {
+    color: #333333;
+}
+
+.section {
+    margin-bottom: 20px;
+}
+
+/* Table Styles */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.table td {
+    background-color: #ffffff;
+}
+
+.table .total-row {
+    font-weight: bold;
+}
+
+.footer {
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    color: #666;
+}
+
+/* Print-Specific Styles */
+@media print {
+    .container {
+        background-color: #ffffff;
+        box-shadow: none;
+        padding: 10mm;
+        margin: 0;
+        border-radius: 0;
+    }
+}
+
+/* Dompdf Specific Page Setup */
+@page {
+    size: A4;
+    margin: 20mm;
+}

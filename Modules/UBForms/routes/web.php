@@ -14,6 +14,12 @@ use Modules\UBForms\Http\Controllers\UBFormsController;
 |
 */
 
-Route::group([], function () {
-    Route::resource('ubforms', UBFormsController::class)->names('ubforms');
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// Route::get('/browse_movies', [MovieController::class, 'show']);
+
+Route::get('/', function () {
+    return view('welcome');
 });

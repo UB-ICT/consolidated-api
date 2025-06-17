@@ -15,7 +15,7 @@ class Cors
      */
     public function handle(Request $request, Closure $next): Response
     {
-      $allowedOrigins = ['http://127.0.0.1:5173', 'http://127.0.0.1:8088/auth/google', 'http://localhost:8088/', 'https://api.ub.edu.bz'];
+      $allowedOrigins = ['http://127.0.0.1:5173', 'http://127.0.0.1:8088/', 'http://localhost:8088/', 'https://api.ub.edu.bz', 'http://localhost:8088'];
       # $origin = $_SERVER['HTTP_ORIGIN'];
       $origin = request()->headers->get('referer');
       #var_dump($origin); exit;

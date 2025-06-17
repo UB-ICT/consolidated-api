@@ -1,12 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace Modules\UBForms\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-//use Illuminate\Database\Eloquent\Model;
 use MongoDB\Laravel\Eloquent\Model; //Needs this inorder to use MongoDB
-use MongoDB\Laravel\Relations\BelongsTo;
-use App\Models\User;
+use Modules\UBForms\Models\User;
 
 /*
 This is the HR model. Not originally part of any annual report, this 
@@ -21,12 +19,13 @@ class Records extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mongodb';
+    protected $connection = 'firestore';
     protected $collection = 'recordsStatistics'; // Specify the collection name if different from the default
 
     //updated from Github
     protected $fillable = [
         'email',
+        'name',
         'userID',
         'academicYearID',
         'department',

@@ -1,380 +1,344 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Records;
-use App\Models\User;
+use Modules\UBForms\Models\Records;
+use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-
-/*
-This is the Records Statistics Controller responsible for doing 5 functions. 
-
-The function initialize() creates the fields in mongo db for all  annual reports 
-that are to be submitted by Staff.
-
-The function store(), is similar but you would need to pass in all the fields with the 
-information to properly create it in the database. 
-
-The function getReport() retrieves the report based on the report ID. 
-
-The function delReport() deleted the report based on the report ID. 
-
-The last function updateReport() updates a report, it only updates the fields that are passed. 
-
-
-Author: SW
-
-*/
+use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Log;
 
 class RecordsStatistics extends Controller
 {
-    //Initialize function
-    //Updated from Github
-    private function initializeReport(string $email){
-        return $reportData = Records::create([
+    private function initializeReport(string $email)
+    {
+        $report = [
             'email' => $email,
             'academicYearID' => "2023-2024", //temporary
             'department' => "",
             'deadline' => "",
-            'currentStudentEnrollmentTrend' => ['associates' => '', 'undergraduate' => '', 'graduate' => '','Total' => ''], //Added Total to the array
-            'studentEnrollmentTrend' => Array(
-              ['academicYear' => '2021/2022', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
-              ['academicYear' => '2022/2023', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
-              ['academicYear' => '2023/2024', 'associate' => '', 'undergraduate' => '', 'graduate' => '', 'other' => '','Total' => ''], //Added Total to the array
+            'currentStudentEnrollmentTrend' => ['associates' => 0, 'undergraduate' => 0, 'graduate' => 0, 'Total' => 0],
+            'studentEnrollmentTrend' => array(
+                ['academicYear' => '2021/2022', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
+                ['academicYear' => '2022/2023', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
+                ['academicYear' => '2023/2024', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
             ),
-            'enrollmentTrendPerFaculty' => Array(
-              ['academicYear' => '2021/2022', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
-              ['academicYear' => '2022/2023', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
-              ['academicYear' => '2023/2024', 'educationAndArts' => '', 'managementAndSocialScience' => '', 'healthScience' => '', 'scienceAndTechnology' => ''],
+            'enrollmentTrendPerFaculty' => array(
+                ['academicYear' => '2021/2022', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2022/2023', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2023/2024', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
             ),
-            'graduationStatistics'=> Array(
-              [
-              'academicYear' => "2021/2022",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ], //A little ocd about this part but its okay
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )],
-              [
-              'academicYear' => "2022/2023",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )],
-              ['academicYear' => "2023/2024",
-              'faculties' => Array(
-                [ 'degree' => 'Education and Arts', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Management and Social Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Health Science', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-                [ 'degree' => 'Science and Technology', 'Associates' => '', 'Bachelors' => '', 'Honors' => '' ],
-              )]
+            'graduationStatistics' => array(
+                [
+                    'academicYear' => "2021/2022",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0], //A little ocd about this part but its okay
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                    )
+                ],
+                [
+                    'academicYear' => "2022/2023",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                    )
+                ],
+                [
+                    'academicYear' => "2023/2024",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                    )
+                ]
             ),
-            'studentOrigin' => ['Belize' => '', 'CentralAmericanCountries' => '', 'OtherCountries' => ''], //7.Origin of Students 
-            'campusStatistics' => ['BelizeCity' => '', 'Belmopan' => '', 'PuntaGorda' => '', 'CentralFarm' => '', 'SatellitePrograms' => ''], //8.Campus Statistics
-            'graduates' => ['GraduatesByAge' => '', 'GraduatesByDistrict' => ''],//5 and 6 merged into one
+            'studentOrigin' => ['Belize' => 0, 'CentralAmericanCountries' => 0, 'OtherCountries' => 0], //7.Origin of Students 
+            'campusStatistics' => ['BelizeCity' => 0, 'Belmopan' => 0, 'PuntaGorda' => 0, 'CentralFarm' => 0, 'SatellitePrograms' => 0], //8.Campus Statistics
+            'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0],//5 and 6 merged into one
             'formSubmitted' => false,
-        ]);
+        ];
+        // Store in Firestore and get document ID
+        $documentRef = FirestoreService::syncDocumentAndGetRef('recordsStatistics', $report);
+
+        return [
+            'data' => $report,
+            'id' => $documentRef->id()
+        ];
     }
 
-    public function initialize(Request $request){
-
-        try{
-
-            $data = $request->all(); //Adding this in the event things need to be validated later on  
-
-            $user = $request->user();            
-
-            $reportData = $this->initializeReport($user->email);
-
+    public function initialize(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $report = $this->initializeReport($user->email);
             $response = [
                 'success' => true,
                 'message' => "Initialization Successfull",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-        }catch(\Exception $e){
-            // If an error occurs, create an error response
+                    'reportID' => $report['id']
+                ],
+            ];
+        } catch (\Exception $e) {
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-
         return response($response, 201);
-
     }
 
     //Create
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
 
-        $data = $request->all(); //Adding this in the event things need to be validated later on    
-
-        try{
-
-            $reportData = Records::create([
-                'academicYearID' => $data['academicYearID'],
-                'department' => $data['department'],
-                'deadline' => $data['deadline'],
-                'currentStudentEnrollmentTrend' => $data['currentStudentEnrollmentTrend'],
-                'studentEnrollmentTrend' => $data['studentEnrollmentTrend'],
-                'enrollmentTrendPerFaculty' => $data['enrollmentTrendPerFaculty'],
-                'graduationStatistics'=> $data['graduationStatistics'],
-                'graduatesByAge' => $data['graduatesByAge'], //New
-                'graduatesByDistricts' => $data['graduatesByDistricts'], //New
-                'studentOrigin' => $data['studentOrigin'],
-                'campusStatistics' => $data['campusStatistics'],
-                'graduates' => $data['graduates'],
-                'formSubmitted' => $data['formSubmitted']
-            ]);
-
+        try {
+            $data = $request->all();
+            if (isset($data['currentStudentEnrollmentTrend'])) {
+                $data['currentStudentEnrollmentTrend']['Total'] = $data['currentStudentEnrollmentTrend']['Total'] ??
+                    ((int) ($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                        (int) ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
+                        (int) ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
+            }
+            if (isset($data['studentEnrollmentTrend'])) {
+                foreach ($data['studentEnrollmentTrend'] as &$trend) {
+                    $trend['Total'] = $trend['Total'] ??
+                        ((int) ($trend['associate'] ?? 0) +
+                            (int) ($trend['undergraduate'] ?? 0) +
+                            (int) ($trend['graduate'] ?? 0) +
+                            (int) ($trend['other'] ?? 0));
+                }
+            }
+            // Add timestamps
+            $data['created_at'] = now()->toDateTimeString();
+            $data['updated_at'] = now()->toDateTimeString();
+            $documentRef = FirestoreService::syncDocumentAndGetRef('recordsStatistics', $data);
             $response = [
                 'success' => true,
-                'message' => "Records Statistics Report Created Successfully",
+                'message' => "record Report Created Successfully",
                 'data' => [
-                'reportID' => $reportData->_id
-                ],            
-            ]; 
-            
-        }catch(\Exception $e){
-            // If an error occurs, create an error response
+                    'reportID' => $documentRef->id()
+                ]
+            ];
+        } catch (\Exception $e) {
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'data' => null,            
-            ]; 
+                'data' => null,
+            ];
         }
-        
-        return response($response, 201);        
-
+        return response($response, 201);
     }
 
     //Read
-
-    public function getReport(Request $request, string $reportID){
+    public function getReport(Request $request, string $reportID)
+    {
         try {
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Records::where('_id', $reportID)->first();
+            $report = FirestoreService::getDocument('recordsStatistics', $reportID);
 
             if ($report) {
-                    // Format success response
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
                     'data' => [
-                        'reportData' => $report 
+                        'report' => $report
                     ]
                 ];
             } else {
-                // Report not found
                 $response = [
                     'success' => false,
                     'message' => 'Report not found',
                     'data' => null
                 ];
             }
-
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
-    }
-
-    //Update
-
-    public function updateReport(Request $request){
-        try {
-
-            $data = $request->all();
-            // $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Records::where('email', $data['email'])->first();
-
-            //updated from git
-            if ($report) {
-
-                $report->academicYearID = $request->has('academicYearID') ? $data['academicYearID'] : $report->academicYearID;
-                $report->department = $request->has('department') ? $data['department'] : $report->department;
-                $report->deadline = $request->has('deadline') ? $data['deadline'] : $report->deadline;
-                $report->currentStudentEnrollmentTrend = $request->has('currentStudentEnrollmentTrend') ? $data['currentStudentEnrollmentTrend'] : $report->currentStudentEnrollmentTrend;
-                $report->studentEnrollmentTrend = $request->has('studentEnrollmentTrend') ? $data['studentEnrollmentTrend'] : $report->studentEnrollmentTrend;
-                $report->enrollmentTrendPerFaculty = $request->has('enrollmentTrendPerFaculty') ? $data['enrollmentTrendPerFaculty'] : $report->enrollmentTrendPerFaculty;
-                $report->graduationStatistics = $request->has('graduationStatistics') ? $data['graduationStatistics'] : $report->graduationStatistics;
-                $report->studentOrigin = $request->has('studentOrigin') ? $data['studentOrigin'] : $report->studentOrigin;
-                $report->campusStatistics = $request->has('campusStatistics') ? $data['campusStatistics'] : $report->campusStatistics;
-                $report->graduates = $request->has('graduates') ? $data['graduates'] : $report->graduates;
-                $report->formSubmitted = $request->has('formSubmitted') ? $data['formSubmitted'] : $report->formSubmitted;
-
-                $report->save();
-                    // Format success response
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data updated successfully',
-                    'data' => null
-                ];
-            } else {
-                // Report not found
-                $response = [
-                    'success' => false,
-                    'message' => 'Report not found',
-                    'data' => null
-                ];
-            }
-
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
-    }
-
-    //Delete
-    
-    public function delReport(Request $request){
-        try {
-
-            // $data = $request->all();
-            $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-            $report = Records::where('_id', $id)->first();
-
-            if ($report) {
-
-                $report->delete();
-                    // Format success response
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data deleted successfully',
-                    'data' => null
-                ];
-            } else {
-                // Report not found
-                $response = [
-                    'success' => false,
-                    'message' => 'Report not found',
-                    'data' => null
-                ];
-            }
-
-    } catch (\Exception $e) {
-            // Exception occurred
-        $response = [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null
-        ];
-    }
-     // Return response with HTTP status code 201 (Created)
-     return response($response, 200);
-
-    }
-
-    public function getReportByUser(Request $request){
-        try {
-
-            // $data = $request->all();
-            // $id = $request->input('reportID');
-
-            // Retrieve data based on conditions (assuming $request has the id parameter)
-
-            $user = $request->user();
-
-            $report = Records::where('email', $user->email)->first();
-
-            if ($report) {
-                    // Format success response
-                $response = [
-                    'success' => true,
-                    'message' => 'Report data found successfully',
-                    'data' => [
-                        'reportData' => $report 
-                    ]
-                ];
-            } else {
-                $report = $this->initializeReport($user->email);
-
-                // Report not found
-                $response = [
-                    'success' => true,
-                    'message' => 'Report Initialized.',
-                    'data' => [
-                        'reportData' => $report 
-                    ],
-                ];
-            }
-
         } catch (\Exception $e) {
-                // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
-
     }
 
-    public function generateRecordsPdf(Request $request, string $reportID){ //Look into this a little more
+    //Update
 
-        // Fetch data from MongoDB based on report ID
-        $report = Records::find($reportID);
+    public function updateReport(Request $request)
+    {
+        try {
+            $data = $request->all();
+            Log::info('Update Report Request:', $data);
 
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+            // Validate required fields
+            if (!isset($data['id'])) {
+                throw new \Exception('Report ID is required');
+            }
+
+            // Get existing document
+            $existingDoc = FirestoreService::getDocument('recordsStatistics', $data['id']);
+            // Log::debug('Existing Document:', $existingDoc);
+
+            if (empty($existingDoc)) {
+                throw new \Exception('Report not found in Firestore');
+            }
+
+            // Prepare updated data - merge existing with new updates
+            $updatedData = array_merge($existingDoc, $data);
+
+            // Handle currentStudentEnrollmentTrend
+            if (isset($data['currentStudentEnrollmentTrend'])) {
+                $current = $data['currentStudentEnrollmentTrend'];
+                $updatedData['currentStudentEnrollmentTrend'] = [
+                    'associates' => (int) ($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0),
+                    'undergraduate' => (int) ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0),
+                    'graduate' => (int) ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0),
+                    'Total' => (int) ($current['Total'] ??
+                        (($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                            ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
+                            ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0)))
+                ];
+            }
+
+            // Handle studentEnrollmentTrend
+            if (isset($data['studentEnrollmentTrend'])) {
+                foreach ($data['studentEnrollmentTrend'] as $key => $trend) {
+                    if (isset($existingDoc['studentEnrollmentTrend'][$key])) {
+                        $updatedData['studentEnrollmentTrend'][$key] = [
+                            'academicYear' => $trend['academicYear'] ?? $existingDoc['studentEnrollmentTrend'][$key]['academicYear'],
+                            'associate' => (int) ($trend['associate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['associate'] ?? 0),
+                            'undergraduate' => (int) ($trend['undergraduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['undergraduate'] ?? 0),
+                            'graduate' => (int) ($trend['graduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['graduate'] ?? 0),
+                            'other' => (int) ($trend['other'] ?? $existingDoc['studentEnrollmentTrend'][$key]['other'] ?? 0),
+                            'Total' => (int) ($trend['Total'] ??
+                                (($trend['associate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['associate'] ?? 0) +
+                                    ($trend['undergraduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['undergraduate'] ?? 0) +
+                                    ($trend['graduate'] ?? $existingDoc['studentEnrollmentTrend'][$key]['graduate'] ?? 0) +
+                                    ($trend['other'] ?? $existingDoc['studentEnrollmentTrend'][$key]['other'] ?? 0)))
+                        ];
+                    }
+                }
+            }
+
+            // Update timestamp
+            $updatedData['updated_at'] = now()->toDateTimeString();
+
+            // Update in Firestore
+            $success = FirestoreService::updateDocument('recordsStatistics', $data['id'], $updatedData);
+
+            if (!$success) {
+                throw new \Exception('Firestore update operation failed');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Report updated successfully',
+                'data' => null
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Update Report Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 400);
         }
-
-        // Get the user based on the email from the report
-        $user = User::where('email', $report->email)->first();        
-
-        // Generate PDF using data directly
-        // $pdf = PDF::loadHTML($this->generateReportPdfHtml($report));
-        $pdf = PDF::loadView('RecordsStatisticsReport', ['report' => $report, 'user' => $user])
-                    ->setPaper('a4', 'landscape'); // Set the paper size to A4 and orientation to landscape
-
-        // Return PDF as a response
-        return $pdf->download('report_' . $report->id . '.pdf');
     }
 
-    public function viewFacultyReport(Request $request, string $reportID){ //Look into this a little more
-
-        // Fetch data from MongoDB based on report ID
-        $report = Records::find($reportID);
-
-        // return $report;
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+    //Delete
+    public function delReport(Request $request)
+    {
+        try {
+            $id = $request->input('reportID');
+            $success = FirestoreService::deleteDocument('recordsStatistics', $id);
+            if ($success) {
+                $response = [
+                    'success' => true,
+                    'message' => 'Report data deleted successfully',
+                    'data' => null
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Report not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
         }
-
-        $user = User::where('email', $report->email)->first();  
-
-        return view('RecordsStatisticsReport', ['report' => $report, 'user' => $user]);
-        
+        return response($response, 200);
     }
-    
 
+    public function getReportByUser(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $reports = FirestoreService::queryCollection('recordsStatistics', 'email', '==', $user->email);
+            if (!empty($reports)) {
+                // Assuming we want the first report if multiple exist
+                $report = $reports[0];
+
+                $response = [
+                    'success' => true,
+                    'message' => 'Report data found successfully',
+                    'data' => [
+                        'report' => $report
+                    ]
+                ];
+            } else {
+                $report = $this->initializeReport($user->email);
+
+                $response = [
+                    'success' => true,
+                    'message' => 'Report Initialized.',
+                    'data' => [
+                        'report' => $report
+                    ],
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        return response($response, 200);
+    }
+
+    public function generateRecordsPdf(Request $request, string $reportID)
+    {
+        try {
+            $user = $request->user();
+            // Get report from Firestore
+            $report = FirestoreService::getDocument('recordsStatistics', $reportID);
+            if (!$report) {
+                return response()->json(['error' => 'Report not found'], 404);
+            }
+            // Generate PDF
+            $pdf = PDF::loadView('UBForms::recordstatisticsreport', [
+                'report' => $report,
+                'user' => $user,
+                'request' => $request
+            ]);
+            return $pdf->download('records_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

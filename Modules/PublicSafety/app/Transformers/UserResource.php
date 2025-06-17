@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\PublicSafety\transformers;
+namespace Modules\PublicSafety\Transformers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

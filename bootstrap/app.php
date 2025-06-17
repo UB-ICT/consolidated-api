@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\ForceJsonRequestHeader;
 use Illuminate\Auth\AuthenticationException;
 use App\Http\Middleware\Cors;
+use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
 use Illuminate\Http\Request;
 
 
@@ -19,12 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         //
-        $middleware->append(ForceJsonRequestHeader::class);
+        // $middleware->append(ForceJsonRequestHeader::class);
         $middleware->append(Cors::class);
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'ubforms.user' => CheckUBFormsAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

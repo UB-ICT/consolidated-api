@@ -1,7 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\UBForms\Http\Controllers\UBFormsController;
+use Modules\UBForms\Http\Controllers\FacultyController;
+use Modules\UBForms\Http\Controllers\StaffController;
+use Modules\UBForms\Http\Controllers\HRStatistics;
+use Modules\UBForms\Http\Controllers\FinanceStatistics;
+use Modules\UBForms\Http\Controllers\RecordsStatistics;
+use Modules\UBForms\Http\Controllers\FileUploadsController;
+use Modules\UBForms\Http\Controllers\ReportController;
+use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
 
 /*
  *--------------------------------------------------------------------------
@@ -12,14 +19,17 @@ use Modules\UBForms\Http\Controllers\UBFormsController;
  * routes are loaded by the RouteServiceProvider within a group which
  * is assigned the "api" middleware group. Enjoy building your API!
  *
-*/
+ */
 
 //This will be the only unprotected route because this is used for authentication
-Route::post('authenticate', [AuthController::class, 'AuthenticateUser']);
 
 
-Route::group(['middleware' => ['auth:sanctum']], function(){
-    // Add any route that needs to be protected inside this group
+
+Route::group([
+    'prefix' => 'v1/UBForms',
+    'namespace' => 'Modules\UBForms\Http\Controllers',
+    'middleware' => ['auth:sanctum', 'ubforms.user'],
+], function () {
 
     //Initialize
     Route::post('/facultyInitialize', [FacultyController::class, 'initialize']); //This route should get the data that is passed in the UI 
@@ -64,34 +74,34 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
 
     //Update
 
-    Route::put('/facultyReport', [FacultyController::class, 'updateReport']); 
+    Route::put('/facultyReport', [FacultyController::class, 'updateReport']);
 
-    Route::put('/staffReport', [StaffController::class, 'updateReport']); 
+    Route::put('/staffReport', [StaffController::class, 'updateReport']);
 
-    Route::put('/recordsReport', [RecordsStatistics::class, 'updateReport']); 
+    Route::put('/recordsReport', [RecordsStatistics::class, 'updateReport']);
 
-    Route::put('/HRReport', [HRStatistics::class, 'updateReport']); 
+    Route::put('/HRReport', [HRStatistics::class, 'updateReport']);
 
-    Route::put('/financeReport', [FinanceStatistics::class, 'updateReport']); 
+    Route::put('/financeReport', [FinanceStatistics::class, 'updateReport']);
 
     //Delete
 
-    Route::delete('/facultyReport', [FacultyController::class, 'delReport']); 
+    Route::delete('/facultyReport', [FacultyController::class, 'delReport']);
 
-    Route::delete('/staffReport', [StaffController::class, 'delReport']); 
+    Route::delete('/staffReport', [StaffController::class, 'delReport']);
 
-    Route::delete('/recordsReport', [RecordsStatistics::class, 'delReport']); 
+    Route::delete('/recordsReport', [RecordsStatistics::class, 'delReport']);
 
-    Route::delete('/HRReport', [HRStatistics::class, 'delReport']); 
+    Route::delete('/HRReport', [HRStatistics::class, 'delReport']);
 
-    Route::delete('/financeReport', [FinanceStatistics::class, 'delReport']); 
+    Route::delete('/financeReport', [FinanceStatistics::class, 'delReport']);
 
     //Upload files
 
 
     Route::post('/uploadPhoto', [FileUploadsController::class, 'uploadEventPhoto']); //This route should get the data that is passed in the UI 
     Route::post('/uploadMeetings', [FileUploadsController::class, 'uploadMeetingMinutes']); //This route should get the data that is passed in the UI 
-    
+
     /*Download files
      The name of the contoller if FileUploadsController but I thought I could add in the download function in there one time 
      as opposed to creating another controller for one function
@@ -113,9 +123,4 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
 
     /*Return list of Reports*/
     Route::get('/allReports/{reportTypes}', [ReportController::class, 'getReports']);
-
-
 });
-
-
-

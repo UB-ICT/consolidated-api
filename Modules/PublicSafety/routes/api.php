@@ -37,10 +37,12 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
 // });
 
 
+// This will be the only unprotected route because this is used for authentication
+
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',
-    'middleware' => 'auth:sanctum'
+    'middleware' => 'auth:sanctum',
 ], function () {
     // Existing routes
     Route::apiResource('roles', RoleController::class);

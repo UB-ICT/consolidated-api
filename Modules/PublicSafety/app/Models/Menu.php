@@ -15,6 +15,9 @@ class Menu extends Model
         'name',
         'path',
     ];
+
+    protected $connection = 'pgsql';
+
     public $timestamps = false;
 
 

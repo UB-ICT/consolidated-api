@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Models;
+namespace Modules\UBForms\Models;
 
-// use Illuminate\Database\Eloquent\Model;
 use MongoDB\Laravel\Eloquent\Model; //Needs this inorder to use MongoDB
 use Laravel\Sanctum\Contracts\HasAbilities;
 

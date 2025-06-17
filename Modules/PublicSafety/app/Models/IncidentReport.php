@@ -9,6 +9,9 @@ use Modules\PublicSafety\Models\User;
 class IncidentReport extends Model
 {
     use HasFactory;
+
+    protected $connection = 'pgsql';
+
     protected $fillable = [
         'report',
         'disposition',

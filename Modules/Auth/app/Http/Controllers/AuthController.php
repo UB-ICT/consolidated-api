@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use Exception;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 91352151d70849ccb964628d31a63f99ac23d8ba
 class AuthController extends Controller
 {
     public function login(Request $request)
@@ -23,8 +27,15 @@ class AuthController extends Controller
                 'password' => $fields['password'],
             ];
 
+<<<<<<< HEAD
             if (Auth::attempt($credentials)) {
                 $user = Auth::user();
+=======
+            
+
+            if (Auth::validate($credentials)) {
+                $user = Auth::getLastAttempted();
+>>>>>>> 91352151d70849ccb964628d31a63f99ac23d8ba
 
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
 
@@ -48,7 +59,6 @@ class AuthController extends Controller
                     'data' => null,
                 ];
             }
-
         } catch (Exception $e) {
             $response = [
                 'success' => false,
@@ -59,5 +69,4 @@ class AuthController extends Controller
 
         return response($response, 200);
     }
-
 }
