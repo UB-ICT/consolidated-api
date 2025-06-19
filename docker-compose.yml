@@ -1,7 +1,7 @@
 services:
     laravel.test:
         build:
-            context: ./vendor/laravel/sail/runtimes/8.2
+            context: ./docker/8.2
             dockerfile: Dockerfile
             args:
                 WWWGROUP: "${WWWGROUP}"
@@ -11,7 +11,7 @@ services:
             - "host.docker.internal:host-gateway"
         ports:
             # - '${APP_PORT:-80}:80'
-            - "8088:80" # Map port 8000 on your host to port 80 in the container
+            - "3031:80" # Map port 8000 on your host to port 80 in the container
             - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
         environment:
             WWWUSER: "${WWWUSER}"
@@ -38,7 +38,7 @@ services:
             POSTGRES_PASSWORD: "${PGSQL_PASSWORD}"
         volumes:
             - "sail-pgsql:/var/lib/postgresql/data"
-            - "./vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql"
+            - "./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql"
         networks:
             - sail
         healthcheck:
