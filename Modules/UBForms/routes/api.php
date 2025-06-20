@@ -20,7 +20,7 @@ use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
  * is assigned the "api" middleware group. Enjoy building your API!
  *
  */
-
+ 
 //This will be the only unprotected route because this is used for authentication
 
 

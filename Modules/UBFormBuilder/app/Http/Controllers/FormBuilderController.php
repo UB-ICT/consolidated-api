@@ -122,4 +122,37 @@ class FormBuilderController extends Controller
             'message' => 'Form schema saved successfully'
         ]);
     }
+
+    public function submitForm(Request $request, $formId)
+    {
+        $form = $this->form->find($formId);
+
+        if (!$form) {
+            return response()->json(['error' => 'Form not found'], 404);
+        }
+
+        // Validate against form fields
+        $validationRules = [];
+        foreach ($form['fields'] as $field) {
+            if ($field['required'] ?? false) {
+                $validationRules[$field['name'] ?? $field['label']] = 'required';
+            }
+        }
+
+        $validated = $request->validate($validationRules);
+
+        $submissionId = $this->form->submitForm($formId, $validated);
+
+        return response()->json([
+            'success' => true,
+            'submission_id' => $submissionId,
+            'message' => 'Form submitted successfully'
+        ]);
+    }
+
+    public function getSubmissions($formId)
+    {
+        $submissions = $this->form->getSubmissions($formId);
+        return response()->json(['submissions' => $submissions]);
+    }
 }

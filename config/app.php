@@ -134,6 +134,8 @@ return [
 //         Illuminate\Filesystem\FilesystemServiceProvider::class,
 //     ],
 
+
+
     'aliases' => [
     'JWTAuth' => PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth::class,
     'JWTFactory' => PHPOpenSourceSaver\JWTAuth\Facades\JWTFactory::class,
