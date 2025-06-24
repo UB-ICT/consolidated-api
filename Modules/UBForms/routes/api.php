@@ -124,3 +124,4 @@ Route::group([
     /*Return list of Reports*/
     Route::get('/allReports/{reportTypes}', [ReportController::class, 'getReports']);
 });
+

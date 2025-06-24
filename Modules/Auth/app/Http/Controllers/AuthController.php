@@ -17,22 +17,15 @@ class AuthController extends Controller
             'username' => 'required',
             'password' => 'required',
         ]);
-
         try {
             $tempDeviceName = 'Temp Device Name';
-
             $credentials = [
                 'samaccountname' => $fields['username'],
                 'password' => $fields['password'],
             ];
-
-            
-
             if (Auth::validate($credentials)) {
                 $user = Auth::getLastAttempted();
-
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
-
                 $response = [
                     'success' => true,
                     'message' => "Authenticated Successfully.",
@@ -60,7 +53,25 @@ class AuthController extends Controller
                 'data' => null
             ];
         }
-
+        return response($response, 200);
+    }
+    public function logout(Request $request)
+    {
+        try {
+            // Revoke the token that was used to authenticate the current request
+            $request->user()->currentAccessToken()->delete();
+            $response = [
+                'success' => true,
+                'message' => 'Successfully logged out',
+                'data' => null
+            ];
+        } catch (Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
         return response($response, 200);
     }
 }

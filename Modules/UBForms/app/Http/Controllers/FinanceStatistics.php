@@ -14,7 +14,7 @@ class FinanceStatistics extends Controller
 
     private function initializeReport(string $email)
     {
-        $report = [
+        $report = [ 
             'email' => $email,
             'name' => User::where('email', $email)->value('name') ?? 'Unknown User',
             'academicYearID' => "2023-2024",
