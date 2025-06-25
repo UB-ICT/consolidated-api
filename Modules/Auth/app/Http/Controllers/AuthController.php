@@ -58,8 +58,21 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
-            // Revoke the token that was used to authenticate the current request
-            $request->user()->currentAccessToken()->delete();
+            // Check if user is authenticated
+            if (!$request->user()) {
+                return response([
+                    'success' => false,
+                    'message' => 'Not authenticated',
+                    'data' => null
+                ], 401);
+            }
+
+            // Revoke all tokens (logout from all devices)
+            $request->user()->tokens()->delete();
+
+            // Alternative: Revoke only the current token (logout from current device)
+            // $request->user()->currentAccessToken()->delete();
+
             $response = [
                 'success' => true,
                 'message' => 'Successfully logged out',

@@ -3,15 +3,12 @@
 namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Modules\UBForms\Models\HumanResources;
-use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FirestoreService;
 
 class HRStatistics extends Controller
 {
     //Initialize
-
     private function initializeReport(string $email)
     {
         $report = [
@@ -19,7 +16,7 @@ class HRStatistics extends Controller
             'academicYearID' => "2023-2024",
             'department' => "",
             'deadline' => "",
-            'numberOfStaff' => [ //From Github
+            'numberOfStaff' => [
                 'fulltimeFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
                 'adjunctFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
                 'nonTeachingStaff' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0]
