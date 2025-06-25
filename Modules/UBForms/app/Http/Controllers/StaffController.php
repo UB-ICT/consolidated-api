@@ -11,11 +11,18 @@ use App\Services\FirestoreService;
 class StaffController extends Controller
 {
 
+
     private function initializeReport(string $email)
     {
+        // n - A numeric representation of a month, without leading zeros (1 to 12)
+        // Y - A four digit representation of a year
+        $currentAcademicYear = date('n') >= 8 // August or later
+            ? date('Y') . '-' . (date('Y') + 1)
+            : (date('Y') - 1) . '-' . date('Y');
+
         $report = [
             'email' => $email,
-            'academicYearID' => "2023-2024",
+            'academicYearID' => $currentAcademicYear,
             'department' => "",
             'reportsTo' => "",
             'deadline' => "",
@@ -33,7 +40,7 @@ class StaffController extends Controller
         ];
 
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef('staff', $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef("staff/$email/$currentAcademicYear", $report);
         return [
             'data' => $report,
             'id' => $documentRef->id()
@@ -185,6 +192,8 @@ class StaffController extends Controller
     {
         try {
             $user = $request->user();
+
+
             $reports = FirestoreService::queryCollection('staff', 'email', '==', $user->email);
             if (!empty($reports)) {
                 // Assuming we want the first report if multiple exist
@@ -216,11 +225,11 @@ class StaffController extends Controller
         return response($response, 200);
     }
 
-    public function generateStaffPdf(Request $request, string $reportID)
+    public function generateStaffPdf(Request $request, string $email, string $academicYear, string $reportID)
     {
         try {
             $user = $request->user();
-            $report = FirestoreService::getDocument('staff', $reportID);
+            $report = FirestoreService::getDocument("staff", $reportID);
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }

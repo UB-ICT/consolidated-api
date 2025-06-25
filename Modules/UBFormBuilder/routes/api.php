@@ -24,7 +24,11 @@ Route::middleware(['auth:sanctum'])->prefix('v1/UBFormBuilder')->group(function 
     Route::put('/{id}', [FormBuilderController::class, 'update']);
     Route::delete('/{id}', [FormBuilderController::class, 'destroy']);
 
-     // Form builder specific routes
+    // Form builder specific routes
     Route::get('/{id}/builder', [FormBuilderController::class, 'getBuilderSchema']);
     Route::post('/{id}/builder', [FormBuilderController::class, 'saveBuilderSchema']);
+
+    // Form submission routes
+    Route::post('/{id}/submit', [FormBuilderController::class, 'submitForm']);
+    Route::get('/{id}/submissions', [FormBuilderController::class, 'getSubmissions']);
 });

@@ -115,4 +115,23 @@ class FirestoreService
         }
         return $documents;
     }
+
+    public static function getAcademicYearDocument(string $collection, string $email, string $academicYear, string $documentId): ?array
+    {
+
+        $documentId = null;
+        self::initializeFirestore();
+
+        $path = "$collection/$email/$academicYear";
+        $docRef = $documentId
+            ? self::$firestore->document("$path/$documentId")
+            : self::$firestore->collection($path)->newDocument();
+
+        if ($documentId) {
+            $snapshot = $docRef->snapshot();
+            return $snapshot->exists() ? $snapshot->data() : null;
+        }
+
+        return null;
+    }
 }
