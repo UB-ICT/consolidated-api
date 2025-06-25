@@ -14,11 +14,11 @@ class CheckUBFormsAccess
         // Get the authenticated user
         $user = $request->user();
 
-        $allowedUsers = ['james.faber@ub.edu.bz'];
-        // Check if user is authenticated and in the allowed list
-        if (!$user || !in_array($user->email, $allowedUsers)) {
-            return response()->json(['message' => 'Unauthorized access to UBForms'], 403);
-        }
+        #$allowedUsers = ['james.faber@ub.edu.bz', 'luis.herrera@ub.edu.bz'];
+        #// Check if user is authenticated and in the allowed list
+        #if (!$user || !in_array($user->email, $allowedUsers)) {
+        #    return response()->json(['message' => 'Unauthorized access to UBForms'], 403);
+        #}
         return $next($request);
     }
 }

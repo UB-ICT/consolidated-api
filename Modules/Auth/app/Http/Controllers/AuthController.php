@@ -59,4 +59,37 @@ class AuthController extends Controller
 
         return response($response, 200);
     }
+
+     public function logout(Request $request)
+    {
+        try {
+            // Check if user is authenticated
+            if (!$request->user()) {
+                return response([
+                    'success' => false,
+                    'message' => 'Not authenticated',
+                    'data' => null
+                ], 401);
+            }
+
+            // Revoke all tokens (logout from all devices)
+            $request->user()->tokens()->delete();
+
+            // Alternative: Revoke only the current token (logout from current device)
+            // $request->user()->currentAccessToken()->delete();
+
+            $response = [
+                'success' => true,
+                'message' => 'Successfully logged out',
+                'data' => null
+            ];
+        } catch (Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        return response($response, 200);
+    }
 }
