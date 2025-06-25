@@ -5,8 +5,6 @@ namespace Modules\Auth\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
-
-
 use Exception;
 
 class AuthController extends Controller
@@ -23,8 +21,10 @@ class AuthController extends Controller
                 'samaccountname' => $fields['username'],
                 'password' => $fields['password'],
             ];
-            if (Auth::validate($credentials)) {
-                $user = Auth::getLastAttempted();
+
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+
                 $token = $user->createToken($tempDeviceName)->plainTextToken;
                 $response = [
                     'success' => true,
