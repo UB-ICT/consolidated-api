@@ -58,7 +58,6 @@ class ReportController extends Controller
                     "reportType" => 'records',
                     "id" => $record['_id'] ?? $record['id'] ?? null,
                     "name" => $record['users']['name'] ?? $record['name'] ?? 'N/A',
-                    "test" => $record ?? 'N/A',
                     "formSubmitted" => $record['formSubmitted'] ?? []
                 ]);
             }
@@ -190,6 +189,110 @@ class ReportController extends Controller
             'data' => [
                 'academicYearID' => $academicYearID,
                 'report' => $report
+            ],
+        ];
+        return response()->json($response, 200);
+    }
+
+    public function getTotalFormSubmissionsByAcademicYear($reportTypes, $academicYearID)
+    {
+        $reportTypes = explode("-", $reportTypes);
+        $submissionCounts = [
+            'faculty' => 0,
+            'finance' => 0,
+            'human_resources' => 0,
+            'records' => 0,
+            'staff' => 0,
+            'total' => 0
+        ];
+
+        // Count Faculty form submissions
+        if (in_array('faculty', $reportTypes)) {
+            $facultyData = FirestoreService::queryCollection(
+                'faculties',
+                'academicYearID',
+                '==',
+                $academicYearID
+            );
+            foreach ($facultyData as $faculty) {
+                if (!empty($faculty['formSubmitted']) && $faculty['formSubmitted'] === true) {
+                    $submissionCounts['faculty']++;
+                    $submissionCounts['total']++;
+                }
+            }
+        }
+
+        // Count Finance form submissions
+        if (in_array('finance', $reportTypes)) {
+            $financeData = FirestoreService::queryCollection(
+                'FinanceStatistics',
+                'academicYearID',
+                '==',
+                $academicYearID
+            );
+            foreach ($financeData as $finance) {
+                if (!empty($finance['formSubmitted']) && $finance['formSubmitted'] === true) {
+                    $submissionCounts['finance']++;
+                    $submissionCounts['total']++;
+                }
+            }
+        }
+
+        // Count Human Resources form submissions
+        if (in_array('human_resources', $reportTypes)) {
+            $humanResourcesData = FirestoreService::queryCollection(
+                'HRStatistics',
+                'academicYearID',
+                '==',
+                $academicYearID
+            );
+            foreach ($humanResourcesData as $hr) {
+                if (!empty($hr['formSubmitted']) && $hr['formSubmitted'] === true) {
+                    $submissionCounts['human_resources']++;
+                    $submissionCounts['total']++;
+                }
+            }
+        }
+
+        // Count Records form submissions
+        if (in_array('records', $reportTypes)) {
+            $recordsData = FirestoreService::queryCollection(
+                'recordsStatistics',
+                'academicYearID',
+                '==',
+                $academicYearID
+            );
+            foreach ($recordsData as $record) {
+                if (!empty($record['formSubmitted']) && $record['formSubmitted'] === true) {
+                    $submissionCounts['records']++;
+                    $submissionCounts['total']++;
+                }
+            }
+        }
+
+        // Count Staff form submissions
+        if (in_array('staff', $reportTypes)) {
+            $staffData = FirestoreService::queryCollection(
+                'staff',
+                'academicYearID',
+                '==',
+                $academicYearID
+            );
+            foreach ($staffData as $staff) {
+                if (!empty($staff['formSubmitted']) && $staff['formSubmitted'] === true) {
+                    $submissionCounts['staff']++;
+                    $submissionCounts['total']++;
+                }
+            }
+        }
+
+        // Return the counts
+        $response = [
+            'success' => true,
+            'message' => 'Form submission counts by academic year retrieved.',
+            'data' => [
+                'academicYearID' => $academicYearID,
+                'counts' => $submissionCounts
             ],
         ];
         return response()->json($response, 200);
