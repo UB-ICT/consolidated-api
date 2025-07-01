@@ -134,4 +134,30 @@ class FirestoreService
 
         return null;
     }
+
+    //----------------------------------------------------------menu-----------------------------------------
+    public static function getMenuItems(): array
+    {
+        return self::getCollection('menus');
+    }
+
+    public static function createMenuItem(array $data): DocumentReference
+    {
+        return self::syncDocumentAndGetRef('menus', $data);
+    }
+
+    public static function updateMenuItem(string $id, array $data): bool
+    {
+        return self::updateDocument('menus', $id, $data);
+    }
+
+    public static function deleteMenuItem(string $id): bool
+    {
+        return self::deleteDocument('menus', $id);
+    }
+
+    public static function getActiveMenuItems(): array
+    {
+        return self::queryCollection('menus', 'is_active', '=', true);
+    }
 }

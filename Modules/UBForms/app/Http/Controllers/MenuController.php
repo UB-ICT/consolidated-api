@@ -9,13 +9,15 @@ class MenuController extends Controller
 {
     protected $database;
 
-
     public function index()
     {
-        $menus = $this->database->getReference('menus')->getValue();
-        return response()->json($menus ?: []);
+        try {
+            $menus = FirestoreService::getMenuItems();
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-
 
     public function store(Request $request)
     {
@@ -23,30 +25,63 @@ class MenuController extends Controller
             'name' => 'required|string|max:255',
             'path' => 'required|string|max:255',
             'icon' => 'nullable|string|max:255',
-            'order' => 'integer',
-            'is_active' => 'boolean'
+            'order' => 'integer|min:0',
+            'is_active' => 'boolean',
+            'permission' => 'nullable|string'
         ]);
-        $newMenu = $this->database->getReference('menus')->push($validated);
-        return response()->json(['id' => $newMenu->getKey(), ...$validated]);
+        try {
+            $documentRef = FirestoreService::createMenuItem($validated);
+            return response()->json([
+                'id' => $documentRef->id(),
+                ...$validated
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'name' => 'string|max:255',
-            'path' => 'string|max:255',
+            'name' => 'sometimes|string|max:255',
+            'path' => 'sometimes|string|max:255',
             'icon' => 'nullable|string|max:255',
-            'order' => 'integer',
-            'is_active' => 'boolean'
+            'order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
+            'permission' => 'nullable|string'
         ]);
-
-        $this->database->getReference('menus/' . $id)->update($validated);
-        return response()->json(['id' => $id, ...$validated]);
+        try {
+            $success = FirestoreService::updateMenuItem($id, $validated);
+            if ($success) {
+                return response()->json(['id' => $id, ...$validated]);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    public function destroy($id)
+    public function destroy(string $id)
     {
-        $this->database->getReference('menus/' . $id)->remove();
-        return response()->json(['message' => 'Menu deleted']);
+        try {
+            $success = FirestoreService::deleteMenuItem($id);
+            if ($success) {
+                return response()->json(['message' => 'Menu item deleted']);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function active()
+    {
+        try {
+            $menus = FirestoreService::getActiveMenuItems();
+            usort($menus, fn($a, $b) => $a['order'] <=> $b['order']);
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

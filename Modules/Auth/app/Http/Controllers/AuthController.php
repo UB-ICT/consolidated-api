@@ -66,13 +66,7 @@ class AuthController extends Controller
                     'data' => null
                 ], 401);
             }
-
-            // Revoke all tokens (logout from all devices)
             $request->user()->tokens()->delete();
-
-            // Alternative: Revoke only the current token (logout from current device)
-            // $request->user()->currentAccessToken()->delete();
-
             $response = [
                 'success' => true,
                 'message' => 'Successfully logged out',

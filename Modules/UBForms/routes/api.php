@@ -88,6 +88,8 @@ Route::group([
 
     /*Return list of Reports*/
     Route::get('/allReports/{reportTypes}', [ReportController::class, 'getReports']);
+    Route::get('reportsByAcademicYear/{reportTypes}/{academicYear}', [ReportController::class, 'getReportsByAcademicYear']);
+    Route::get('TotalFormSubmissionsByAcademicYear/{reportTypes}/{academicYear}', [ReportController::class, 'getTotalFormSubmissionsByAcademicYear']);
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
