@@ -58,7 +58,6 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
-            // Check if user is authenticated
             if (!$request->user()) {
                 return response([
                     'success' => false,
@@ -67,6 +66,7 @@ class AuthController extends Controller
                 ], 401);
             }
             $request->user()->tokens()->delete();
+<<<<<<< Updated upstream
             $response = [
                 'success' => true,
                 'message' => 'Successfully logged out',
@@ -100,6 +100,8 @@ class AuthController extends Controller
             // Alternative: Revoke only the current token (logout from current device)
             // $request->user()->currentAccessToken()->delete();
 
+=======
+>>>>>>> Stashed changes
             $response = [
                 'success' => true,
                 'message' => 'Successfully logged out',
