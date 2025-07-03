@@ -3,10 +3,9 @@
 namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Modules\UBForms\Models\Staff;
-use Modules\PublicSafety\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FirestoreService;
+ 
 
 class StaffController extends Controller
 {
