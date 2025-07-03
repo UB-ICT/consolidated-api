@@ -18,6 +18,6 @@ Route::group([], function () {
     Route::resource('auth', AuthController::class)->names('auth');
 });
 
-Route::get('/login', function () {
+Route::get('/v1/login', function () {
     return view('welcome');
 });
