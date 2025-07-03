@@ -70,8 +70,7 @@ class StaffController extends Controller
         }
         return response($response, 201);
     }
-
-
+    
     public function store(Request $request)
     {
         try {
@@ -225,7 +224,7 @@ class StaffController extends Controller
         return response($response, 200);
     }
 
-    public function generateStaffPdf(Request $request, string $email, string $academicYear, string $reportID)
+    public function generateStaffPdf(Request $request, string $reportID)
     {
         try {
             $user = $request->user();
