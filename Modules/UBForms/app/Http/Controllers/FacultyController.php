@@ -16,7 +16,7 @@ class FacultyController extends Controller
         $report = [
             'email' => $email,
             'name' => $name,
-            'academicYearID' => "2023-2024",
+            'academicYearID' => "",
             'faculty' => "",
             'units' => [],
             'deadline' => "",
@@ -70,24 +70,21 @@ class FacultyController extends Controller
         return response($response, 201);
     }
 
-    //Create 
-
+    //Create
     public function store(Request $request)
     {
         try {
             $data = $request->all();
-
             // Add timestamps
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-
             $documentRef = FirestoreService::syncDocumentAndGetRef('faculties', $data);
-
             $response = [
                 'success' => true,
                 'message' => "faculty Report Created Successfully",
                 'data' => [
                     'reportID' => $documentRef->id()
+
                 ]
             ];
         } catch (\Exception $e) {
@@ -139,16 +136,12 @@ class FacultyController extends Controller
     {
         try {
             $data = $request->all();
-
             if (!isset($data['id'])) {
                 throw new \Exception('Report ID is required');
             }
-
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-
             $success = FirestoreService::updateDocument('faculties', $data['id'], $data);
-
             if ($success) {
                 $response = [
                     'success' => true,

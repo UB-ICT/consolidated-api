@@ -17,9 +17,3 @@ use Modules\Auth\Http\Controllers\GoogleAuthController;
 
 Route::post('/v1/auth/login', [AuthController::class, 'login']);
 Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-
-Route::prefix('auth/google')->group(function () {
-    Route::get('redirect', [GoogleAuthController::class, 'redirect']);
-    Route::get('callback', [GoogleAuthController::class, 'callback']);
-    Route::post('logout', [GoogleAuthController::class, 'logout'])->middleware('auth:sanctum');
-});

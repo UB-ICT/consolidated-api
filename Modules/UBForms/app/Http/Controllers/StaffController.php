@@ -5,23 +5,18 @@ namespace Modules\UBForms\Http\Controllers;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FirestoreService;
- 
+
 
 class StaffController extends Controller
 {
 
 
-    private function initializeReport(string $email)
+    private function initializeReport(string $email, string $name)
     {
-        // n - A numeric representation of a month, without leading zeros (1 to 12)
-        // Y - A four digit representation of a year
-        $currentAcademicYear = date('n') >= 8 // August or later
-            ? date('Y') . '-' . (date('Y') + 1)
-            : (date('Y') - 1) . '-' . date('Y');
-
         $report = [
             'email' => $email,
-            'academicYearID' => $currentAcademicYear,
+            "name" => $name,
+            'academicYearID' => "",
             'department' => "",
             'reportsTo' => "",
             'deadline' => "",
@@ -39,7 +34,7 @@ class StaffController extends Controller
         ];
 
         // Store in Firestore and get document ID
-        $documentRef = FirestoreService::syncDocumentAndGetRef("staff/$email/$currentAcademicYear", $report);
+        $documentRef = FirestoreService::syncDocumentAndGetRef("staff", $report);
         return [
             'data' => $report,
             'id' => $documentRef->id()
@@ -51,7 +46,7 @@ class StaffController extends Controller
     {
         try {
             $user = $request->user();
-            $report = $this->initializeReport($user->email);
+            $report = $this->initializeReport($user->email, $user->name);
 
             $response = [
                 'success' => true,
@@ -69,7 +64,7 @@ class StaffController extends Controller
         }
         return response($response, 201);
     }
-    
+
     public function store(Request $request)
     {
         try {
@@ -83,7 +78,7 @@ class StaffController extends Controller
                 'message' => "Staff Report Created Successfully",
                 'data' => [
                     'reportID' => $documentRef->id(),
-                    'name' => $data['name'] ?? 'N/A',
+                    // 'name' => $data['name'] ?? 'N/A',
                 ]
             ];
         } catch (\Exception $e) {
@@ -204,7 +199,7 @@ class StaffController extends Controller
                     ]
                 ];
             } else {
-                $report = $this->initializeReport($user->email);
+                $report = $this->initializeReport($user->email, $user->name);
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
