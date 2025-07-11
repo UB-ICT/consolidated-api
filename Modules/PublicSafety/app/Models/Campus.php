@@ -5,7 +5,7 @@ namespace Modules\PublicSafety\Models;
 
 use Modules\PublicSafety\Models\Building;
 use Modules\PublicSafety\Models\IncidentReport;
-use Modules\PublicSafety\Models\User;
+use Modules\Auth\Models\User;
 use Modules\PublicSafety\Models\UserCampus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
