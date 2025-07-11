@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
+use Modules\Auth\Http\Controllers\GoogleAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,3 +22,13 @@ Route::group([], function () {
 Route::get('/v1/login', function () {
     return view('welcome');
 });
+
+// Route to redirect to Google's OAuth page
+Route::middleware(['web'])->group(function () {
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
+    // Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+});
+
+Route::middleware('auth:sanctum')->get('/api/user', [GoogleAuthController::class, 'getUserInfo']);
