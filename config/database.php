@@ -30,7 +30,6 @@ return [
     */
 
     'connections' => [
-
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('PGSQL_URL'),
@@ -52,6 +51,11 @@ return [
             'database' => env('MONGODB_DATABASE', 'testmongodb'),
         ],
 
+        'firestore' => [
+            'driver' => 'mongodb',
+            'dsn' => env('MONGODB_URI'),
+            'database' => env('MONGODB_DATABASE', 'testmongodb'),
+        ],
     ],
 
     /*
