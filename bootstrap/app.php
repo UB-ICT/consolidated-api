@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         //
         // $middleware->append(ForceJsonRequestHeader::class);
-        $middleware->append(Cors::class);
+        $middleware->prepend(Cors::class);
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
