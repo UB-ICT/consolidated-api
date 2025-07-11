@@ -36,6 +36,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+        
+        // Load services configuration
+        $this->app['config']->set('services.google', config('services.google', [])
+        );
     }
 
     /**
