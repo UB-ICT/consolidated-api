@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'credentials' => storage_path('app/json/anonymousSDK.json'),  // Path to your credentials
+    'firebase' => storage_path(env('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')),  // Path to your credentials
 ];
