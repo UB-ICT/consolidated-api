@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
+use Modules\Auth\Http\Controllers\GoogleAuthController;
 
 /*
  *--------------------------------------------------------------------------
@@ -15,6 +16,5 @@ use Modules\Auth\Http\Controllers\AuthController;
 */
 
 Route::post('/v1/auth/login', [AuthController::class, 'login']);
-
-
 Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/v1/user', [GoogleAuthController::class, 'getUserInfo'])->middleware('auth:sanctum');
