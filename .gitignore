@@ -20,3 +20,6 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
+firebase-credentials.json
+storage/app/google-service-account.json
+.env.local
