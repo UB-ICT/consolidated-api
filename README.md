@@ -118,3 +118,6 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 # UBPublicSafetyAdmindashboardBackend
 # backend
 # backend
+
+
+php artisan module:make-migration "add-google-id-to-users" Auth 
