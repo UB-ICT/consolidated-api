@@ -22,7 +22,7 @@
         "laravel/socialite": "^5.21",
         "laravel/tinker": "^2.9",
         "laravel/ui": "^4.6",
-        "mongodb/laravel-mongodb": "^5.5",
+        "mongodb/laravel-mongodb": "^5.5.0",
         "nwidart/laravel-modules": "^11.1",
         "php-open-source-saver/jwt-auth": "^2.7",
         "pusher/pusher-php-server": "*",

@@ -8,11 +8,9 @@ use Modules\Auth\Models\User;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Throwable;
 use Illuminate\Support\Facades\Log;
 use Google\Client as GoogleClient;
 use Google\Service\Directory as GoogleDirectory;
-use Google\Service\Directory\Resource\Members as GoogleMembers;
 use Exception;
 use App\Services\FirestoreService;
 

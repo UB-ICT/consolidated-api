@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\UBForms\Http\Controllers;
+use Illuminate\Http\Request;
 
 use App\Services\FirestoreService;
 
@@ -296,5 +297,9 @@ class ReportController extends Controller
             ],
         ];
         return response()->json($response, 200);
+    }
+
+    public function totalVisit(Request $request) {
+
     }
 }
