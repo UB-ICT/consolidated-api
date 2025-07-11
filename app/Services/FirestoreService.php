@@ -8,7 +8,9 @@ namespace App\Services;
 use Google\Cloud\Firestore\FirestoreClient;
 use Google\Cloud\Firestore\DocumentReference;
 
-use App\Jobs\SyncToFirestoreJob;
+// use App\Jobs\SyncToFirestoreJob;
+// use GPBMetadata\Google\Api\Log;
+use Illuminate\Support\Facades\Log;
 
 class FirestoreService
 {
@@ -22,7 +24,7 @@ class FirestoreService
         if (is_null(self::$firestore)) {
             self::$firestore = new FirestoreClient([
                 'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
-                'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS'))
+                'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS_PATH'))
             ]);
         }
     }

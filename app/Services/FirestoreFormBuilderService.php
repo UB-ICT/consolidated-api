@@ -15,7 +15,7 @@ class FirestoreFormBuilderService
         if (is_null(self::$firestore)) {
             self::$firestore = new FirestoreClient([
                 'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
-                'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS'))
+                'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS_PATH'))
             ]);
         }
     }
