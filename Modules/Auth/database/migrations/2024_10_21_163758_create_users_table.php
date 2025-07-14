@@ -18,9 +18,6 @@ return new class extends Migration {
             $table->string('domain')->default('ub.edu.bz');
             $table->string('password')->nullable();
             $table->string('profile_picture')->nullable();
-            $table->string('google_id')->nullable();
-            $table->dateTime('email_verified_at')->default(now());
-            $table->rememberToken();
             $table->integer('menu_id')->nullable();
 
             // Changed to unsignedBigInteger for consistency
