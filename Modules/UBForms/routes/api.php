@@ -21,6 +21,7 @@ use Modules\UBForms\Http\Controllers\MenuController;
  */
 
 //This will be the only unprotected route because this is used for authentication
+Route::get('/staffInitializeReport/{email}/{name}', [StaffController::class, 'initializeReport']);
 
 
 
@@ -35,6 +36,9 @@ Route::group([
     Route::post('/recordsInitialize', [RecordsStatistics::class, 'initialize']); //This route should get the data that is passed in the UI 
     Route::post('/HRInitialize', [HRStatistics::class, 'initialize']); //This route should get the data that is passed in the UI 
     Route::post('/financeInitialize', [FinanceStatistics::class, 'initialize']); //This route should get the data that is passed in the UI 
+
+    //This route should get the data that is passed in the UI
+
 
     //Create
     Route::post('/facultyReport', [FacultyController::class, 'store']); //This route should get the data that is passed in the UI 

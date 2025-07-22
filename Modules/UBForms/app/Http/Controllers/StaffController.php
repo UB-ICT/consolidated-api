@@ -9,14 +9,27 @@ use App\Services\FirestoreService;
 
 class StaffController extends Controller
 {
-
-
-    private function initializeReport(string $email, string $name)
+    public function initializeReport(string $email, string $name)
     {
+
+        //get the default academic year from settings from firestore
+        $settingsSnapshot = FirestoreService::getDocument('settings', '1pnMGp8R82EeHPsq2vkL');
+
+        $defaultAcademicYear = '';
+        if ($settingsSnapshot && isset($settingsSnapshot['defaultAcademicYear'])) {
+            $defaultAcademicYear = $settingsSnapshot['defaultAcademicYear'];
+            // Check if the academic year is set to 2024-2025
+            if ($defaultAcademicYear !== '2024-2025') {
+                throw new \Exception("The default academic year is not set to 2024-2025. Current value: " . $defaultAcademicYear);
+            }
+        } else {
+            throw new \Exception("Default academic year is not configured in settings");
+        }
+
         $report = [
             'email' => $email,
             "name" => $name,
-            'academicYearID' => "",
+            'academicYearID' => $defaultAcademicYear,
             'department' => "",
             'reportsTo' => "",
             'deadline' => "",
