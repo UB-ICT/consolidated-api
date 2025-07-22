@@ -23,3 +23,6 @@ yarn-error.log
 firebase-credentials.json
 storage/app/google-service-account.json
 .env.local
+
+.DS_Store
+**/**/.DS_Store

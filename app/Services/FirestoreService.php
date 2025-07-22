@@ -29,6 +29,12 @@ class FirestoreService
         }
     }
 
+    public static function firestore()
+    {
+        self::initializeFirestore();
+        return self::$firestore;
+    }
+
     public static function getCollection(string $collectionName): array
     {
         self::initializeFirestore();

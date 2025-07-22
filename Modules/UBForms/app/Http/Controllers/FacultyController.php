@@ -6,17 +6,18 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Log;
 
 class FacultyController extends Controller
 {
     //Initialize 
 
-    private function initializeReport(string $email, string $name)
+    private function initializeReport(string $email, string $name, string $academicYearID)
     {
         $report = [
             'email' => $email,
             'name' => $name,
-            'academicYearID' => "",
+            'academicYearID' => $academicYearID,
             'faculty' => "",
             'units' => [],
             'deadline' => "",
@@ -40,35 +41,46 @@ class FacultyController extends Controller
             'formSubmitted' => false,
             'otherComments' => "",
         ];
+
+        $reports = FirestoreService::queryCollection('faculties', 'email', '==', $email);            
+            // Then filter by academic year
+        $filteredReports = array_filter($reports, function($report) use ($academicYearID) {
+            return isset($report['academicYearID']) && $report['academicYearID'] === $academicYearID;
+        });
+
+        if (!empty($filteredReports)) {
+            return $filteredReports[0];
+        }
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('faculties', $report);
-        return [
-            'data' => $report,
-            'id' => $documentRef->id()
-        ];
+        return array_merge($report, ['id' => $documentRef->id()]);
+        // return [
+        //     'data' => $report,
+        //     'id' => $documentRef->id()
+        // ];
     }
 
-    public function initialize(Request $request)
-    {
-        try {
-            $user = $request->user(); //Adding this in the event things need to be validated later on  
-            $report = $this->initializeReport($user->email, $user->name);
-            $response = [
-                'success' => true,
-                'message' => "Initialization Successful",
-                'data' => [
-                    'reportID' => $report['id']
-                ],
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-        return response($response, 201);
-    }
+    // public function initialize(Request $request)
+    // {
+    //     try {
+    //         $user = $request->user(); //Adding this in the event things need to be validated later on  
+    //         $report = $this->initializeReport($user->email, $user->name);
+    //         $response = [
+    //             'success' => true,
+    //             'message' => "Initialization Successful",
+    //             'data' => [
+    //                 'reportID' => $report['id']
+    //             ],
+    //         ];
+    //     } catch (\Exception $e) {
+    //         $response = [
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //             'data' => null,
+    //         ];
+    //     }
+    //     return response($response, 201);
+    // }
 
     //Create
     public function store(Request $request)
@@ -202,28 +214,45 @@ class FacultyController extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('faculties', 'email', '==', $user->email);
+            $settings = FirestoreService::getCollection('settings');
+            
+            // Get default academic year from first document in settings collection
+            $defaultAcademicYear = ""; // fallback default
+            if (!empty($settings)) {
+                $firstSetting = $settings[0];
+                if (isset($firstSetting['defaultAcademicYear'])) {
+                    $defaultAcademicYear = $firstSetting['defaultAcademicYear'];
+                }
+            }
 
-            if (!empty($reports)) {
-                // Assuming we want the first report if multiple exist
-                $report = $reports[0];
+            if ($defaultAcademicYear == "") {
+                $response = [
+                    'success' => false,
+                    'message' => "Default Academic Year not found",
+                    'data' => null
+                ];
+                return response($response, 500);
+            }
+            
+            $documents = FirestoreService::getCollection('faculties');
+            $filteredDocuments = array_filter($documents, function($document) use ($user, $defaultAcademicYear) {
+                return isset($document['email']) && $document['email'] === $user->email && isset($document['academicYearID']) && $document['academicYearID'] === $defaultAcademicYear;
+            });
 
+            if (!empty($filteredDocuments)) {
+                $report = array_values($filteredDocuments)[0]; // Get first record
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
-                    'data' => [
-                        'report' => $report
-                    ]
+                    'data' => $report
                 ];
             } else {
-                $report = $this->initializeReport($user->email, $user->name);
-
+                $report = $this->initializeReport($user->email, $user->name, $defaultAcademicYear);
+                
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
-                    'data' => [
-                        'report' => $report
-                    ],
+                    'data' => $report
                 ];
             }
         } catch (\Exception $e) {
