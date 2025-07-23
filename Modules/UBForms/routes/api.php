@@ -37,9 +37,6 @@ Route::group([
     Route::post('/HRInitialize', [HRStatistics::class, 'initialize']); //This route should get the data that is passed in the UI 
     Route::post('/financeInitialize', [FinanceStatistics::class, 'initialize']); //This route should get the data that is passed in the UI 
 
-    //This route should get the data that is passed in the UI
-
-
     //Create
     Route::post('/facultyReport', [FacultyController::class, 'store']); //This route should get the data that is passed in the UI 
     Route::post('/staffReport', [StaffController::class, 'store']); //This route should get the data that is passed in the UI 

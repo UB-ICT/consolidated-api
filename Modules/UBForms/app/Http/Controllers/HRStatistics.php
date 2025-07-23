@@ -9,25 +9,13 @@ use App\Services\FirestoreService;
 class HRStatistics extends Controller
 {
     //Initialize
-    private function initializeReport(string $email)
+    private function initializeReport(string $email, string $name, string $academicYearID)
     {
 
-        //get the default academic year from settings from firestore
-        $settingsSnapshot = FirestoreService::getDocument('settings', '1pnMGp8R82EeHPsq2vkL');
-
-        $defaultAcademicYear = '';
-        if ($settingsSnapshot && isset($settingsSnapshot['defaultAcademicYear'])) {
-            $defaultAcademicYear = $settingsSnapshot['defaultAcademicYear'];
-            // Check if the academic year is set to 2024-2025
-            if ($defaultAcademicYear !== '2024-2025') {
-                throw new \Exception("The default academic year is not set to 2024-2025. Current value: " . $defaultAcademicYear);
-            }
-        } else {
-            throw new \Exception("Default academic year is not configured in settings");
-        }
         $report = [
             'email' => $email,
-            'academicYearID' => $defaultAcademicYear,
+            'name' => $name,
+            'academicYearID' => $academicYearID,
             'department' => "",
             'deadline' => "",
             'numberOfStaff' => [
@@ -37,35 +25,19 @@ class HRStatistics extends Controller
             ],
             'formSubmitted' => false,
         ];
+
+        $reports = FirestoreService::queryCollection('HRStatistics', 'email', '==', $email);
+        // Then filter by academic year
+        $filteredReports = array_filter($reports, function ($report) use ($academicYearID) {
+            return isset($report['academicYearID']) && $report['academicYearID'] === $academicYearID;
+        });
+
+        if (!empty($filteredReports)) {
+            return $filteredReports[0];
+        }
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('HRStatistics', $report);
-        return [
-            'data' => $report,
-            'id' => $documentRef->id()
-        ];
-    }
-
-    public function initialize(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $report = $this->initializeReport($user->email);
-
-            $response = [
-                'success' => true,
-                'message' => "Initialization Successful",
-                'data' => [
-                    'reportID' => $report['id']
-                ],
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-        return response($response, 201);
+        return array_merge($report, ['id' => $documentRef->id()]);
     }
 
     //Create function doesn't pass the user email
@@ -194,25 +166,44 @@ class HRStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('HRStatistics', 'email', '==', $user->email);
-            if (!empty($reports)) {
-                $report = $reports[0];
+            $settings = FirestoreService::getCollection('settings');
+
+            // Get default academic year from first document in settings collection
+            $defaultAcademicYear = ""; // fallback default
+            if (!empty($settings)) {
+                $firstSetting = $settings[0];
+                if (isset($firstSetting['defaultAcademicYear'])) {
+                    $defaultAcademicYear = $firstSetting['defaultAcademicYear'];
+                }
+            }
+
+            if ($defaultAcademicYear == "") {
+                $response = [
+                    'success' => false,
+                    'message' => "Default Academic Year not found",
+                    'data' => null
+                ];
+                return response($response, 500);
+            }
+            $documents = FirestoreService::getCollection('HRStatistics');
+            $filteredDocuments = array_filter($documents, function ($document) use ($user, $defaultAcademicYear) {
+                return isset($document['email']) && $document['email'] === $user->email && isset($document['academicYearID']) && $document['academicYearID'] === $defaultAcademicYear;
+            });
+
+            if (!empty($filteredDocuments)) {
+                $report = array_values($filteredDocuments)[0]; // Get first record
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
-                    'data' => [
-                        'report' => $report
-                    ]
+                    'data' => $report
                 ];
             } else {
-                $report = $this->initializeReport($user->email);
+                $report = $this->initializeReport($user->email, $user->name, $defaultAcademicYear);
 
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
-                    'data' => [
-                        'report' => $report
-                    ],
+                    'data' => $report
                 ];
             }
         } catch (\Exception $e) {

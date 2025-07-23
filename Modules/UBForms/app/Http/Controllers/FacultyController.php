@@ -14,21 +14,6 @@ class FacultyController extends Controller
 
     private function initializeReport(string $email, string $name, string $academicYearID)
     {
-
-        //get the default academic year from settings from firestore
-        $settingsSnapshot = FirestoreService::getDocument('settings', '1pnMGp8R82EeHPsq2vkL');
-
-        $defaultAcademicYear = '';
-        if ($settingsSnapshot && isset($settingsSnapshot['defaultAcademicYear'])) {
-            $defaultAcademicYear = $settingsSnapshot['defaultAcademicYear'];
-            // Check if the academic year is set to 2024-2025
-            if ($defaultAcademicYear !== '2024-2025') {
-                throw new \Exception("The default academic year is not set to 2024-2025. Current value: " . $defaultAcademicYear);
-            }
-        } else {
-            throw new \Exception("Default academic year is not configured in settings");
-        }
-
         $report = [
             'email' => $email,
             'name' => $name,
@@ -57,9 +42,9 @@ class FacultyController extends Controller
             'otherComments' => "",
         ];
 
-        $reports = FirestoreService::queryCollection('faculties', 'email', '==', $email);            
-            // Then filter by academic year
-        $filteredReports = array_filter($reports, function($report) use ($academicYearID) {
+        $reports = FirestoreService::queryCollection('faculties', 'email', '==', $email);
+        // Then filter by academic year
+        $filteredReports = array_filter($reports, function ($report) use ($academicYearID) {
             return isset($report['academicYearID']) && $report['academicYearID'] === $academicYearID;
         });
 
@@ -69,33 +54,7 @@ class FacultyController extends Controller
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('faculties', $report);
         return array_merge($report, ['id' => $documentRef->id()]);
-        // return [
-        //     'data' => $report,
-        //     'id' => $documentRef->id()
-        // ];
     }
-
-    // public function initialize(Request $request)
-    // {
-    //     try {
-    //         $user = $request->user(); //Adding this in the event things need to be validated later on  
-    //         $report = $this->initializeReport($user->email, $user->name);
-    //         $response = [
-    //             'success' => true,
-    //             'message' => "Initialization Successful",
-    //             'data' => [
-    //                 'reportID' => $report['id']
-    //             ],
-    //         ];
-    //     } catch (\Exception $e) {
-    //         $response = [
-    //             'success' => false,
-    //             'message' => $e->getMessage(),
-    //             'data' => null,
-    //         ];
-    //     }
-    //     return response($response, 201);
-    // }
 
     //Create
     public function store(Request $request)
@@ -111,7 +70,6 @@ class FacultyController extends Controller
                 'message' => "faculty Report Created Successfully",
                 'data' => [
                     'reportID' => $documentRef->id()
-
                 ]
             ];
         } catch (\Exception $e) {
@@ -126,7 +84,6 @@ class FacultyController extends Controller
     }
 
     //Read 
-
     public function getReport(Request $request, string $reportID)
     {
         try {
@@ -158,7 +115,6 @@ class FacultyController extends Controller
     }
 
     //Update
-
     public function updateReport(Request $request)
     {
         try {
@@ -194,7 +150,6 @@ class FacultyController extends Controller
     }
 
     //Delete
-
     public function delReport(Request $request)
     {
         try {
@@ -230,7 +185,7 @@ class FacultyController extends Controller
         try {
             $user = $request->user();
             $settings = FirestoreService::getCollection('settings');
-            
+
             // Get default academic year from first document in settings collection
             $defaultAcademicYear = ""; // fallback default
             if (!empty($settings)) {
@@ -248,9 +203,9 @@ class FacultyController extends Controller
                 ];
                 return response($response, 500);
             }
-            
+
             $documents = FirestoreService::getCollection('faculties');
-            $filteredDocuments = array_filter($documents, function($document) use ($user, $defaultAcademicYear) {
+            $filteredDocuments = array_filter($documents, function ($document) use ($user, $defaultAcademicYear) {
                 return isset($document['email']) && $document['email'] === $user->email && isset($document['academicYearID']) && $document['academicYearID'] === $defaultAcademicYear;
             });
 
@@ -263,7 +218,7 @@ class FacultyController extends Controller
                 ];
             } else {
                 $report = $this->initializeReport($user->email, $user->name, $defaultAcademicYear);
-                
+
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',

@@ -11,53 +11,30 @@ use Illuminate\Support\Facades\Log;
 
 class RecordsStatistics extends Controller
 {
-    private function initializeReport(string $email)
+    private function initializeReport(string $email, string $name, string $academicYearID)
     {
-
-        //get the default academic year from settings from firestore
-        $settingsSnapshot = FirestoreService::getDocument('settings', '1pnMGp8R82EeHPsq2vkL');
-
-        $defaultAcademicYear = '';
-        if ($settingsSnapshot && isset($settingsSnapshot['defaultAcademicYear'])) {
-            $defaultAcademicYear = $settingsSnapshot['defaultAcademicYear'];
-            // Check if the academic year is set to 2024-2025
-            if ($defaultAcademicYear !== '2024-2025') {
-                throw new \Exception("The default academic year is not set to 2024-2025. Current value: " . $defaultAcademicYear);
-            }
-        } else {
-            throw new \Exception("Default academic year is not configured in settings");
-        }
-
         $report = [
             'email' => $email,
-            'academicYearID' => $defaultAcademicYear,
+            'name' => $name,
+            'academicYearID' => $academicYearID,
             'department' => "",
             'deadline' => "",
             'currentStudentEnrollmentTrend' => ['associates' => 0, 'undergraduate' => 0, 'graduate' => 0, 'Total' => 0],
             'studentEnrollmentTrend' => array(
-                ['academicYear' => '2021/2022', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
                 ['academicYear' => '2022/2023', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
                 ['academicYear' => '2023/2024', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
+                ['academicYear' => '2024/2025', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
             ),
             'enrollmentTrendPerFaculty' => array(
-                ['academicYear' => '2021/2022', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
                 ['academicYear' => '2022/2023', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
                 ['academicYear' => '2023/2024', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2024/2025', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
             ),
             'graduationStatistics' => array(
                 [
-                    'academicYear' => "2021/2022",
-                    'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0], //A little ocd about this part but its okay
-                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                    )
-                ],
-                [
                     'academicYear' => "2022/2023",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0], //A little ocd about this part but its okay
                         ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                         ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                         ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
@@ -71,6 +48,15 @@ class RecordsStatistics extends Controller
                         ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                         ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
                     )
+                ],
+                [
+                    'academicYear' => "2024/2025",
+                    'faculties' => array(
+                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                    )
                 ]
             ),
             'studentOrigin' => ['Belize' => 0, 'CentralAmericanCountries' => 0, 'OtherCountries' => 0], //7.Origin of Students 
@@ -78,39 +64,22 @@ class RecordsStatistics extends Controller
             'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0],//5 and 6 merged into one
             'formSubmitted' => false,
         ];
+
+        $reports = FirestoreService::queryCollection('recordsStatistics', 'email', '==', $email);
+        // Then filter by academic year
+        $filteredReports = array_filter($reports, function ($report) use ($academicYearID) {
+            return isset($report['academicYearID']) && $report['academicYearID'] === $academicYearID;
+        });
+
+        if (!empty($filteredReports)) {
+            return $filteredReports[0];
+        }
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('recordsStatistics', $report);
-
-        return [
-            'data' => $report,
-            'id' => $documentRef->id()
-        ];
-    }
-
-    public function initialize(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $report = $this->initializeReport($user->email);
-            $response = [
-                'success' => true,
-                'message' => "Initialization Successfull",
-                'data' => [
-                    'reportID' => $report['id']
-                ],
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-        return response($response, 201);
+        return array_merge($report, ['id' => $documentRef->id()]);
     }
 
     //Create
-
     public function store(Request $request)
     {
 
@@ -300,27 +269,45 @@ class RecordsStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('recordsStatistics', 'email', '==', $user->email);
-            if (!empty($reports)) {
-                // Assuming we want the first report if multiple exist
-                $report = $reports[0];
+            $settings = FirestoreService::getCollection('settings');
 
+            // Get default academic year from first document in settings collection
+            $defaultAcademicYear = ""; // fallback default
+            if (!empty($settings)) {
+                $firstSetting = $settings[0];
+                if (isset($firstSetting['defaultAcademicYear'])) {
+                    $defaultAcademicYear = $firstSetting['defaultAcademicYear'];
+                }
+            }
+
+            if ($defaultAcademicYear == "") {
+                $response = [
+                    'success' => false,
+                    'message' => "Default Academic Year not found",
+                    'data' => null
+                ];
+                return response($response, 500);
+            }
+
+            $documents = FirestoreService::getCollection('recordsStatistics');
+            $filteredDocuments = array_filter($documents, function ($document) use ($user, $defaultAcademicYear) {
+                return isset($document['email']) && $document['email'] === $user->email && isset($document['academicYearID']) && $document['academicYearID'] === $defaultAcademicYear;
+            });
+
+            if (!empty($filteredDocuments)) {
+                $report = array_values($filteredDocuments)[0]; // Get first record
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
-                    'data' => [
-                        'report' => $report
-                    ]
+                    'data' => $report
                 ];
             } else {
-                $report = $this->initializeReport($user->email);
+                $report = $this->initializeReport($user->email, $user->name, $defaultAcademicYear);
 
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
-                    'data' => [
-                        'report' => $report
-                    ],
+                    'data' => $report
                 ];
             }
         } catch (\Exception $e) {
