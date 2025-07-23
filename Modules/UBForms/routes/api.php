@@ -21,6 +21,7 @@ use Modules\UBForms\Http\Controllers\MenuController;
  */
 
 //This will be the only unprotected route because this is used for authentication
+Route::get('/staffInitializeReport/{email}/{name}', [StaffController::class, 'initializeReport']);
 
 
 

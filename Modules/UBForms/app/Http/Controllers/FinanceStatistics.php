@@ -12,12 +12,12 @@ class FinanceStatistics extends Controller
 {
     //Initialize 
 
-    private function initializeReport(string $email)
+    private function initializeReport(string $email, string $name, string $academicYearID)
     {
-        $report = [ 
+        $report = [
             'email' => $email,
-            'name' => User::where('email', $email)->value('name') ?? 'Unknown User',
-            'academicYearID' => "2023-2024",
+            'name' => $name,
+            'academicYearID' => $academicYearID,
             'department' => "",
             'deadline' => "",
             'income' => ['fundingFromGoB' => 0, 'tuitionFees' => 0, 'contracts' => 0, 'researchGrants' => 0, 'endowmentAndInvestmentIncome' => 0, 'other' => 0, 'total' => 0],
@@ -25,35 +25,20 @@ class FinanceStatistics extends Controller
             'investments' => ['projectInvestment1' => 0, 'projectInvestment2' => 0, 'projectInvestment3' => 0],
             'formSubmitted' => false,
         ];
+
+        $reports = FirestoreService::queryCollection('FinanceStatistics', 'email', '==', $email);
+        // Then filter by academic year
+        $filteredReports = array_filter($reports, function ($report) use ($academicYearID) {
+            return isset($report['academicYearID']) && $report['academicYearID'] === $academicYearID;
+        });
+
+        if (!empty($filteredReports)) {
+            return $filteredReports[0];
+        }
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('FinanceStatistics', $report);
-        return [
-            'data' => $report,
-            'id' => $documentRef->id()
-        ];
-    }
+        return array_merge($report, ['id' => $documentRef->id()]);
 
-    public function initialize(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $report = $this->initializeReport($user->email);
-            $response = [
-                'success' => true,
-                'message' => "Initialization Successfull",
-                'data' => [
-                    'reportID' => $report['id']
-                ],
-            ];
-        } catch (\Exception $e) {
-            // If an error occurs, create an error response
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-        return response($response, 201);
     }
 
     //Create 
@@ -178,25 +163,45 @@ class FinanceStatistics extends Controller
     {
         try {
             $user = $request->user();
-            $reports = FirestoreService::queryCollection('FinanceStatistics', 'email', '==', $user->email);
-            if (!empty($reports)) {
-                // Assuming we want the first report if multiple exist
-                $report = $reports[0];
+            $settings = FirestoreService::getCollection('settings');
+
+            // Get default academic year from first document in settings collection
+            $defaultAcademicYear = ""; // fallback default
+            if (!empty($settings)) {
+                $firstSetting = $settings[0];
+                if (isset($firstSetting['defaultAcademicYear'])) {
+                    $defaultAcademicYear = $firstSetting['defaultAcademicYear'];
+                }
+            }
+
+            if ($defaultAcademicYear == "") {
+                $response = [
+                    'success' => false,
+                    'message' => "Default Academic Year not found",
+                    'data' => null
+                ];
+                return response($response, 500);
+            }
+
+            $documents = FirestoreService::getCollection('FinanceStatistics');
+            $filteredDocuments = array_filter($documents, function ($document) use ($user, $defaultAcademicYear) {
+                return isset($document['email']) && $document['email'] === $user->email && isset($document['academicYearID']) && $document['academicYearID'] === $defaultAcademicYear;
+            });
+
+            if (!empty($filteredDocuments)) {
+                $report = array_values($filteredDocuments)[0]; // Get first record
                 $response = [
                     'success' => true,
                     'message' => 'Report data found successfully',
-                    'data' => [
-                        'report' => $report
-                    ]
+                    'data' => $report
                 ];
             } else {
-                $report = $this->initializeReport($user->email);
+                $report = $this->initializeReport($user->email, $user->name, $defaultAcademicYear);
+
                 $response = [
                     'success' => true,
                     'message' => 'Report Initialized.',
-                    'data' => [
-                        'report' => $report
-                    ],
+                    'data' => $report
                 ];
             }
         } catch (\Exception $e) {
