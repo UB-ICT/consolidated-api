@@ -98,7 +98,7 @@ class StaffController extends Controller
         }
         return response($response, 200);
     }
-
+ 
     public function updateReport(Request $request)
     {
         try {
