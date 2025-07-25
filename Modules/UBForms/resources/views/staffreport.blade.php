@@ -34,8 +34,6 @@
                 <b>Report By: </b>{{ $report['name'] ?? 'N/A' }}
             </div>
             <br>
-            <!-- <div> -->
-            <!-- <b>Reports To:</b> {{ $report['reportsTo'] }} -->
     </div>
     </section>
 
