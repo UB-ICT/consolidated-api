@@ -4,6 +4,7 @@ namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Facade\Log;
 
 /*
 
@@ -47,7 +48,6 @@ class FileUploadsController extends Controller
                 'message' => 'File uploaded successfully',
                 'data' => $result
             ];
-
         } catch (\Exception $e) {
             // Exception occurred
             $response = [
@@ -64,28 +64,38 @@ class FileUploadsController extends Controller
     public function uploadEventPhoto(Request $request)
     {
         try {
-            # return response($request, 200);
-            $result = array();
-            if ($files = $request->file('file')) {
-                foreach ($files as $file) {
-                    $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
-                    $file->storeAs('uploads/photos', $fileName);
+            $result = [];
 
-                    array_push($result, ["generated_name" => $fileName, "original_name" => $file->getClientOriginalName()]);
+            if ($request->hasFile('file')) {
+                $files = $request->file('file');
+
+                if (!is_array($files)) {
+                    $files = [$files];
+                }
+
+                foreach ($files as $file) {
+                    if ($file->isValid()) {
+                        $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
+                        $file->storeAs('uploads/photos', $fileName);
+
+                        // Generate a public URL for the file
+                        $fileUrl = asset('storage/uploads/photos/' . $fileName);
+
+                        $result[] = [
+                            "generated_name" => $fileName,
+                            "original_name" => $file->getClientOriginalName(),
+                            "url" => $fileUrl
+                        ];
+                    }
                 }
             }
-            #$file = $request->file('file');
 
-            //Implementing it this way returns information that might be usefull not sure what the full usecase for this would be
-            //Saving to the report data
             $response = [
                 'success' => true,
                 'message' => 'File uploaded successfully',
                 'data' => $result
             ];
-
         } catch (\Exception $e) {
-            // Exception occurred
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -93,7 +103,7 @@ class FileUploadsController extends Controller
             ];
         }
 
-        return response($response, 200);
+        return response()->json($response, 200);
     }
 
 
@@ -124,4 +134,3 @@ class FileUploadsController extends Controller
         return response($response, 200);
     }
 }
-

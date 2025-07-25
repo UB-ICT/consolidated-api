@@ -213,8 +213,8 @@
         <div class="header">
             <div class="header-content">
                 <div class="header-logo">
-                    <img src="{{public_path('./../../ub-api/Modules/UBForms/public/images/UB-Logo.png')}}"
-                        alt="University Logo">
+                    <!-- <img src="{{public_path('./../../ub-api/Modules/UBForms/public/images/UB-Logo.png')}}"
+                        alt="University Logo"> -->
                 </div>
                 <div class="header-text">
                     <h1>University of Belize Annual Report</h1>
