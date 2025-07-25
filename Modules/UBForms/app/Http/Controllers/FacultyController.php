@@ -27,7 +27,6 @@ class FacultyController extends Controller
             'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'mostImpactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
             'revisedAcademics' => ['programsOffered' => '', 'newProgrammesAdded' => '', 'revisedPrograms' => ''],
-            'academicPrograms' => "",
             'courses' => ['totalNewCourses' => '', 'totalCoursesOnline' => '', 'totalCourseFaceToFace' => ''],
             'eliminatedAcademicPrograms' => "",
             'retentionOfStudents' => ['currentStudents' => '', 'transferStudents' => ''],

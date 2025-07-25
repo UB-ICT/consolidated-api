@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Annual Report PDF</title>
+    <title>Finance Report PDF</title>
     <!-- <link rel="stylesheet" href="{{ public_path('./../../ub-api/Modules/UBForms/public/css/financeStyle.css') }}"> -->
     <style>
         /* Basic Reset */
@@ -218,7 +218,7 @@
                 </div>
                 <div class="header-text">
                     <h1>University of Belize Annual Report</h1>
-                    <p class="academic-year">Academic Year 2024-2025</p>
+                    <p class="academic-year">Academic Year: {{$report['academicYearID']}}</p>
                 </div>
             </div>
         </div>
