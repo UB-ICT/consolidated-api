@@ -151,7 +151,7 @@
         <section class="content">
             <h2>Report Details</h2>
             <div>
-                <b>Report By: </b>{{ $user['name'] }}
+                <b>Report By: </b>{{ $report['name'] }}
             </div>
             <br>
             <div>

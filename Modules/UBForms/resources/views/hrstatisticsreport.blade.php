@@ -31,7 +31,7 @@
             </div>
             <br>
             <div>
-                <b>Report By: </b>{{ $user->name }}
+                <b>Report By: </b>{{ $report['name'] }}
             </div>
         </section>
 
