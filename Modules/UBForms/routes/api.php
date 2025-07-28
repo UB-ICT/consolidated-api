@@ -71,7 +71,7 @@ Route::group([
     Route::delete('/financeReport', [FinanceStatistics::class, 'delReport']);
 
     //Upload files
-    Route::post('/uploadPhoto', [FileUploadsController::class, 'uploadEventPhoto']); //This route should get the data that is passed in the UI 
+    Route::post('/uploadPhoto/{reportID}/{eventID}', [FileUploadsController::class, 'uploadEventPhoto']); //This route should get the data that is passed in the UI 
     Route::post('/uploadMeetings', [FileUploadsController::class, 'uploadMeetingMinutes']); //This route should get the data that is passed in the UI 
 
     /*Download files
