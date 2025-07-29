@@ -4,6 +4,11 @@ namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+// use Illuminate\Facade\Log;
+use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Log;
+use exception;
+
 
 /*
 
@@ -47,7 +52,6 @@ class FileUploadsController extends Controller
                 'message' => 'File uploaded successfully',
                 'data' => $result
             ];
-
         } catch (\Exception $e) {
             // Exception occurred
             $response = [
@@ -60,41 +64,58 @@ class FileUploadsController extends Controller
         return response($response, 200);
     }
 
+    public function uploadEventPhoto(Request $request, string $reportId, int $eventId)
+{
+    try {
+        $result = [];
+        // Validate required parameters
+        if (!$reportId) {
+            throw new \Exception('Report ID required');
+        }
 
-    public function uploadEventPhoto(Request $request)
-    {
-        try {
-            # return response($request, 200);
-            $result = array();
-            if ($files = $request->file('file')) {
-                foreach ($files as $file) {
-                    $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
-                    $file->storeAs('uploads/photos', $fileName);
+        if ($eventId === null) {
+            throw new \Exception('Event ID is required');
+        }
 
-                    array_push($result, ["generated_name" => $fileName, "original_name" => $file->getClientOriginalName()]);
-                }
+        if (!$request->hasFile('file')) {
+            throw new \Exception('No files were uploaded');
+        }
+
+        $files = $request->file('file');
+        if (!is_array($files)) {
+            $files = [$files];
+        }
+
+        foreach ($files as $file) {
+            if ($file->isValid()) {
+                $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('uploads/photos', $fileName);
+
+                // Generate a public URL for the file
+                $fileUrl = asset('storage/uploads/photos/' . $fileName);
+
+                $result[] = [
+                    "generated_name" => $fileName,
+                    "original_name" => $file->getClientOriginalName(),
+                    "url" => $fileUrl
+                ];
             }
-            #$file = $request->file('file');
-
-            //Implementing it this way returns information that might be usefull not sure what the full usecase for this would be
-            //Saving to the report data
-            $response = [
-                'success' => true,
-                'message' => 'File uploaded successfully',
-                'data' => $result
-            ];
-
-        } catch (\Exception $e) {
-            // Exception occurred
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null
-            ];
         }
 
-        return response($response, 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Files uploaded successfully',
+            'data' => $result
+        ]);
+    } catch (\Exception $e) {
+        Log::error('File upload error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'data' => null
+        ], 500);
     }
+}
 
 
     public function downloadFile(Request $request, string $fileType, string $fileName)
@@ -123,5 +144,5 @@ class FileUploadsController extends Controller
 
         return response($response, 200);
     }
+    
 }
-
