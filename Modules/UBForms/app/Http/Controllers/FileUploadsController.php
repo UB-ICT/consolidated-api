@@ -68,13 +68,8 @@ class FileUploadsController extends Controller
 {
     try {
         $result = [];
-        Log::info('reportID', ['reportId' => $reportId]);
-        Log::info('eventID', ['eventId' => $eventId]);
-        Log::info('Request files:', $request->allFiles());
-
-
         // Validate required parameters
-        if (empty($reportId)) {
+        if (!$reportId) {
             throw new \Exception('Report ID required');
         }
 
