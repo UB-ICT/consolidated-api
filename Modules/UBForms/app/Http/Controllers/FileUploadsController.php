@@ -121,7 +121,7 @@ class FileUploadsController extends Controller
     public function downloadFile(Request $request, string $fileType, string $fileName)
     {
         try {
-            $filePath = storage_path('app/uploads/' . $fileType . '/' . $fileName);
+            $filePath = storage_path('app/private/uploads/' . $fileType . '/' . $fileName);
 
             if (file_exists($filePath)) {
                 return response()->download($filePath);
