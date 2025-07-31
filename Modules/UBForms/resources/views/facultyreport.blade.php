@@ -414,9 +414,9 @@
             @foreach ($meeting['meetingMinutesURL'] as $minutesURL)
             @if(isset($minutesURL['meetingURL']) && !empty($minutesURL['meetingURL']))
 
-            <!-- Display link to view or download meeting minutes -->
+            {{ $minutesURL['meetingURL'] }}
             <p><strong>Meeting Minutes URL:</strong>
-                <a href="{{ $minutesURL['meetingURL'] }}">View Minutes</a>
+                <a href="http://localhost:3031/{{ $minutesURL['meetingURL'] }}">View Minutes</a>
             </p>
             @else
             <p>No meeting minutes available.</p>
