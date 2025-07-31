@@ -207,29 +207,29 @@
     <section class="content">
         <h2>II. Strategic Goals</h2>
         @if(isset($report['strategicGoals']))
-            <p><b>Strategic Goals Under Review:</b> {{ $report['strategicGoals']['strategicGoalsUnderReview'] ?? 'N/A' }}
-            </p>
-            <p><b>Implementation Plans:</b> {{ $report['strategicGoals']['implmentationPlans'] ?? 'N/A' }}</p>
-            <p><b>Plans to Achieve Not Completed Goals:</b>
-                {{ $report['strategicGoals']['plansToAchieveNotCompletedGoals'] ?? 'N/A' }}
-            </p>
-            <p><b>Strategic Goals:</b> {{ $report['strategicGoals']['strategicGoals'] ?? 'N/A' }}</p>
+        <p><b>Strategic Goals Under Review:</b> {{ $report['strategicGoals']['strategicGoalsUnderReview'] ?? 'N/A' }}
+        </p>
+        <p><b>Implementation Plans:</b> {{ $report['strategicGoals']['implmentationPlans'] ?? 'N/A' }}</p>
+        <p><b>Plans to Achieve Not Completed Goals:</b>
+            {{ $report['strategicGoals']['plansToAchieveNotCompletedGoals'] ?? 'N/A' }}
+        </p>
+        <p><b>Strategic Goals:</b> {{ $report['strategicGoals']['strategicGoals'] ?? 'N/A' }}</p>
         @else
-            <p>No strategic goals data available.</p>
+        <p>No strategic goals data available.</p>
         @endif
     </section>
 
     <section class="content avoid-break">
         <h2>III. Accomplishments for the Reporting Period</h2>
         @if(isset($report['accomplishments']) && is_array($report['accomplishments']))
-            <p><b>Accomplishment List:</b> {{ $report['accomplishments']['accomplishmentList'] ?? 'N/A' }}</p>
-            <p><b>Accomplishment Advancement:</b> {{ $report['accomplishments']['accomplishmentAdvancement'] ?? 'N/A' }}
-            </p>
-            <p><b>Impactful Change:</b> {{ $report['accomplishments']['impactfulChange'] ?? 'N/A' }}</p>
-            <p><b>Why:</b> {{ $report['accomplishments']['why'] ?? 'N/A' }}</p>
-            <p><b>Applicable Opportunities:</b> {{ $report['accomplishments']['applicableOpportunities'] ?? 'N/A' }}</p>
+        <p><b>Accomplishment List:</b> {{ $report['accomplishments']['accomplishmentList'] ?? 'N/A' }}</p>
+        <p><b>Accomplishment Advancement:</b> {{ $report['accomplishments']['accomplishmentAdvancement'] ?? 'N/A' }}
+        </p>
+        <p><b>Impactful Change:</b> {{ $report['accomplishments']['impactfulChange'] ?? 'N/A' }}</p>
+        <p><b>Why:</b> {{ $report['accomplishments']['why'] ?? 'N/A' }}</p>
+        <p><b>Applicable Opportunities:</b> {{ $report['accomplishments']['applicableOpportunities'] ?? 'N/A' }}</p>
         @else
-            <p>No accomplishments data available.</p>
+        <p>No accomplishments data available.</p>
         @endif
     </section>
 
@@ -257,29 +257,32 @@
     </section>
 
     <section class="content">
-        <h2>VI. Activities for the Year</h2>
+        <h2>XII. Activities for the Year</h2>
+        @if(isset($report['activities']) && is_array($report['activities']))
         @foreach ($report['activities'] as $activity)
-            <p><strong>Event Name:</strong> {{ $activity['eventName'] }}</p>
-            <p><strong>Persons in Picture:</strong> {{ $activity['personsInPicture'] ?? 'N/A' }}</p>
-            <p><strong>Event Summary:</strong> {{$activity['eventSummary'] }}</p>
-            <p><strong>Event Month:</strong> {{ $activity['eventMonth'] ?? 'N/A' }}</p>
+        @if(is_array($activity))
+        <div class="activity">
+            <p><strong>Event Name:</strong> {{ $activity['eventName'] ?? '' }}</p>
+            <p><strong>Persons in Picture:</strong> {{ $activity['personsInPicture'] ?? '' }}</p>
 
-            @if (isset($activity['pictureURL']) && is_array($activity['pictureURL']))
-                @foreach($activity['pictureURL'] as $pictureURL)
-                    @if (isset($pictureURL['eventPicture']) && !empty($pictureURL['eventPicture']))
-                        @php
-                            $baseUrl = request()->getSchemeAndHttpHost();
-                        @endphp
-                        <img src="{{ public_path($pictureURL['eventPicture']) }}" alt="Event Picture"
-                            style="max-width: 100%; height: auto;">
-                        <p><a href="{{ $baseUrl . $pictureURL['eventPicture'] }}"><b>Download Image</b></a></p>
-                    @endif
-                @endforeach
-            @else
-                <p>No pictures available for this event.</p>
+            <br><br>
+            @if(isset($activity['pictureURL']) && is_array($activity['pictureURL']))
+            @foreach ($activity['pictureURL'] as $picture)
+            @if(isset($picture['eventPicture']))
+
+            <img src="{{ storage_path($picture['eventPicture']) }}"
+                alt="Event Picture"
+                style="max-width: 200px; height: auto;">
             @endif
-            <hr>
+            @endforeach
+            @endif
+        </div>
+        <hr>
+        @endif
         @endforeach
+        @else
+        <p>No activities reported.</p>
+        @endif
     </section>
 
     <section class="content">
@@ -298,29 +301,42 @@
     <section class="content">
         <h2>IX. Division Meetings</h2>
         @if(isset($report['meetings']) && count($report['meetings']) > 0)
-            @foreach ($report['meetings'] as $meeting)
-                <p><strong>Meeting Type:</strong> {{ $meeting['meetingType'] }}</p>
-                <p><strong>Meeting Date:</strong> {{ $meeting['meetingDate'] }}</p>
+        @foreach ($report['meetings'] as $meeting)
+        <p><strong>Meeting Type:</strong> {{ $meeting['meetingType'] }}</p>
+        <p><strong>Meeting Date:</strong> {{ $meeting['meetingDate'] }}</p>
 
-                <!-- Handling meeting minutes URL -->
-                @if(isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL']))
-                    @foreach ($meeting['meetingMinutesURL'] as $minutesURL)
-                        @if(isset($minutesURL['meetingURL']) && !empty($minutesURL['meetingURL']))
-                            <!-- Display link to view or download meeting minutes -->
-                            <p><strong>Meeting Minutes URL:</strong>
-                                <a href="{{ $minutesURL['meetingURL'] }}">View Minutes</a>
-                            </p>
-                        @else
-                            <p>No meeting minutes available.</p>
-                        @endif
-                    @endforeach
-                @else
-                    <p>No meeting minutes available.</p>
-                @endif
-                <hr>
-            @endforeach
+        <!-- Meeting minutes will be merged into the main PDF -->
+        @if(isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL']) && count($meeting['meetingMinutesURL']) > 0)
+        <p><strong>Meeting Minutes:</strong> Included in this report</p>
+        
+        <!-- Meeting PDFs will be merged into the final PDF -->
+        @foreach ($meeting['meetingMinutesURL'] as $minutesURL)
+        @if(isset($minutesURL['meetingURL']) && !empty($minutesURL['meetingURL']))
+        @php
+            $fileName = basename($minutesURL['meetingURL']);
+            $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
+            $fileExists = file_exists($filePath);
+        @endphp
+        @if($fileExists)
+        <div style="margin: 10px 0; padding: 10px; background-color: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px;">
+            <p><strong>✓ Meeting Minutes:</strong> {{ $fileName }} ({{ number_format(filesize($filePath)) }} bytes)</p>
+            <p><em>This meeting PDF will be merged into the final report.</em></p>
+        </div>
         @else
-            <p>No faculty meetings reported for this year.</p>
+        <div style="margin: 10px 0; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+            <p><strong>⚠ Meeting Minutes:</strong> {{ $fileName }}</p>
+            <p><em>File not found - will not be included in the final report.</em></p>
+        </div>
+        @endif
+        @endif
+        @endforeach
+        @else
+        <p>No meeting minutes available.</p>
+        @endif
+        <hr>
+        @endforeach
+        @else
+        <p>No faculty meetings reported for this year.</p>
         @endif
     </section>
 
