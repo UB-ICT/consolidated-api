@@ -409,17 +409,29 @@
             <p><strong>Meeting Type:</strong> {{ $meeting['meetingType'] }}</p>
             <p><strong>Meeting Date:</strong> {{ $meeting['meetingDate'] }}</p>
 
-            <!-- Handling meeting minutes URL -->
-            @if(isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL']))
+            <!-- Meeting minutes will be merged into the main PDF -->
+            @if(isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL']) && count($meeting['meetingMinutesURL']) > 0)
+            <p><strong>Meeting Minutes:</strong> Included in this report</p>
+            
+            <!-- Meeting PDFs will be merged into the final PDF -->
             @foreach ($meeting['meetingMinutesURL'] as $minutesURL)
             @if(isset($minutesURL['meetingURL']) && !empty($minutesURL['meetingURL']))
-
-            {{ $minutesURL['meetingURL'] }}
-            <p><strong>Meeting Minutes URL:</strong>
-                <a href="http://localhost:3031/{{ $minutesURL['meetingURL'] }}">View Minutes</a>
-            </p>
+            @php
+                $fileName = basename($minutesURL['meetingURL']);
+                $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
+                $fileExists = file_exists($filePath);
+            @endphp
+            @if($fileExists)
+            <div style="margin: 10px 0; padding: 10px; background-color: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px;">
+                <p><strong>✓ Meeting Minutes:</strong> {{ $fileName }} ({{ number_format(filesize($filePath)) }} bytes)</p>
+                <p><em>This meeting PDF will be merged into the final report.</em></p>
+            </div>
             @else
-            <p>No meeting minutes available.</p>
+            <div style="margin: 10px 0; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+                <p><strong>⚠ Meeting Minutes:</strong> {{ $fileName }}</p>
+                <p><em>File not found - will not be included in the final report.</em></p>
+            </div>
+            @endif
             @endif
             @endforeach
             @else
