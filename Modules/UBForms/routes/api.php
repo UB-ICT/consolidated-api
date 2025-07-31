@@ -72,7 +72,7 @@ Route::group([
 
     //Upload files
     Route::post('/uploadPhoto/{reportId}/{eventId}', [FileUploadsController::class, 'uploadEventPhoto']); //This route should get the data that is passed in the UI 
-    Route::post('/uploadMeetings', [FileUploadsController::class, 'uploadMeetingMinutes']); //This route should get the data that is passed in the UI 
+    Route::post('/uploadMeetings/{reportId}/{meetingId}', [FileUploadsController::class, 'uploadMeetingMinutes']); //This route should get the data that is passed in the UI 
 
     /*Download files
      The name of the contoller if FileUploadsController but I thought I could add in the download function in there one time 
