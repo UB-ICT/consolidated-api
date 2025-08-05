@@ -20,7 +20,7 @@ class StaffController extends Controller
             'reportsTo' => "",
             'deadline' => "",
             'missionStatement' => "",
-            'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => ''],
+            'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => '', 'completionRate' => ''],
             'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
             'studentSuccess' => ['studentClubs' => '', 'studentSurveys' => '', 'initiatives' => ''],
