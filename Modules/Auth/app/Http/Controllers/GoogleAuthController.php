@@ -52,8 +52,7 @@ class GoogleAuthController extends Controller
         Auth::login($_user);
         $token = $_user->createToken('google-login')->plainTextToken;
 
-        return redirect(config('app.frontend_url'). '?token=' . $token);
-
+        return redirect(config('app.frontend_url') . '?token=' . $token);
     }
 
     /**
@@ -69,11 +68,11 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $groupEmail = 'api_annual_reports@ub.edu.bz';
             $client->setSubject($email);
-            
+
             // Create Directory service
             $service = new GoogleDirectory($client);
             // Check if user is a member of the api_annual_reports group
-            
+
             try {
                 $service->members->get($groupEmail, $email);
                 return true;
@@ -81,7 +80,6 @@ class GoogleAuthController extends Controller
                 Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
                 return false;
             }
-
         } catch (Exception $e) {
             Log::error('Error initializing Google API client: ' . $e->getMessage());
             return false;
@@ -100,10 +98,10 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $client->setSubject($email);
-            
+
             // Create Directory service
             $service = new GoogleDirectory($client);
-            
+
             // Define relevant groups to check (you can expand this list)
             $relevantGroups = [
                 'api_annual_report_Developers@ub.edu.bz',
@@ -112,11 +110,12 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Records@ub.edu.bz',
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
-                'api_annual_report_Deans@ub.edu.bz'
+                'api_annual_report_Deans@ub.edu.bz',
+
             ];
-            
+
             $userGroups = [];
-            
+
             // Check if user is a member of any relevant group
             foreach ($relevantGroups as $groupEmail) {
                 try {
@@ -127,9 +126,8 @@ class GoogleAuthController extends Controller
                     continue;
                 }
             }
-            
+
             return $userGroups;
-            
         } catch (Exception $e) {
             Log::error('Error getting user mailing groups for ' . $email . ': ' . $e->getMessage());
             return [];
@@ -147,7 +145,7 @@ class GoogleAuthController extends Controller
 
             Log::info('All menus: ' . json_encode($allMenus));
             $userMenus = [];
-            
+
             foreach ($allMenus as $menu) {
                 // Check if menu has roles field and if any of user's mailing groups match
                 if (isset($menu['roles']) && is_array($menu['roles'])) {
@@ -167,12 +165,12 @@ class GoogleAuthController extends Controller
                     }
                 }
             }
-            
+
             // Sort menus by order field
-            usort($userMenus, function($a, $b) {
+            usort($userMenus, function ($a, $b) {
                 return $a['order'] <=> $b['order'];
             });
-            
+
             return $userMenus;
         } catch (Exception $e) {
             Log::error('Error getting menus from Firebase: ' . $e->getMessage());
@@ -190,14 +188,14 @@ class GoogleAuthController extends Controller
         if (!$this->isUserInAnnualReportsGroup($user->email)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        
+
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         // Get user's mailing groups
         $mailingGroups = $this->getUserMailingGroups($user->email);
-        
+
         // Get menus based on mailing groups
         $menus = $this->getMenusByMailingGroups($mailingGroups);
 
