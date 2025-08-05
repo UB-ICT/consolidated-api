@@ -243,17 +243,10 @@
 
     <section class="content">
         <h2>V. Student Success</h2>
-        <p><b>Student Learning:</b> {{ $report['studentSuccess']['studentLearning'] }}</p>
-        <p><b>Student Clubs:</b> {{ $report['studentSuccess']['studentClubs'] }}</p>
-        <p><b>Student 1:</b> {{ $report['studentSuccess']['student1'] }} <b>Reason:</b>
-            {{ $report['studentSuccess']['reason1'] }}
-        </p>
-        <p><b>Student 2:</b> {{ $report['studentSuccess']['student2'] }} <b>Reason:</b>
-            {{ $report['studentSuccess']['reason2'] }}
-        </p>
-        <p><b>Student 3:</b> {{ $report['studentSuccess']['student3'] }} <b>Reason:</b>
-            {{ $report['studentSuccess']['reason3'] }}
-        </p>
+        <p><b>a. List of Clubs</b> {{ $report['studentSuccess']['studentClubs'] }}</p>
+        <p><b>b. State results of any student surveys at UB, including surveys on student success, student satisfaction, etc.</b> {{ $report['studentSuccess']['studentsurveys'] }}</p>
+        <p><b>c. All new initiatives at UB regarding student success.
+            </b> {{ $report['studentSuccess']['initiatives'] }}
     </section>
 
     <section class="content">
@@ -308,14 +301,14 @@
         <!-- Meeting minutes will be merged into the main PDF -->
         @if(isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL']) && count($meeting['meetingMinutesURL']) > 0)
         <p><strong>Meeting Minutes:</strong> Included in this report</p>
-        
+
         <!-- Meeting PDFs will be merged into the final PDF -->
         @foreach ($meeting['meetingMinutesURL'] as $minutesURL)
         @if(isset($minutesURL['meetingURL']) && !empty($minutesURL['meetingURL']))
         @php
-            $fileName = basename($minutesURL['meetingURL']);
-            $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
-            $fileExists = file_exists($filePath);
+        $fileName = basename($minutesURL['meetingURL']);
+        $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
+        $fileExists = file_exists($filePath);
         @endphp
         @if($fileExists)
         <div style="margin: 10px 0; padding: 10px; background-color: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px;">

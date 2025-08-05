@@ -23,7 +23,7 @@ class StaffController extends Controller
             'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => ''],
             'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
-            'studentSuccess' => ['studentLearning' => '', 'studentClubs' => '', 'student1' => '', 'reason1' => '', 'student2' => '', 'reason2' => '', 'student3' => '', 'reason3' => ''],
+            'studentSuccess' => ['studentClubs' => '', 'studentSurveys' => '', 'initiatives' => ''],
             'activities' => array(['eventId' => 0, 'eventName' => "", 'personsInPicture' => '', 'pictureURL' => array(['eventPicture' => '']), 'eventSummary' => '', 'eventMonth' => '']),
             'administrativeData' => ['fullTimeStaff' => '', 'partTimeStaff' => '', 'significantStaffChanges' => ''],
             'financialBudget' => ['fundingSources' => '', 'significantBudgetChanges' => ''],
@@ -99,7 +99,7 @@ class StaffController extends Controller
         }
         return response($response, 200);
     }
- 
+
     public function updateReport(Request $request)
     {
         try {
@@ -227,28 +227,28 @@ class StaffController extends Controller
             Log::info('Starting PDF merge process');
             Log::info('Main PDF path: ' . $mainPdfPath . ' (exists: ' . (file_exists($mainPdfPath) ? 'yes' : 'no') . ')');
             Log::info('Additional PDFs count: ' . count($additionalPdfPaths));
-            
+
             // If no additional PDFs, just return the main PDF
             if (empty($additionalPdfPaths)) {
                 Log::info('No additional PDFs to merge, returning main PDF only');
                 return file_get_contents($mainPdfPath);
             }
-            
+
             // Create a temporary output file
             $outputPath = storage_path('app/temp/merged_' . uniqid() . '.pdf');
-            
+
             // Build command to merge PDFs using pdftk (if available) or ghostscript
             $command = '';
             $allPdfs = array_merge([$mainPdfPath], $additionalPdfPaths);
             $pdfList = implode(' ', array_map('escapeshellarg', $allPdfs));
-            
+
             // Check if commands exist
             $pdftkExists = $this->commandExists('pdftk');
             $gsExists = $this->commandExists('gs');
-            
+
             Log::info('pdftk available: ' . ($pdftkExists ? 'yes' : 'no'));
             Log::info('ghostscript available: ' . ($gsExists ? 'yes' : 'no'));
-            
+
             // Try pdftk first, then ghostscript as fallback
             if ($pdftkExists) {
                 $command = "pdftk {$pdfList} cat output " . escapeshellarg($outputPath);
@@ -261,15 +261,15 @@ class StaffController extends Controller
                 Log::warning('No PDF merging tool available. Creating combined PDF with embedded content.');
                 return $this->createCombinedPdfWithEmbeddedContent($mainPdfPath, $additionalPdfPaths);
             }
-            
+
             // Execute the command
             $output = [];
             $returnCode = 0;
             exec($command . ' 2>&1', $output, $returnCode);
-            
+
             Log::info('Command return code: ' . $returnCode);
             Log::info('Command output: ' . implode("\n", $output));
-            
+
             if ($returnCode === 0 && file_exists($outputPath)) {
                 Log::info('PDF merge successful, output file size: ' . filesize($outputPath));
                 $content = file_get_contents($outputPath);
@@ -281,14 +281,13 @@ class StaffController extends Controller
                 // Fallback: create combined PDF with embedded content
                 return $this->createCombinedPdfWithEmbeddedContent($mainPdfPath, $additionalPdfPaths);
             }
-            
         } catch (\Exception $e) {
             Log::error('PDF merge error: ' . $e->getMessage());
             // Fallback: create combined PDF with embedded content
             return $this->createCombinedPdfWithEmbeddedContent($mainPdfPath, $additionalPdfPaths);
         }
     }
-    
+
     /**
      * Check if a command exists on the system
      */
@@ -299,7 +298,7 @@ class StaffController extends Controller
         exec("which {$command} 2>/dev/null", $output, $returnCode);
         return $returnCode === 0;
     }
-    
+
     /**
      * Create a combined PDF with embedded content when system tools are not available
      */
@@ -307,28 +306,27 @@ class StaffController extends Controller
     {
         try {
             Log::info('Creating combined PDF with embedded content');
-            
+
             // Read the main PDF content
             $mainPdfContent = file_get_contents($mainPdfPath);
-            
+
             // Create a new PDF that includes the meeting PDFs as embedded content
             $html = $this->createHtmlWithEmbeddedPdfs($additionalPdfPaths);
-            
+
             // Generate new PDF with embedded content
             $pdf = PDF::loadHTML($html);
             $pdf->setPaper('A4', 'portrait');
-            
+
             $newPdfContent = $pdf->output();
-            
+
             Log::info('Created combined PDF with embedded content');
             return $newPdfContent;
-            
         } catch (\Exception $e) {
             Log::error('Error creating combined PDF: ' . $e->getMessage());
             return file_get_contents($mainPdfPath);
         }
     }
-    
+
     /**
      * Create HTML with embedded PDF data
      */
@@ -354,14 +352,14 @@ class StaffController extends Controller
                 <h1>Staff Report with Embedded Meeting Minutes</h1>
                 <p>This report includes the following meeting minutes as embedded PDF content:</p>
             </div>';
-        
+
         foreach ($additionalPdfPaths as $index => $pdfPath) {
             if (file_exists($pdfPath)) {
                 $fileName = basename($pdfPath);
                 $fileSize = filesize($pdfPath);
                 $pdfContent = file_get_contents($pdfPath);
                 $base64Content = base64_encode($pdfContent);
-                
+
                 $html .= '
                 <div class="meeting-section">
                     <div class="meeting-header">
@@ -387,11 +385,11 @@ class StaffController extends Controller
                 </div>';
             }
         }
-        
+
         $html .= '
         </body>
         </html>';
-        
+
         return $html;
     }
 
@@ -401,7 +399,7 @@ class StaffController extends Controller
     private function getMeetingPdfPaths($report)
     {
         $pdfPaths = [];
-        
+
         if (isset($report['meetings']) && is_array($report['meetings'])) {
             foreach ($report['meetings'] as $meeting) {
                 if (isset($meeting['meetingMinutesURL']) && is_array($meeting['meetingMinutesURL'])) {
@@ -410,7 +408,7 @@ class StaffController extends Controller
                             // Extract filename from URL - handle different URL formats
                             $meetingURL = $minutesURL['meetingURL'];
                             Log::info('Processing meeting URL: ' . $meetingURL);
-                            
+
                             // Handle different URL formats
                             if (strpos($meetingURL, 'app/private/uploads/meetings/') !== false) {
                                 // URL contains the full path
@@ -419,10 +417,10 @@ class StaffController extends Controller
                                 // URL might be just the filename
                                 $fileName = $meetingURL;
                             }
-                            
+
                             $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
                             Log::info('Looking for file: ' . $filePath);
-                            
+
                             if (file_exists($filePath)) {
                                 Log::info('Found meeting PDF: ' . $filePath);
                                 $pdfPaths[] = $filePath;
@@ -434,7 +432,7 @@ class StaffController extends Controller
                 }
             }
         }
-        
+
         Log::info('Total meeting PDFs found: ' . count($pdfPaths));
         return $pdfPaths;
     }
@@ -447,36 +445,36 @@ class StaffController extends Controller
             if (!$report) {
                 return response()->json(['error' => 'Report not found'], 404);
             }
-            
+
             // Generate main PDF
             $pdf = PDF::loadView('UBForms::staffreport', [
                 'report' => $report,
                 'user' => $user,
                 'request' => $request
             ]);
-            
+
             // Create temp directory if it doesn't exist
             $tempDir = storage_path('app/temp');
             if (!file_exists($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
-            
+
             // Save main PDF to temporary file
             $mainPdfPath = $tempDir . '/main_staff_report_' . $reportID . '.pdf';
             $pdf->save($mainPdfPath);
-            
+
             // Get meeting PDF paths
             $meetingPdfPaths = $this->getMeetingPdfPaths($report);
-            
+
             // If there are meeting PDFs, merge them
             if (!empty($meetingPdfPaths)) {
                 $mergedPdfContent = $this->mergePdfs($mainPdfPath, $meetingPdfPaths);
-                
+
                 // Clean up temporary main PDF
                 if (file_exists($mainPdfPath)) {
                     unlink($mainPdfPath);
                 }
-                
+
                 // Return merged PDF
                 return response($mergedPdfContent)
                     ->header('Content-Type', 'application/pdf')
@@ -484,12 +482,12 @@ class StaffController extends Controller
             } else {
                 // No meeting PDFs to merge, return main PDF
                 $pdfContent = $pdf->output();
-                
+
                 // Clean up temporary main PDF
                 if (file_exists($mainPdfPath)) {
                     unlink($mainPdfPath);
                 }
-                
+
                 return response($pdfContent)
                     ->header('Content-Type', 'application/pdf')
                     ->header('Content-Disposition', 'attachment; filename="staff_report_' . $reportID . '.pdf"');
@@ -499,7 +497,7 @@ class StaffController extends Controller
             if (isset($mainPdfPath) && file_exists($mainPdfPath)) {
                 unlink($mainPdfPath);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate PDF: ' . $e->getMessage()
