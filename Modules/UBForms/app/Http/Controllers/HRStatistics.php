@@ -20,7 +20,7 @@ class HRStatistics extends Controller
             'deadline' => "",
             'numberOfStaff' => [
                 'fulltimeFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
-                'adjunctFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
+                'partTimeFaculty' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0],
                 'nonTeachingStaff' => ['educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0, 'total' => 0]
             ],
             'formSubmitted' => false,

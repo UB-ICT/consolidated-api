@@ -212,10 +212,7 @@
     <div class="container">
         <div class="header">
             <div class="header-content">
-                <div class="header-logo">
-                    <!-- <img src="{{public_path('./../../ub-api/Modules/UBForms/public/images/UB-Logo.png')}}"
-                        alt="University Logo"> -->
-                </div>
+
                 <div class="header-text">
                     <h1>University of Belize Annual Report</h1>
                     <p class="academic-year">Academic Year: {{$report['academicYearID']}}</p>
@@ -248,10 +245,6 @@
                     <td>{{ number_format($report['income']['fundingFromGoB'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Tuition Fees by Faculty</td>
-                    <td>{{ number_format($report['income']['tuitionFees'], 2) }}</td>
-                </tr>
-                <tr>
                     <td>Contracts</td>
                     <td>{{ number_format($report['income']['contracts'], 2) }}</td>
                 </tr>
@@ -274,7 +267,28 @@
             </tbody>
         </table>
 
-        <div class="section-title">2. Finance – Expenditures (Bz$)</div>
+        <div class="section-title">Tuition Fees by Faculty</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>FEA</th>
+                    <th>FHS</th>
+                    <th>FMSS</th>
+                    <th>FST</th>
+                    <th>SoM</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ number_format($report['tuitionFeesByFaculty']['FEA'], 2) }}</td>
+                    <td> {{ number_format($report['tuitionFeesByFaculty']['FHS'], 2) }}</td>
+                    <td> {{ number_format($report['tuitionFeesByFaculty']['FMSS'], 2) }}</td>
+                    <td> {{ number_format($report['tuitionFeesByFaculty']['FST'], 2) }}</td>
+                    <td> {{ number_format($report['tuitionFeesByFaculty']['SoM'], 2) }}</td>
+            </tbody>
+        </table>
+
+        <div class="section-title">2. Finance - Expenditures (Bz$)</div>
         <table>
             <thead>
                 <tr>
@@ -306,7 +320,7 @@
         <div class="section-title">4. Major Capital Expenditure Projects / Investments (buildings etc.)</div>
         <ul>
             @foreach (explode('; ', $report['expenditure']['capitalExpenditures']) as $project)
-                <li>{{ $project }}</li>
+            <li>{{ $project }}</li>
             @endforeach
         </ul>
 
