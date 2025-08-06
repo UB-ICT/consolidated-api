@@ -214,6 +214,8 @@
             {{ $report['strategicGoals']['plansToAchieveNotCompletedGoals'] ?? 'N/A' }}
         </p>
         <p><b>Strategic Goals:</b> {{ $report['strategicGoals']['strategicGoals'] ?? 'N/A' }}</p>
+        <p><b>Completion Rate:</b> {{ $report['strategicGoals']['strategicGoals'] ?? 'N/A' }}</p>
+
         @else
         <p>No strategic goals data available.</p>
         @endif

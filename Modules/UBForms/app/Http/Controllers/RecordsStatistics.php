@@ -19,49 +19,49 @@ class RecordsStatistics extends Controller
             'academicYearID' => $academicYearID,
             'department' => "",
             'deadline' => "",
-            'currentStudentEnrollmentTrend' => ['associates' => 0, 'undergraduate' => 0, 'graduate' => 0, 'Total' => 0],
+            'currentStudentEnrollmentTrend' => ['associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
             'studentEnrollmentTrend' => array(
                 ['academicYear' => '2022/2023', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
                 ['academicYear' => '2023/2024', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
                 ['academicYear' => '2024/2025', 'associate' => 0, 'undergraduate' => 0, 'graduate' => 0, 'other' => 0, 'Total' => 0],
             ),
             'enrollmentTrendPerFaculty' => array(
-                ['academicYear' => '2022/2023', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
-                ['academicYear' => '2023/2024', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
-                ['academicYear' => '2024/2025', 'educationAndArts' => 0, 'managementAndSocialScience' => 0, 'healthScience' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2022/2023', 'educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2023/2024', 'educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0],
+                ['academicYear' => '2024/2025', 'educationAndArts' => 0, 'managementAndSocialSciences' => 0, 'healthSciences' => 0, 'scienceAndTechnology' => 0],
             ),
             'graduationStatistics' => array(
                 [
                     'academicYear' => "2022/2023",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0], //A little ocd about this part but its okay
-                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Education and Arts', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0], //A little ocd about this part but its okay
+                        ['degree' => 'Management and Social Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
                     )
                 ],
                 [
                     'academicYear' => "2023/2024",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Education and Arts', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
                     )
                 ],
                 [
                     'academicYear' => "2024/2025",
                     'faculties' => array(
-                        ['degree' => 'Education and Arts', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Management and Social Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Health Science', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
-                        ['degree' => 'Science and Technology', 'Associates' => 0, 'Bachelors' => 0, 'Honors' => 0],
+                        ['degree' => 'Education and Arts', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Management and Social Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Health Sciences', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
+                        ['degree' => 'Science and Technology', 'Associate' => 0, 'Bachelor' => 0, 'Honors' => 0],
                     )
                 ]
             ),
             'studentOrigin' => ['Belize' => 0, 'CentralAmericanCountries' => 0, 'OtherCountries' => 0], //7.Origin of Students 
             'campusStatistics' => ['BelizeCity' => 0, 'Belmopan' => 0, 'PuntaGorda' => 0, 'CentralFarm' => 0, 'SatellitePrograms' => 0], //8.Campus Statistics
-            'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0],//5 and 6 merged into one
+            'graduates' => ['graduatesByAge' => 0, 'graduatesByDistrict' => 0], //5 and 6 merged into one
             'formSubmitted' => false,
         ];
 
@@ -87,9 +87,10 @@ class RecordsStatistics extends Controller
             $data = $request->all();
             if (isset($data['currentStudentEnrollmentTrend'])) {
                 $data['currentStudentEnrollmentTrend']['Total'] = $data['currentStudentEnrollmentTrend']['Total'] ??
-                    ((int) ($data['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                    ((int) ($data['currentStudentEnrollmentTrend']['associate'] ?? 0) +
                         (int) ($data['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
-                        (int) ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0));
+                        (int) ($data['currentStudentEnrollmentTrend']['graduate'] ?? 0) +
+                        (int) ($data['currentStudentEnrollmentTrend']['Total'] ?? 0));
             }
             if (isset($data['studentEnrollmentTrend'])) {
                 foreach ($data['studentEnrollmentTrend'] as &$trend) {
@@ -180,11 +181,12 @@ class RecordsStatistics extends Controller
             if (isset($data['currentStudentEnrollmentTrend'])) {
                 $current = $data['currentStudentEnrollmentTrend'];
                 $updatedData['currentStudentEnrollmentTrend'] = [
-                    'associates' => (int) ($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0),
+                    'associate' => (int) ($current['associate'] ?? $existingDoc['currentStudentEnrollmentTrend']['associate'] ?? 0),
                     'undergraduate' => (int) ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0),
                     'graduate' => (int) ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0),
+                    'other' => (int) ($current['other'] ?? $existingDoc['currentStudentEnrollmentTrend']['other'] ?? 0),
                     'Total' => (int) ($current['Total'] ??
-                        (($current['associates'] ?? $existingDoc['currentStudentEnrollmentTrend']['associates'] ?? 0) +
+                        (($current['associate'] ?? $existingDoc['currentStudentEnrollmentTrend']['associate'] ?? 0) +
                             ($current['undergraduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['undergraduate'] ?? 0) +
                             ($current['graduate'] ?? $existingDoc['currentStudentEnrollmentTrend']['graduate'] ?? 0)))
                 ];
@@ -225,7 +227,6 @@ class RecordsStatistics extends Controller
                 'message' => 'Report updated successfully',
                 'data' => null
             ]);
-
         } catch (\Exception $e) {
             Log::error('Update Report Error: ' . $e->getMessage());
             return response()->json([
