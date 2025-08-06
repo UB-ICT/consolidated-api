@@ -3,8 +3,6 @@
 namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Modules\UBForms\Models\Finance;
-use Modules\UBForms\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FirestoreService;
 
@@ -20,7 +18,14 @@ class FinanceStatistics extends Controller
             'academicYearID' => $academicYearID,
             'department' => "",
             'deadline' => "",
-            'income' => ['fundingFromGoB' => 0, 'tuitionFees' => 0, 'contracts' => 0, 'researchGrants' => 0, 'endowmentAndInvestmentIncome' => 0, 'other' => 0, 'total' => 0],
+            'income' => ['fundingFromGoB' => 0, 'contracts' => 0, 'researchGrants' => 0, 'endowmentAndInvestmentIncome' => 0, 'other' => 0, 'total' => 0],
+            'tuitionFeesByFaculty' => [
+                'FST' => 0,
+                'FMSS' => 0,
+                'FEA' => 0,
+                'FHS' => 0,
+                'SoM' => 0
+            ],
             'expenditure' => ['teachingStaffCosts' => 0, 'nonTeachingStaffCosts' => 0, 'administrationCosts' => 0, 'capitalExpenditures' => 0, 'otherExpenditures' => 0],
             'investments' => ['projectInvestment1' => 0, 'projectInvestment2' => 0, 'projectInvestment3' => 0],
             'formSubmitted' => false,
@@ -38,7 +43,6 @@ class FinanceStatistics extends Controller
         // Store in Firestore and get document ID
         $documentRef = FirestoreService::syncDocumentAndGetRef('FinanceStatistics', $report);
         return array_merge($report, ['id' => $documentRef->id()]);
-
     }
 
     //Create 
