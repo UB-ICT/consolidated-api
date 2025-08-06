@@ -289,7 +289,7 @@
             @foreach ([
             'educationAndArts' => 'Education and Arts',
             'managementAndSocialSciences' => 'Management and Social Sciences',
-            'healthSciencea' => 'Health Sciences',
+            'healthSciences' => 'Health Sciences',
             'scienceAndTechnology' => 'Science and Technology'
             ] as $facultyKey => $facultyName)
             <tr>
@@ -346,8 +346,8 @@
                 @php
                 $currentFaculty = collect($facultiesByYear[$year] ?? [])->firstWhere('degree', $faculty['degree'] ?? '');
                 @endphp
-                <td>{{ $currentFaculty['Associates'] ?? '' }}</td>
-                <td>{{ $currentFaculty['Bachelors'] ?? '' }}</td>
+                <td>{{ $currentFaculty['Associate'] ?? '' }}</td>
+                <td>{{ $currentFaculty['Bachelor'] ?? '' }}</td>
                 <td>{{ $currentFaculty['Honors'] ?? '' }}</td>
                 @endforeach
             </tr>
