@@ -32,10 +32,6 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
  *
  */
 
-// Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-//     Route::apiResource('publicsafety', PublicSafetyController::class)->names('publicsafety');
-// });
-
 
 // This will be the only unprotected route because this is used for authentication
 
@@ -68,16 +64,3 @@ Route::group([
     Route::post('upload', [FileUploadController::class, 'upload']);
     Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });
-
-
-
-
-// Route::post('/v1/publicSafety/send-notification', function (Request $request, FCMService $fcmService) {
-//     $request->validate([
-//         // 'deviceToken' => 'required|string',
-//         'title' => 'required|string',
-//         'body' => 'required|string',
-//     ]);
-
-//     return $fcmService->sendNotification($request->deviceToken, $request->title, $request->body);
-// })->middleware('auth:sanctum');
