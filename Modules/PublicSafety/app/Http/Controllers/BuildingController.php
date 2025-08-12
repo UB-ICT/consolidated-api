@@ -3,13 +3,7 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Transformers\BuildingResource;
-use Modules\PublicSafety\Transformers\BuildingCollection;
-use Modules\PublicSafety\Http\Requests\StoreBuildingRequest;
-use Modules\PublicSafety\Http\Requests\UpdateBuildingRequest;
-use Modules\PublicSafety\Models\Building;
 use App\Services\FirestoreUBFormService;
-use Google\Cloud\Firestore\DocumentReference;
 use Illuminate\Http\Request;
 
 class BuildingController extends Controller
