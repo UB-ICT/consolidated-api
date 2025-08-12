@@ -4,13 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Transformers\IncidentReportResource;
-use Modules\PublicSafety\Transformers\IncidentReportCollection;
-use Modules\PublicSafety\Http\Requests\StoreIncidentReportRequest;
-use Modules\PublicSafety\Http\Requests\UpdateIncidentReportRequest;
-use Modules\PublicSafety\Models\IncidentReport;
-use Modules\PublicSafety\Models\IncidentFile;
-use Illuminate\Support\Facades\Storage;
 use App\Services\FirestoreUBFormService;
 use Illuminate\Http\Request;
 

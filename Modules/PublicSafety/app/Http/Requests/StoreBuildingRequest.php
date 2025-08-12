@@ -25,7 +25,7 @@ class StoreBuildingRequest extends FormRequest
             //
             'name'=>['required'],
             'location'=>['required'],
-            'campus_id'=>['required']
+            'campusId'=>['required']
         ];
     }
 

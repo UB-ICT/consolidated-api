@@ -19,9 +19,38 @@ class BuildingController extends Controller
     {
         try {
             $data = $request->all();
+
+            // Validate required fields including campusId
+            $request->validate([
+                'name' => 'required|string',
+                'location' => 'required|string',
+                'campusId' => 'required|string' // Ensure campusId is provided
+            ]);
+
+            // Verify the campus exists before creating the building
+            $campusExists = FirestoreUBFormService::getUBFormDocument(
+                self::COLLECTION_PREFIX . 'campuses',
+                $data['campusId']
+            );
+
+            if (!$campusExists) {
+                throw new \Exception('The specified campus does not exist');
+            }
+
+            $defaultValues = [
+                'name' => '',
+                'location' => '',
+                'campusId' => '',
+            ];
+
+            //add timestamps
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+
+            // Merge request data with defaults (request data overrides defaults)
+            $documentData = array_merge($defaultValues, $data);
+
+            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $documentData);
             $response = [
                 'success' => true,
                 'message' => "building Created Successfully",
