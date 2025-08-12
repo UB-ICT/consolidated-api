@@ -13,10 +13,8 @@ use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\UserStatusController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
-use Modules\PublicSafety\Http\Controllers\SubMenuController;
 use Modules\PublicSafety\Http\Controllers\MenuRoleController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
-use Modules\PublicSafety\Http\Controllers\PDFController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 // use Modules\PublicSafety\Services\FCMService;
 
@@ -57,10 +55,7 @@ Route::group([
     Route::apiResource('menus', MenuController::class);
     Route::get('menus', [MenuController::class, 'getMenus']);
     Route::apiResource('menuRoles', MenuRoleController::class);
-    Route::apiResource('subMenus', SubMenuController::class);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
-    // Route::post('upload', [FileUploadController::class, 'upload']);
-    // Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });

@@ -4,12 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Modules\PublicSafety\Transformers\MenuResource;
-use Modules\PublicSafety\Transformers\MenuCollection;
-use Modules\PublicSafety\Http\Requests\StoreMenuRequest;
-use Modules\PublicSafety\Http\Requests\UpdateMenuRequest;
 use Modules\PublicSafety\Models\Menu;
-use Modules\PublicSafety\Models\Role;
 
 class MenuController extends Controller
 {
@@ -18,7 +13,6 @@ class MenuController extends Controller
      */
     public function index()
     {
-        return new MenuCollection(Menu::with('subMenus')->paginate());
     }
 
     /**
@@ -32,9 +26,8 @@ class MenuController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreMenuRequest $request)
+    public function store(Request $request)
     {
-        return new MenuResource(Menu::create($request->all()));
 
     }
 
@@ -43,9 +36,7 @@ class MenuController extends Controller
      */
     public function show(Menu $menu)
     {
-        // return new MenuResource($menu);
-        $menu->load('subMenus');
-        return new MenuResource($menu);
+       
     }
 
 
@@ -60,10 +51,9 @@ class MenuController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMenuRequest $request, Menu $menu)
+    public function update(Request $request, Menu $menu)
     {
-        $menu->update($request->all());
-        return response()->json(['message' => 'updated successfully'], 200);
+       
     }
 
     /**
@@ -71,48 +61,39 @@ class MenuController extends Controller
      */
     public function destroy(Menu $menu)
     {
-        $menu->delete();
-        return response()->json(['message' => 'deleted successfully'], 200);
+       
     }
 
     public function getMenus(Request $request)
     {
-        // Check if role_id is provided in the request
-        if (!$request->has('role_id')) {
-            return response()->json(['error' => 'Role ID is required'], 400);
-        }
 
-        $roleId = $request->role_id;
-        $menus = $this->getMenusByRole($roleId);
-
-        return response()->json($menus);
     }
 
     private function getMenusByRole($roleId)
     {
-        // //$role receives a role and with(['menus.subMenus']) ensures menus and their submenus are loaded in a single query
-        $role = Role::with(['menus.subMenus'])->find($roleId);
+    //     // //$role receives a role and with(['menus.subMenus']) ensures menus and their submenus are loaded in a single query
+    //     $role = Role::with(['menus.subMenus'])->find($roleId);
 
-        if (!$role) {
-            return [];
-        }
+    //     if (!$role) {
+    //         return [];
+    //     }
 
-        return $role->menus->map(function ($menu) {
-            return [
-                'id' => $menu->id,
-                'icon' => $menu->icon,
-                'name' => $menu->name,
-                'path' => $menu->path,
-                'subMenu' => $menu->subMenus->map(function ($subMenu) {
-                    return [
-                        'id' => $subMenu->id,
-                        'icon' => $subMenu->icon,
-                        'name' => $subMenu->name,
-                        'path' => $subMenu->path,
-                        'menuId' => $subMenu->menu_id,
-                    ];
-                }),
-            ];
-        });
-    }
+    //     return $role->menus->map(function ($menu) {
+    //         return [
+    //             'id' => $menu->id,
+    //             'icon' => $menu->icon,
+    //             'name' => $menu->name,
+    //             'path' => $menu->path,
+    //             'subMenu' => $menu->subMenus->map(function ($subMenu) {
+    //                 return [
+    //                     'id' => $subMenu->id,
+    //                     'icon' => $subMenu->icon,
+    //                     'name' => $subMenu->name,
+    //                     'path' => $subMenu->path,
+    //                     'menuId' => $subMenu->menu_id,
+    //                 ];
+    //             }),
+    //         ];
+    //     });
+    // }
 }
