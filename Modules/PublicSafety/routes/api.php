@@ -51,7 +51,7 @@ Route::group([
     Route::apiResource('buildings', BuildingController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
-    Route::post('uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
+    Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);
     Route::apiResource('menus', MenuController::class);
@@ -61,6 +61,6 @@ Route::group([
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
-    Route::post('upload', [FileUploadController::class, 'upload']);
-    Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
+    // Route::post('upload', [FileUploadController::class, 'upload']);
+    // Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
 });

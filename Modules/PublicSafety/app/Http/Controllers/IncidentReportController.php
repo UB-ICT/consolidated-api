@@ -5,6 +5,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreUBFormService;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class IncidentReportController extends Controller
@@ -13,11 +14,79 @@ class IncidentReportController extends Controller
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'incidentReports';
 
+    public function initialize(Request $request)
+    {
+        try {
+            $defaultReport = [
+                'report' => '',
+                'disposition' => '',
+                'caseNumber' => $this->generateCaseNumber(),
+                'action' => '',
+                'location' => '',
+                'uploadedBy' => $request->user()->id ?? '', // Assuming you have authentication
+                'incidentReoccured' => false,
+                'frequency' => 0,
+                'incidentFiles' => ['pictureURL' => array(['incidentPictures' => ''])], // Changed from incidentFile to incidentFiles (array)
+                'incidentStatusId' => '',
+                'buildingId' => '',
+                'incidentTypeId' => '',
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString()
+            ];
+
+            $response = [
+                'success' => true,
+                'message' => "Incident report initialized successfully",
+                'data' => $defaultReport
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
+
+
     //create/store
     public function store(Request $request)
     {
         try {
-            $data = $request->all();
+            $validator = Validator::make($request->all(), [
+                'report' => 'required|string',
+                'disposition' => 'required|string',
+                'action' => 'required|string',
+                'location' => 'required|string',
+                'uploadedBy' => 'required|string',
+                'incidentReoccured' => 'required|boolean',
+                'frequency' => 'nullable|integer',
+                'incidentStatusId' => 'required|string',
+                'campusId' => 'required|string',
+                'buildingId' => 'required|string',
+                'incidentTypeId' => 'required|string',
+                'incidentFiles' => 'nullable|array',
+                'incidentFiles.*.id' => 'nullable|string',
+                'incidentFiles.*.url' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                throw new \Exception($validator->errors()->first());
+            }
+
+            $data = $validator->validated();
+
+            // Verify references exist
+            $this->verifyReferencesExist($data);
+
+            // Generate case number if not provided
+            if (empty($data['caseNumber'])) {
+                $data['caseNumber'] = $this->generateCaseNumber();
+            }
+
+
+
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
             $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
@@ -25,7 +94,8 @@ class IncidentReportController extends Controller
                 'success' => true,
                 'message' => "incidentReport Created Successfully",
                 'data' => [
-                    'incidentReportID' => $documentRef->id()
+                    'incidentReportID' => $documentRef->id(),
+                    'caseNumber' => $data['caseNumber']
                 ]
             ];
         } catch (\Exception $e) {
@@ -134,6 +204,39 @@ class IncidentReportController extends Controller
         // Return response with HTTP status code 201 (Created)
         return response($response, 200);
     }
+
+
+    /**
+     * Verify all referenced documents exist
+     */
+    private function verifyReferencesExist(array $data)
+    {
+        $references = [
+            'incidentStatusId' => self::COLLECTION_PREFIX . 'incidentStatuses',
+            'campusId' => self::COLLECTION_PREFIX . 'campuses',
+            'buildingId' => self::COLLECTION_PREFIX . 'buildings',
+            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
+        ];
+
+        foreach ($references as $field => $collection) {
+            if (!empty($data[$field])) {
+                $exists = FirestoreUBFormService::getUBFormDocument($collection, $data[$field]);
+                if (!$exists) {
+                    throw new \Exception("The specified {$field} does not exist");
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate a unique case number
+     */
+    private function generateCaseNumber()
+    {
+        return 'CASE-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+    }
+
+
 
 
     // public function getTotalIncidentReport(IncidentReport $incidentReport)
