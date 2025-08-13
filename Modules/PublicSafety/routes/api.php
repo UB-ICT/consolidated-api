@@ -16,7 +16,6 @@ use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\MenuRoleController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
-// use Modules\PublicSafety\Services\FCMService;
 
 
 /*
@@ -52,10 +51,13 @@ Route::group([
     Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);
-    Route::apiResource('menus', MenuController::class);
-    Route::get('menus', [MenuController::class, 'getMenus']);
-    Route::apiResource('menuRoles', MenuRoleController::class);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
+
+    //menus
+    Route::get('/menu', [MenuController::class, 'index']);
+    Route::post('/menu', [MenuController::class, 'store']);
+    Route::put('/menu/{id}', [MenuController::class, 'update']);
+    Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
 });

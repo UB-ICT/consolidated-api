@@ -3,7 +3,7 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Services\FirestoreUBFormService;
+use App\Services\FirestoreService;
 use Illuminate\Http\Request;
 
 
@@ -22,7 +22,7 @@ class IncidentStatusController extends Controller
             $data = $request->all();
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
             $response = [
                 'success' => true,
                 'message' => "Incident Status Created Successfully",
@@ -46,7 +46,7 @@ class IncidentStatusController extends Controller
     public function show(Request $request, string $IncidentStatusID)
     {
         try {
-            $incidentStatus = FirestoreUBFormService::getUBFormDocument($this->collectionName, $IncidentStatusID);
+            $incidentStatus = FirestoreService::getDocument($this->collectionName, $IncidentStatusID);
             if ($incidentStatus) {
                 $response = [
                     'success' => true,
@@ -82,7 +82,7 @@ class IncidentStatusController extends Controller
             $data = $request->all();
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreUBFormService::updateUBFormDocument(
+            $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
                 $data
@@ -114,7 +114,7 @@ class IncidentStatusController extends Controller
     public function destroy(string $id)
     {
         try {
-            $success = FirestoreUBFormService::deleteUBFormDocument($this->collectionName, $id);
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
 
             if ($success) {
                 $response = [

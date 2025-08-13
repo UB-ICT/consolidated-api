@@ -4,7 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use App\Services\FirestoreUBFormService;
+use App\Services\FirestoreService;
 
 class CampusController extends Controller
 {
@@ -21,7 +21,7 @@ class CampusController extends Controller
             $data = $request->all();
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
             $response = [
                 'success' => true,
                 'message' => "campus Created Successfully",
@@ -44,7 +44,7 @@ class CampusController extends Controller
     public function show(Request $request, string $campusID)
     {
         try {
-            $campus = FirestoreUBFormService::getUBFormDocument($this->collectionName, $campusID);
+            $campus = FirestoreService::getDocument($this->collectionName, $campusID);
             if ($campus) {
                 $response = [
                     'success' => true,
@@ -80,7 +80,7 @@ class CampusController extends Controller
             $data = $request->all();
             //add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreUBFormService::updateUBFormDocument(
+            $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
                 $data
@@ -114,7 +114,7 @@ class CampusController extends Controller
     public function destroy(string $id)
     {
         try {
-            $success = FirestoreUBFormService::deleteUBFormDocument($this->collectionName, $id);
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
 
             if ($success) {
                 $response = [

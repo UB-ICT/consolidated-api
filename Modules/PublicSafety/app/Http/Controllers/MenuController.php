@@ -4,96 +4,99 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Modules\PublicSafety\Models\Menu;
+use App\Services\FirestoreService;
 
 class MenuController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
+    protected const COLLECTION_PREFIX = 'publicSafety_';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'menus';
+
+    //DISPLAY
     public function index()
     {
+        try {
+            $menus = FirestoreService::getPublicSafetyMenuItems($this->collectionName);
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+    //store
     public function store(Request $request)
     {
-
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'path' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'order' => 'integer|min:0',
+            'is_active' => 'boolean',
+            'component' => 'nullable|string',
+            'roles' => 'array'
+        ]);
+        try {
+            $documentRef = FirestoreService::createPublicSafetyMenuItem($this->collectionName, $validated);
+            return response()->json([
+                'id' => $documentRef->id(),
+                ...$validated
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Menu $menu)
-    {
-       
-    }
 
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Menu $menu)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Menu $menu)
+    public function update(Request $request, string $id)
     {
-       
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'path' => 'sometimes|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
+            'permission' => 'nullable|string'
+        ]);
+        try {
+            $success = FirestoreService::updatePublicSafetyMenuItem($this->collectionName, $id, $validated);
+            if ($success) {
+                return response()->json(['id' => $id, ...$validated]);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Menu $menu)
+    public function destroy(string $id)
     {
-       
+        try {
+            $success = FirestoreService::deletePublicSafetyMenuItem($this->collectionName, $id);
+            if ($success) {
+                return response()->json(['message' => 'Menu item deleted']);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    public function getMenus(Request $request)
-    {
 
+    public function active()
+    {
+        try {
+            $menus = FirestoreService::getPublicSafetyActiveMenuItems($this->collectionName);
+            usort($menus, fn($a, $b) => $a['order'] <=> $b['order']);
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-
-    private function getMenusByRole($roleId)
-    {
-    //     // //$role receives a role and with(['menus.subMenus']) ensures menus and their submenus are loaded in a single query
-    //     $role = Role::with(['menus.subMenus'])->find($roleId);
-
-    //     if (!$role) {
-    //         return [];
-    //     }
-
-    //     return $role->menus->map(function ($menu) {
-    //         return [
-    //             'id' => $menu->id,
-    //             'icon' => $menu->icon,
-    //             'name' => $menu->name,
-    //             'path' => $menu->path,
-    //             'subMenu' => $menu->subMenus->map(function ($subMenu) {
-    //                 return [
-    //                     'id' => $subMenu->id,
-    //                     'icon' => $subMenu->icon,
-    //                     'name' => $subMenu->name,
-    //                     'path' => $subMenu->path,
-    //                     'menuId' => $subMenu->menu_id,
-    //                 ];
-    //             }),
-    //         ];
-    //     });
-    // }
 }

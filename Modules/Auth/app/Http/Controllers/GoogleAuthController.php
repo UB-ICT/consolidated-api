@@ -49,6 +49,12 @@ class GoogleAuthController extends Controller
             return redirect(config('app.frontend_url') . '?error=access_denied');
         }
 
+        //Check if user is in the public_safety Google group
+        if (!$this->isUserInPublicSafetyGroup($_user->email)) {
+            Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in public_safety Google group');
+            return redirect(config('app.frontend_url') . '?error=access_denied');
+        }
+
         Auth::login($_user);
         $token = $_user->createToken('google-login')->plainTextToken;
 
@@ -67,6 +73,34 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $groupEmail = 'api_annual_reports@ub.edu.bz';
+            $client->setSubject($email);
+
+            // Create Directory service
+            $service = new GoogleDirectory($client);
+            // Check if user is a member of the api_annual_reports group
+
+            try {
+                $service->members->get($groupEmail, $email);
+                return true;
+            } catch (Exception $e) {
+                Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
+                return false;
+            }
+        } catch (Exception $e) {
+            Log::error('Error initializing Google API client: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function isUserInPublicSafetyGroup($email)
+    {
+        try {
+            // Initialize Google Client with service account credentials
+            $client = new GoogleClient();
+            $client->setAuthConfig(storage_path('app/google-service-account.json'));
+            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
+            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
+            $groupEmail = 'public_safety@ub.edu.bz';
             $client->setSubject($email);
 
             // Create Directory service
@@ -111,6 +145,9 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
                 'api_annual_report_Deans@ub.edu.bz',
+                'public_safety_developers@ub.edu.bz',
+                'public_safety_admin@ub.edu.bz',
+                'public_safety_security@ub.edu.bz',
 
             ];
 
@@ -189,6 +226,10 @@ class GoogleAuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        if (!$this->isUserInPublicSafetyGroup($user->email)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -213,6 +254,37 @@ class GoogleAuthController extends Controller
                 'mailing_groups' => $mailingGroups,
                 'menus' => $menus
             ]
+        ]);
+    }
+
+    //mock google login soo that i can test in postman
+    public function mockGoogleLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        // Mock the Google user
+        $_user = User::where('email', $request->email)->first();
+
+        if (!$_user) {
+            $_user = User::create([
+                'name' => 'Test User',
+                'email' => $request->email,
+                'google_id' => Str::random(21),
+                'password' => bcrypt(Str::random(16)),
+                'email_verified_at' => now(),
+            ]);
+        }
+
+        // Bypass group checks for testing or implement them if needed
+        Auth::login($_user);
+        $token = $_user->createToken('postman-login')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $_user
         ]);
     }
 }

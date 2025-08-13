@@ -4,7 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 
 use Illuminate\Routing\Controller;
-use App\Services\FirestoreUBFormService;
+use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
@@ -89,7 +89,7 @@ class IncidentReportController extends Controller
 
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
             $response = [
                 'success' => true,
                 'message' => "incidentReport Created Successfully",
@@ -112,7 +112,7 @@ class IncidentReportController extends Controller
     public function show(Request $request, string $incidentReportID)
     {
         try {
-            $incidentReport = FirestoreUBFormService::getUBFormDocument($this->collectionName, $incidentReportID);
+            $incidentReport = FirestoreService::getDocument($this->collectionName, $incidentReportID);
             if ($incidentReport) {
                 $response = [
                     'success' => true,
@@ -146,7 +146,7 @@ class IncidentReportController extends Controller
             $data = $request->all();
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreUBFormService::updateUBFormDocument(
+            $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
                 $data
@@ -180,7 +180,7 @@ class IncidentReportController extends Controller
     public function destroy(string $id)
     {
         try {
-            $success = FirestoreUBFormService::deleteUBFormDocument($this->collectionName, $id);
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
 
             if ($success) {
                 $response = [
@@ -220,7 +220,7 @@ class IncidentReportController extends Controller
 
         foreach ($references as $field => $collection) {
             if (!empty($data[$field])) {
-                $exists = FirestoreUBFormService::getUBFormDocument($collection, $data[$field]);
+                $exists = FirestoreService::getDocument($collection, $data[$field]);
                 if (!$exists) {
                     throw new \Exception("The specified {$field} does not exist");
                 }

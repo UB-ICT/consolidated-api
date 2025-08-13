@@ -3,13 +3,11 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Services\FirestoreUBFormService;
+use App\Services\FirestoreService;
 use Illuminate\Http\Request;
 
 class IncidentTypeController extends Controller
 {
-
-
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'incidentTypes';
 
@@ -23,7 +21,7 @@ class IncidentTypeController extends Controller
             $data = $request->all();
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
             $response = [
                 'success' => true,
                 'message' => "Incident Type Created Successfully",
@@ -47,7 +45,7 @@ class IncidentTypeController extends Controller
     public function show(Request $request, string $IncidentTypeID)
     {
         try {
-            $incidentType = FirestoreUBFormService::getUBFormDocument($this->collectionName, $IncidentTypeID);
+            $incidentType = FirestoreService::getDocument($this->collectionName, $IncidentTypeID);
             if ($incidentType) {
                 $response = [
                     'success' => true,
@@ -83,7 +81,7 @@ class IncidentTypeController extends Controller
             $data = $request->all();
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreUBFormService::updateUBFormDocument(
+            $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
                 $data
@@ -115,7 +113,7 @@ class IncidentTypeController extends Controller
     public function destroy(string $id)
     {
         try {
-            $success = FirestoreUBFormService::deleteUBFormDocument($this->collectionName, $id);
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
 
             if ($success) {
                 $response = [

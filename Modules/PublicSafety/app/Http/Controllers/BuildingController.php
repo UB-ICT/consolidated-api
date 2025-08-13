@@ -3,7 +3,7 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Services\FirestoreUBFormService;
+use App\Services\FirestoreService;
 use Illuminate\Http\Request;
 
 class BuildingController extends Controller
@@ -28,7 +28,7 @@ class BuildingController extends Controller
             ]);
 
             // Verify the campus exists before creating the building
-            $campusExists = FirestoreUBFormService::getUBFormDocument(
+            $campusExists = FirestoreService::getDocument(
                 self::COLLECTION_PREFIX . 'campuses',
                 $data['campusId']
             );
@@ -40,7 +40,7 @@ class BuildingController extends Controller
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
 
-            $documentRef = FirestoreUBFormService::syncUBFormDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
             $response = [
                 'success' => true,
                 'message' => "building Created Successfully",
@@ -62,7 +62,7 @@ class BuildingController extends Controller
     public function show(Request $request, string $buildingID)
     {
         try {
-            $building = FirestoreUBFormService::getUBFormDocument($this->collectionName, $buildingID);
+            $building = FirestoreService::getDocument($this->collectionName, $buildingID);
             if ($building) {
                 $response = [
                     'success' => true,
@@ -98,7 +98,7 @@ class BuildingController extends Controller
             $data = $request->all();
             // Add updated timestamp
             $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreUBFormService::updateUBFormDocument(
+            $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
                 $data
@@ -130,7 +130,7 @@ class BuildingController extends Controller
     public function destroy(string $id)
     {
         try {
-            $success = FirestoreUBFormService::deleteUBFormDocument($this->collectionName, $id);
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
 
             if ($success) {
                 $response = [
