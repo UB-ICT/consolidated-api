@@ -9,8 +9,7 @@ use App\Services\FirestoreService;
 class MenuController extends Controller
 {
 
-    protected const COLLECTION_PREFIX = 'publicSafety_';
-    protected string $collectionName = self::COLLECTION_PREFIX . 'menus';
+    protected string $collectionName = 'menus';
 
     //DISPLAY
     public function index()
