@@ -54,9 +54,17 @@ class GoogleAuthController extends Controller
         }
 
         Auth::login($_user);
-        $tokenName = $isAnnualReports ? 'annual-reports-login' : 'public-safety-login';
-        $token = $_user->createToken($tokenName)->plainTextToken;
+        if ($isAnnualReports) {
+            $tokenName = 'annual-reports-login';
+        }
 
+        if ($isPublicSafety) {
+            $tokenName = 'public-safety-login';
+        }
+
+
+        $token = $_user->createToken($tokenName)->plainTextToken;
+        Log::info('Token name: ' . $tokenName);
         return redirect(config('app.frontend_url') . '?token=' . $token . '&system=' . ($isAnnualReports ? 'annual-reports' : 'public-safety'));
     }
 
