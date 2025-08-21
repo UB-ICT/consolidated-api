@@ -13,7 +13,6 @@ use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\UserStatusController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
-use Modules\PublicSafety\Http\Controllers\MenuRoleController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 
@@ -41,13 +40,31 @@ Route::group([
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('users', UserController::class);
-    Route::apiResource('campuses', CampusController::class);
+
+    // New routes for CampusController
+    Route::get('campuses', [CampusController::class, 'index']);
+    Route::post('campuses', [CampusController::class, 'store']);
+    Route::get('campuses/{campusID}', [CampusController::class, 'show']);
+    Route::put('campuses/{campusID}', [CampusController::class, 'update']);
+    Route::delete('campuses/{campusID}', [CampusController::class, 'destroy']);
+
+
+    Route::get('buildings', [BuildingController::class, 'index']);
+    Route::post('buildings', [BuildingController::class, 'store']);
+    Route::get('buildings/{buildingID}', [BuildingController::class, 'show']);
+    Route::put('buildings/{buildingID}', [BuildingController::class, 'update']);
+    Route::delete('buildings/{buildingID}', [BuildingController::class, 'destroy']);
+
+
+
     Route::apiResource('messageCategories', MessageCategoryController::class);
     Route::apiResource('messages', MessageController::class);
     Route::apiResource('userCampuses', UserCampusController::class);
-    Route::apiResource('buildings', BuildingController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
+
+    Route::post('/incidentReports/initialize', [IncidentReportController::class, 'initialize']);
     Route::apiResource('incidentReports', IncidentReportController::class);
+
     Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);

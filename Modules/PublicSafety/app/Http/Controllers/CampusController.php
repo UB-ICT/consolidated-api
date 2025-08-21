@@ -14,6 +14,28 @@ class CampusController extends Controller
     protected string $collectionName = self::COLLECTION_PREFIX . 'campuses';
 
 
+
+    public function index(Request $request)
+    {
+        try {
+            $campuses = FirestoreService::getCollection($this->collectionName);
+            $response = [
+                'success' => true,
+                'message' => 'Campuses retrieved successfully',
+                'data' => [
+                    'campuses' => $campuses
+                ]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
+
     //create/store
     public function store(Request $request)
     {

@@ -12,6 +12,27 @@ class BuildingController extends Controller
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'buildings';
 
+    public function index(Request $request)
+    {
+        try {
+            $buildings = FirestoreService::getCollection($this->collectionName);
+            $response = [
+                'success' => true,
+                'message' => 'Buildings retrieved successfully',
+                'data' => [
+                    'buildings' => $buildings
+                ]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
+
     /**
      * create/store.
      */
