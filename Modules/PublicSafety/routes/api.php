@@ -10,8 +10,6 @@ use Modules\PublicSafety\Http\Controllers\MessageCategoryController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
 use Modules\PublicSafety\Http\Controllers\IncidentReportController;
 use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
-use Modules\PublicSafety\Http\Controllers\UserStatusController;
-use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
@@ -36,10 +34,11 @@ Route::group([
     'namespace' => 'Modules\PublicSafety\Http\Controllers',
     'middleware' => 'auth:sanctum',
 ], function () {
-    // Existing routes
-    Route::apiResource('roles', RoleController::class);
-    Route::apiResource('permissions', PermissionController::class);
+
+
     Route::apiResource('users', UserController::class);
+    Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
+
 
     // New routes for CampusController
     Route::get('campuses', [CampusController::class, 'index']);
@@ -48,29 +47,25 @@ Route::group([
     Route::put('campuses/{campusID}', [CampusController::class, 'update']);
     Route::delete('campuses/{campusID}', [CampusController::class, 'destroy']);
 
-
     Route::get('buildings', [BuildingController::class, 'index']);
     Route::post('buildings', [BuildingController::class, 'store']);
     Route::get('buildings/{buildingID}', [BuildingController::class, 'show']);
     Route::put('buildings/{buildingID}', [BuildingController::class, 'update']);
     Route::delete('buildings/{buildingID}', [BuildingController::class, 'destroy']);
 
+    // Route::apiResource('messageCategories', MessageCategoryController::class);
+    // Route::apiResource('messages', MessageController::class);
+    // Route::apiResource('userCampuses', UserCampusController::class);
+    // Route::apiResource('incidentStatuses', IncidentStatusController::class);
 
-
-    Route::apiResource('messageCategories', MessageCategoryController::class);
-    Route::apiResource('messages', MessageController::class);
-    Route::apiResource('userCampuses', UserCampusController::class);
-    Route::apiResource('incidentStatuses', IncidentStatusController::class);
-
-    Route::post('/incidentReports/initialize', [IncidentReportController::class, 'initialize']);
-    Route::apiResource('incidentReports', IncidentReportController::class);
+    Route::get('/incidentReports', [IncidentReportController::class, 'index']);
+    Route::post('/incidentReports', [IncidentReportController::class, 'store']);
+    Route::get('incidentReports/{incidentReportID}', [IncidentReportController::class, 'show']);
+    Route::put('incidentReports/{incidentReportID}', [IncidentReportController::class, 'update']);
+    Route::delete('incidentReports/{incidentReportID}', [IncidentReportController::class, 'destroy']);
+    Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
 
     Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
-    Route::apiResource('userStatuses', UserStatusController::class);
-    Route::apiResource('incidentTypes', IncidentTypeController::class);
-    Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
-    Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
-    Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);

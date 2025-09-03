@@ -32,7 +32,7 @@ RUN apt-get update && apt-get upgrade -y \
     php8.2-xml php8.2-zip php8.2-bcmath php8.2-soap \
     php8.2-intl php8.2-readline \
     php8.2-ldap \
-    php-imagick8.2 ghostscript\
+    php8.2-imagick ghostscript\
     php8.2-msgpack php8.2-igbinary php8.2-redis php8.2-swoole \
     php8.2-memcached php8.2-pcov php8.2-xdebug \
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
@@ -66,8 +66,9 @@ RUN apt-get update && \
     if [ -d "/etc/php/8.2/fpm/conf.d" ]; then echo "extension=grpc.so" > /etc/php/8.2/fpm/conf.d/20-grpc.ini; fi
 
 RUN userdel -r ubuntu
-RUN groupadd --force -g $WWWGROUP sail
-RUN useradd -ms /bin/bash --no-user-group -g $WWWGROUP -u 1337 sail
+# Use a different GID that doesn't conflict with system groups
+RUN groupadd --force -g 1337 sail
+RUN useradd -ms /bin/bash --no-user-group -g 1337 -u 1337 sail
 
 COPY start-container /usr/local/bin/start-container
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf

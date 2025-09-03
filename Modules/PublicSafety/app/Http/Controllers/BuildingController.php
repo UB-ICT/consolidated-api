@@ -20,7 +20,8 @@ class BuildingController extends Controller
                 'success' => true,
                 'message' => 'Buildings retrieved successfully',
                 'data' => [
-                    'buildings' => $buildings
+                    'buildings' => $buildings,
+
                 ]
             ];
         } catch (\Exception $e) {
@@ -41,32 +42,35 @@ class BuildingController extends Controller
         try {
             $data = $request->all();
 
-            // Validate required fields including campusId
             $request->validate([
                 'name' => 'required|string',
                 'location' => 'required|string',
-                'campusId' => 'required|string' // Ensure campusId is provided
             ]);
 
-            // Verify the campus exists before creating the building
-            $campusExists = FirestoreService::getDocument(
-                self::COLLECTION_PREFIX . 'campuses',
-                $data['campusId']
-            );
-
-            if (!$campusExists) {
-                throw new \Exception('The specified campus does not exist');
-            }
-            //add timestamps
+            // Add timestamps
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
 
+            // Add to Firestore and get document reference
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
+
+            // Get the document ID
+            $documentId = $documentRef->id();
+
+            // Update the document to include the ID field
+            $documentRef->update([
+                ['path' => 'id', 'value' => $documentId]
+            ]);
+
+            // Also add ID to the data array for response
+            $data['id'] = $documentId;
+
             $response = [
                 'success' => true,
-                'message' => "building Created Successfully",
+                'message' => "Building Created Successfully",
                 'data' => [
-                    'buildingID' => $documentRef->id()
+                    'buildingID' => $documentId,
+                    'building' => $data
                 ]
             ];
         } catch (\Exception $e) {
