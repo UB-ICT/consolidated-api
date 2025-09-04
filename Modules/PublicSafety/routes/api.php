@@ -36,8 +36,17 @@ Route::group([
 ], function () {
 
 
-    Route::apiResource('users', UserController::class);
+    // Route::apiResource('users', UserController::class);
+
+    Route::get('users', [UserController::class, 'index']);
+    Route::post('users', [UserController::class, 'store']);
+    Route::get('users/{userID}', [UserController::class, 'show']);
+    Route::put('users/{userID}', [UserController::class, 'update']);
+    Route::delete('users/{userID}', [UserController::class, 'destroy']);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
+    Route::get('users/email/{email}', [UserController::class, 'getUserByEmail']);
+    Route::post('users/device-token', [UserController::class, 'updateDeviceToken'])->middleware('auth:sanctum');
+    Route::get('users/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
 
 
     // New routes for CampusController
