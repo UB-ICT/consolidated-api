@@ -58,9 +58,9 @@ class GoogleAuthController extends Controller
             $tokenName = 'annual-reports-login';
         }
 
-        if ($isPublicSafety) {
-            $tokenName = 'public-safety-login';
-        }
+        // if ($isPublicSafety) {
+        //     $tokenName = 'public-safety-login';
+        // }
 
 
         $token = $_user->createToken($tokenName)->plainTextToken;
