@@ -13,7 +13,7 @@ use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
-
+use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 
 /*
  *--------------------------------------------------------------------------
@@ -62,17 +62,28 @@ Route::group([
     Route::put('buildings/{buildingID}', [BuildingController::class, 'update']);
     Route::delete('buildings/{buildingID}', [BuildingController::class, 'destroy']);
 
+    Route::get('incidentTypes', [IncidentTypeController::class, 'index']);
+    Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
+    Route::put('incidentTypes{id}', [IncidentTypeController::class, 'update']);
+    Route::delete('incidentTypes{id}', [IncidentTypeController::class, 'destroy']);
+
     // Route::apiResource('messageCategories', MessageCategoryController::class);
     // Route::apiResource('messages', MessageController::class);
     // Route::apiResource('userCampuses', UserCampusController::class);
-    // Route::apiResource('incidentStatuses', IncidentStatusController::class);
 
+    Route::post('/initialize/incidentReport', [IncidentReportController::class, 'initialize']);
     Route::get('/incidentReports', [IncidentReportController::class, 'index']);
     Route::post('/incidentReports', [IncidentReportController::class, 'store']);
     Route::get('incidentReports/{incidentReportID}', [IncidentReportController::class, 'show']);
     Route::put('incidentReports/{incidentReportID}', [IncidentReportController::class, 'update']);
     Route::delete('incidentReports/{incidentReportID}', [IncidentReportController::class, 'destroy']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
+
+
+    Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
+    Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
+    Route::put('incidentStatus{id}', [IncidentStatusController::class, 'update']);
+    Route::delete('incidentStatus{id}', [IncidentStatusController::class, 'destroy']);
 
     Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
 

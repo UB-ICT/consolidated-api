@@ -196,4 +196,16 @@ class FirestoreService
     {
         return self::queryCollection($collectionName, 'is_active', '=', true);
     }
+
+    //incidentTypes
+    public static function getIncidentStatus(): array
+    {
+        return self::getCollection('publicSafety_incidentStatuses');
+    }
+
+     public static function createIncidentStatus(array $data): DocumentReference
+    {
+        return self::syncDocumentAndGetRef('publicSafety_incidentStatuses', $data);
+    }
+
 }

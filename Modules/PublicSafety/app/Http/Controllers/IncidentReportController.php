@@ -23,11 +23,12 @@ class IncidentReportController extends Controller
                 'disposition' => '',
                 'incidentStatus' => '',
                 'incidentType' => '',
-                'incidentFiles' => ['id' => '', 'name' => '', 'path' => ''], // Changed from incidentFile to incidentFiles (array)
+                'incidentFiles' => ['incidentFiles' => array(['incidentPicture' => ''])], // Changed from incidentFile to incidentFiles (array)
                 'buildingId' => '',
                 'buildingLocation' => '',
                 'report' => '',
-                'uploadedBy' => $request->user()->id ?? '', // Assuming you have authentication
+                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
+                'date' => "" ,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
@@ -44,6 +45,9 @@ class IncidentReportController extends Controller
                 'data' => null,
             ];
         }
+        $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
+        return array_merge($defaultReport,  ['id' => $documentRef->id()]);
+
         return response($response, 200);
     }
 
