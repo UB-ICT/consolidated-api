@@ -18,12 +18,12 @@ class CampusController extends Controller
     public function index(Request $request)
     {
         try {
-            $campuses = FirestoreService::getCollection($this->collectionName);
+            $campus = FirestoreService::getCollection($this->collectionName);
             $response = [
                 'success' => true,
                 'message' => 'Campuses retrieved successfully',
                 'data' => [
-                    'campuses' => $campuses
+                    'campus' => $campus
                 ]
             ];
         } catch (\Exception $e) {

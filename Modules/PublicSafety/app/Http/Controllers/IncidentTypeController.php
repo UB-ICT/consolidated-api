@@ -12,6 +12,29 @@ class IncidentTypeController extends Controller
     protected string $collectionName = self::COLLECTION_PREFIX . 'incidentTypes';
 
 
+
+
+    public function index(Request $request)
+    {
+        try {
+            $incidentType = FirestoreService::getCollection($this->collectionName);
+            $response = [
+                'success' => true,
+                'message' => 'Campuses retrieved successfully',
+                'data' => [
+                    'incidentType' => $incidentType,
+                ]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response()->json($response);
+    }
+
     /**
      * create/store.
      */

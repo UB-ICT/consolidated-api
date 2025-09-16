@@ -21,14 +21,19 @@ class IncidentReportController extends Controller
                 'action' => '',
                 'caseNumber' => $this->generateCaseNumber(),
                 'disposition' => '',
-                'incidentStatus' => '',
+                'incidentReportStatus' => '',
                 'incidentType' => '',
                 'incidentFiles' => ['incidentFiles' => array(['incidentPicture' => ''])], // Changed from incidentFile to incidentFiles (array)
-                'buildingId' => '',
-                'buildingLocation' => '',
+                'buildingName' => '',
                 'report' => '',
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
-                'date' => "" ,
+                'campus' => "",
+                'date' => "",
+                'time' => "",
+                'reportedBy' => "",
+                'contact' => "",
+                'witnesses' => "",
+                'formSubmitted' => "",
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
@@ -81,13 +86,18 @@ class IncidentReportController extends Controller
                 'action' => 'required|string',
                 'caseNumber' => 'nullable|string',
                 'disposition' => 'required|string',
-                'incidentStatus' => 'required|string',
+                'incidentReportStatus' => 'required|string',
                 'incidentType' => 'required|string',
                 'incidentFiles' => 'nullable|array',
-                'buildingId' => 'required|string',
-                // 'buildingLocation' => 'required|string',
+                'buildingName' => 'required|string',
                 'report' => 'required|string',
                 'uploadedBy' => 'required|string',
+                'date' => 'required|string',
+                'time' => 'required|string',
+                'reportedBy' => 'string',
+                'contact' => 'string',
+                'witnesses' => 'string',
+                'formSubmitted' => 'required|string',
             ]);
 
             // Verify references exist

@@ -85,6 +85,13 @@ Route::group([
     Route::put('incidentStatus{id}', [IncidentStatusController::class, 'update']);
     Route::delete('incidentStatus{id}', [IncidentStatusController::class, 'destroy']);
 
+
+    Route::get('incidentTypes', [IncidentTypeController::class,'index']);
+    Route::post('incidentTypes', [IncidentTypeController::class,'store']);
+    Route::put('incidentTypes{id}', [IncidentTypeController::class,'update']);
+    Route::delete('incidentTypes{id}', [IncidentTypeController::class,'destroy']);
+
+
     Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
 
     //menus
