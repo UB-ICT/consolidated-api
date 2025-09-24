@@ -20,12 +20,11 @@ class IncidentReportController extends Controller
             $defaultReport = [
                 'action' => '',
                 'caseNumber' => $this->generateCaseNumber(),
-                'disposition' => '',
+                'description' => '',
                 'incidentReportStatus' => '',
                 'incidentType' => '',
                 'incidentFiles' => ['incidentFiles' => array(['incidentPicture' => ''])], // Changed from incidentFile to incidentFiles (array)
                 'buildingName' => '',
-                'report' => '',
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'campus' => "",
                 'date' => "",
@@ -84,13 +83,12 @@ class IncidentReportController extends Controller
 
             $request->validate([
                 'action' => 'required|string',
+                'description' => 'required|string',
                 'caseNumber' => 'nullable|string',
-                'disposition' => 'required|string',
                 'incidentReportStatus' => 'required|string',
                 'incidentType' => 'required|string',
                 'incidentFiles' => 'nullable|array',
                 'buildingName' => 'required|string',
-                'report' => 'required|string',
                 'uploadedBy' => 'required|string',
                 'date' => 'required|string',
                 'time' => 'required|string',

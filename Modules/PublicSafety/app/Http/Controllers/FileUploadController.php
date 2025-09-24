@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\Log;
 
 class FileUploadController extends Controller
 {
-    public function uploadIncidentReportPhoto(Request $request, string $incidentReportId, )
+    public function uploadIncidentReportPhoto(Request $request, string $reportId)
     {
         try {
             $result = [];
             // Validate required parameters
-            if (!$incidentReportId) {
+            if (!$reportId) {
                 throw new \Exception('Incident Report ID required');
             }
+
 
             if (!$request->hasFile('file')) {
                 throw new \Exception('No files were uploaded');
@@ -57,5 +58,32 @@ class FileUploadController extends Controller
                 'data' => null
             ], 500);
         }
+    }
+
+    public function downloadFile(Request $request, string $fileType, string $fileName)
+    {
+        try {
+            $filePath = storage_path('app/private/uploads/' . $fileType . '/' . $fileName);
+
+            if (file_exists($filePath)) {
+                return response()->download($filePath);
+            } else {
+                // abort(404, 'File not found');
+                $response = [
+                    'success' => false,
+                    'message' => 'File not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            // Exception occurred
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+
+        return response($response, 200);
     }
 }
