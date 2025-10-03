@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class IncidentReportController extends Controller
 {
@@ -36,6 +37,8 @@ class IncidentReportController extends Controller
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
+
+            Log::info('Initializing Incident Report: ', $defaultReport);
 
             $response = [
                 'success' => true,
@@ -81,10 +84,12 @@ class IncidentReportController extends Controller
 
             $data = $request->all();
 
+            Log::info('Storing Incident Report: ', $data);
+
             $request->validate([
                 'action' => 'required|string',
                 'description' => 'required|string',
-                'caseNumber' => 'nullable|string',
+                'caseNumber' => 'required|string',
                 'incidentReportStatus' => 'required|string',
                 'incidentType' => 'required|string',
                 'incidentFiles' => 'nullable|array',
@@ -95,7 +100,7 @@ class IncidentReportController extends Controller
                 'reportedBy' => 'string',
                 'contact' => 'string',
                 'witnesses' => 'string',
-                'formSubmitted' => 'required|string',
+                'formSubmitted' => 'required|boolean',
             ]);
 
             // Verify references exist
@@ -174,7 +179,7 @@ class IncidentReportController extends Controller
         try {
             $data = $request->all();
             // Add updated timestamp
-            $data['updated_at'] = now()->toDateTimeString();
+            // $data['updated_at'] = now()->toDateTimeString();
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
@@ -186,6 +191,7 @@ class IncidentReportController extends Controller
                     'message' => 'incidentReport data updated successfully',
                     'data' => $data
                 ];
+                Log::info('Updated Incident Report: ', $data);
             } else {
                 $response = [
                     'success' => false,

@@ -17,12 +17,12 @@ class IncidentTypeController extends Controller
     public function index(Request $request)
     {
         try {
-            $incidentType = FirestoreService::getCollection($this->collectionName);
+            $incidentTypes = FirestoreService::getCollection($this->collectionName);
             $response = [
                 'success' => true,
                 'message' => 'Campuses retrieved successfully',
                 'data' => [
-                    'incidentType' => $incidentType,
+                    'incidentTypes' => $incidentTypes,
                 ]
             ];
         } catch (\Exception $e) {
@@ -68,13 +68,13 @@ class IncidentTypeController extends Controller
     public function show(Request $request, string $IncidentTypeID)
     {
         try {
-            $incidentType = FirestoreService::getDocument($this->collectionName, $IncidentTypeID);
-            if ($incidentType) {
+            $incidentTypes = FirestoreService::getDocument($this->collectionName, $IncidentTypeID);
+            if ($incidentTypes) {
                 $response = [
                     'success' => true,
                     'message' => 'incidentType found',
                     'data' => [
-                        'incidentType' => $incidentType
+                        'incidentTypes' => $incidentTypes
                     ]
                 ];
             } else {
