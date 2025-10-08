@@ -14,6 +14,7 @@ use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
+use Modules\PublicSafety\Models\IncidentReport;
 
 /*
  *--------------------------------------------------------------------------
@@ -92,11 +93,13 @@ Route::group([
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
 
 
-    Route::post('/uploadPhoto/{reportId}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
+    Route::post('/uploadPhoto/{Id}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
     Route::post('/menu', [MenuController::class, 'store']);
     Route::put('/menu/{id}', [MenuController::class, 'update']);
     Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
+
+    Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
 });

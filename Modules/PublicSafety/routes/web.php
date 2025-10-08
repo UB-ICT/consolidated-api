@@ -14,6 +14,12 @@ use Modules\PublicSafety\Http\Controllers\PublicSafetyController;
 |
 */
 
-Route::group([], function () {
-    Route::resource('publicsafety', PublicSafetyController::class)->names('publicsafety');
+// Route::group([], function () {
+//     Route::resource('publicsafety', PublicSafetyController::class)->names('publicsafety');
+// });
+
+
+
+Route::get('/incidentReport', function () {
+    return view('PublicSafety::incidentreport');
 });

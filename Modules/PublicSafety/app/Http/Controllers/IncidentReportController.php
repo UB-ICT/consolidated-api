@@ -8,6 +8,7 @@ use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class IncidentReportController extends Controller
 {
@@ -296,5 +297,36 @@ class IncidentReportController extends Controller
             ];
         }
         return response($response, 200);
+    }
+
+    public function generateIncidentReportPdf(Request $request, string $reportID)
+    {
+        try {
+            $user = $request->user();
+            $incidentReport = FirestoreService::getDocument($this->collectionName, $reportID);
+            if (!$incidentReport) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incident Report not found',
+                    'data' => null,
+                ], 404);
+            }
+
+            // Load the view and pass the incident report data
+            $pdf = Pdf::loadView('publicsafety::incidentreport', [
+                'incidentReport' => $incidentReport,
+                'user' => $user,
+                'request' => $request
+            ]);
+
+            // Return the generated PDF as a download
+            return $pdf->download('incident_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }
