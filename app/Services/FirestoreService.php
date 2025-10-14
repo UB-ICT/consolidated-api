@@ -7,9 +7,6 @@ namespace App\Services;
 
 use Google\Cloud\Firestore\FirestoreClient;
 use Google\Cloud\Firestore\DocumentReference;
-
-// use App\Jobs\SyncToFirestoreJob;
-// use GPBMetadata\Google\Api\Log;
 use Illuminate\Support\Facades\Log;
 
 class FirestoreService
@@ -53,6 +50,30 @@ class FirestoreService
         return $result;
     }
 
+    public static function getCollectionWhere(string $collection, string $field, string $operator, $value): array
+    {
+        self::initializeFirestore();
+
+        try {
+            $collectionRef = self::$firestore->collection($collection);
+            $query = $collectionRef->where($field, $operator, $value);
+            $documents = $query->documents();
+
+            $results = [];
+            foreach ($documents as $document) {
+                if ($document->exists()) {
+                    $data = $document->data();
+                    $data['id'] = $document->id(); // include document ID
+                    $results[] = $data;
+                }
+            }
+
+            return $results;
+        } catch (\Exception $e) {
+            Log::error("Firestore getCollectionWhere error: " . $e->getMessage());
+            return [];
+        }
+    }
 
     public static function syncDocumentAndGetRef(string $collection, array $data): DocumentReference
     {
@@ -203,9 +224,8 @@ class FirestoreService
         return self::getCollection('publicSafety_incidentStatuses');
     }
 
-     public static function createIncidentStatus(array $data): DocumentReference
+    public static function createIncidentStatus(array $data): DocumentReference
     {
         return self::syncDocumentAndGetRef('publicSafety_incidentStatuses', $data);
     }
-
 }

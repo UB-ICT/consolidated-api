@@ -25,7 +25,7 @@ class IncidentReportController extends Controller
                 'description' => '',
                 'incidentReportStatus' => '',
                 'incidentType' => '',
-                'incidentFiles' => ['incidentFiles' => array(['incidentPicture' => ''])], // Changed from incidentFile to incidentFiles (array)
+                "incidentFiles" => [],
                 'buildingName' => '',
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'campus' => "",
@@ -34,29 +34,16 @@ class IncidentReportController extends Controller
                 'reportedBy' => "",
                 'contact' => "",
                 'witnesses' => "",
-                'formSubmitted' => "",
+                'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
 
             Log::info('Initializing Incident Report: ', $defaultReport);
-
-            $response = [
-                'success' => true,
-                'message' => "Incident report initialized successfully",
-                'data' => $defaultReport
-            ];
         } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
         return array_merge($defaultReport,  ['id' => $documentRef->id()]);
-
-        return response($response, 200);
     }
 
     public function index(Request $request)
@@ -83,9 +70,9 @@ class IncidentReportController extends Controller
     {
         try {
 
-            $data = $request->all();
+            // $data = $request->all();
 
-            Log::info('Storing Incident Report: ', $data);
+            // Log::info('Storing Incident Report: ', $data);
 
             $request->validate([
                 'action' => 'required|string',
@@ -104,16 +91,7 @@ class IncidentReportController extends Controller
                 'formSubmitted' => 'required|boolean',
             ]);
 
-            // Verify references exist
-            $this->verifyReferencesExist($data);
-
-            // Generate case number if not provided
-            if (empty($data['caseNumber'])) {
-                $data['caseNumber'] = $this->generateCaseNumber();
-            }
-            $data['created_at'] = now()->toDateTimeString();
-            $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
             // Get the document ID
             $documentId = $documentRef->id();
 
@@ -122,16 +100,14 @@ class IncidentReportController extends Controller
                 ['path' => 'id', 'value' => $documentId]
             ]);
 
-            // Also add ID to the data array for response
-            $data['id'] = $documentId;
+            // Build incident report data for response by merging request data with the generated id
+            $incidentReport = $request->all();
+            $incidentReport['id'] = $documentRef->id(); // add Firestore ID to object
 
             $response = [
                 'success' => true,
                 'message' => "incidentReport Created Successfully",
-                'data' => [
-                    'incidentReportID' => $documentRef->id(),
-                    'caseNumber' => $data['caseNumber']
-                ]
+                'data' => $incidentReport
             ];
         } catch (\Exception $e) {
             $response = [
@@ -152,9 +128,7 @@ class IncidentReportController extends Controller
                 $response = [
                     'success' => true,
                     'message' => 'incident Report found',
-                    'data' => [
-                        'incident Report' => $incidentReport
-                    ]
+                    'data' => $incidentReport
                 ];
             } else {
                 $response = [
@@ -321,6 +295,44 @@ class IncidentReportController extends Controller
 
             // Return the generated PDF as a download
             return $pdf->download('incident_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function getUnsubmittedIncidentReports(Request $request)
+    {
+        try {
+            $userName = $request->user()->name ?? '';
+
+            $unsubmitted = FirestoreService::getCollectionWhere(
+                $this->collectionName,
+                'uploadedBy',
+                '=',
+                $userName
+            );
+
+            // Filter for reports where formSubmitted == false
+            $unsubmittedReport = collect($unsubmitted)
+                ->firstWhere('formSubmitted', false);
+
+            if ($unsubmittedReport) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Unsubmitted incident report found',
+                    'data' => $unsubmittedReport,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No unsubmitted incident report found',
+                'data' => null,
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

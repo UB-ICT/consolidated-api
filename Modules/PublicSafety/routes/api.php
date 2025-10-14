@@ -72,13 +72,15 @@ Route::group([
     // Route::apiResource('messages', MessageController::class);
     // Route::apiResource('userCampuses', UserCampusController::class);
 
-    Route::post('/initialize/incidentReport', [IncidentReportController::class, 'initialize']);
+    Route::post('/initialize/incidentReports', [IncidentReportController::class, 'initialize']);
     Route::get('/incidentReports', [IncidentReportController::class, 'index']);
     Route::post('/incidentReports', [IncidentReportController::class, 'store']);
     Route::get('incidentReports/{incidentReportID}', [IncidentReportController::class, 'show']);
     Route::put('incidentReports/{incidentReportID}', [IncidentReportController::class, 'update']);
     Route::delete('incidentReports/{incidentReportID}', [IncidentReportController::class, 'destroy']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
+    Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
+    Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
 
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
@@ -100,6 +102,4 @@ Route::group([
     Route::post('/menu', [MenuController::class, 'store']);
     Route::put('/menu/{id}', [MenuController::class, 'update']);
     Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
-
-    Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
 });
