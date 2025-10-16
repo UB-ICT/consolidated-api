@@ -15,6 +15,7 @@ use Modules\PublicSafety\Http\Controllers\FileUploadController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Models\IncidentReport;
+use Modules\PublicSafety\Http\Controllers\EndOfShiftReportPatrolController;
 
 /*
  *--------------------------------------------------------------------------
@@ -65,8 +66,8 @@ Route::group([
 
     Route::get('incidentTypes', [IncidentTypeController::class, 'index']);
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
-    Route::put('incidentTypes{id}', [IncidentTypeController::class, 'update']);
-    Route::delete('incidentTypes{id}', [IncidentTypeController::class, 'destroy']);
+    Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
+    Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
 
     // Route::apiResource('messageCategories', MessageCategoryController::class);
     // Route::apiResource('messages', MessageController::class);
@@ -83,6 +84,17 @@ Route::group([
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
 
 
+    //end of shift report patrol
+    Route::post('/initialize/endOfShiftReportPatrol', [EndOfShiftReportPatrolController::class, 'initialize']);
+    Route::get('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'index']);
+    Route::post('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'store']);
+    Route::get('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'show']);
+    Route::put('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'update']);
+    Route::delete('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'destroy']);
+    Route::get('/endOfShiftReportPatrolsTotal', [EndOfShiftReportPatrolController::class, 'getTotalEndOfShiftReportPatrol']);
+    Route::get('/generateEndOfShiftReportPatrolPdf/{reportID}', [EndOfShiftReportPatrolController::class, 'generateEndOfShiftReportPatrolPdf']);
+    Route::get('/unsubmittedEndOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'getUnsubmittedEndOfShiftReportPatrols']);
+
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
     Route::put('incidentStatus/{id}', [IncidentStatusController::class, 'update']);
@@ -96,6 +108,8 @@ Route::group([
 
 
     Route::post('/uploadPhoto/{Id}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
+
+
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
