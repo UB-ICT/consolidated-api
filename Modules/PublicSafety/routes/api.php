@@ -16,6 +16,10 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Models\IncidentReport;
 use Modules\PublicSafety\Http\Controllers\EndOfShiftReportPatrolController;
+use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
+
+
+
 
 /*
  *--------------------------------------------------------------------------
@@ -84,8 +88,8 @@ Route::group([
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
 
 
-    //end of shift report patrol
-    Route::post('/initialize/endOfShiftReportPatrol', [EndOfShiftReportPatrolController::class, 'initialize']);
+    //end of shift report (patrol officer)
+    Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
     Route::get('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'index']);
     Route::post('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'store']);
     Route::get('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'show']);
@@ -94,6 +98,19 @@ Route::group([
     Route::get('/endOfShiftReportPatrolsTotal', [EndOfShiftReportPatrolController::class, 'getTotalEndOfShiftReportPatrol']);
     Route::get('/generateEndOfShiftReportPatrolPdf/{reportID}', [EndOfShiftReportPatrolController::class, 'generateEndOfShiftReportPatrolPdf']);
     Route::get('/unsubmittedEndOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'getUnsubmittedEndOfShiftReportPatrols']);
+
+    //end of shift report (Shift Supervisor)
+    Route::post('/initialize/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'initialize']);
+    Route::get('/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'index']);
+    Route::post('/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'store']);
+    Route::get('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'show']);
+    Route::put('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'update']);
+    Route::delete('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'destroy']);
+    Route::get('/endOfShiftReportSupervisorTotal', [EndOfShiftReportSupervisorController::class, 'getTotalEndOfShiftReportSupervisor']);
+    Route::get('/generateEndOfShiftReportSupervisorPdf/{ID}', [EndOfShiftReportSupervisorController::class, 'generateEndOfShiftReportSupervisorPdf']);
+    Route::get('/unsubmittedendOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'getUnsubmittedEndOfShiftReportSupervisor']);
+
+
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);

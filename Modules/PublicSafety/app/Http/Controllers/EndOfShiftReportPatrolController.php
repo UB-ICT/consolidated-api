@@ -20,7 +20,7 @@ class EndOfShiftReportPatrolController extends Controller
             $defaultReport = [
                 'date' => '',
                 'time' => '',
-                'uploadedBy' => '', //Patrol Officer
+                'uploadedBy' => $request->user()->name ?? '', //Patrol Officer
                 'campus' => '',
                 'report' => '',
                 'formSubmitted' => false,
@@ -61,7 +61,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'uploadedBy' => 'required|string', //Patrol Officer
                 'campus' => 'required|string',
                 'report' => 'required|string',
-                'formSubmitted' => false,
+                'formSubmitted' => 'required|boolean',
             ]);
 
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
@@ -118,6 +118,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'data' => null,
             ];
         }
+        return response($response, 200);
     }
 
     //update
@@ -187,7 +188,7 @@ class EndOfShiftReportPatrolController extends Controller
     }
 
 
-    public function getTotalEndOfShiftReportPatrol()
+    public function getTotalEndOfShiftReportPatrol(Request $request)
     {
         try {
             //Get all all end of shift reports from firestore
@@ -208,6 +209,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'data' => null,
             ];
         }
+        return response($response, 200);
     }
 
     public function generateEndOfShiftReportPatrolPdf(Request $request, string $reportID)
