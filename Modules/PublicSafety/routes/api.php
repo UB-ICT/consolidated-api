@@ -108,7 +108,7 @@ Route::group([
     Route::delete('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'destroy']);
     Route::get('/endOfShiftReportSupervisorTotal', [EndOfShiftReportSupervisorController::class, 'getTotalEndOfShiftReportSupervisor']);
     Route::get('/generateEndOfShiftReportSupervisorPdf/{ID}', [EndOfShiftReportSupervisorController::class, 'generateEndOfShiftReportSupervisorPdf']);
-    Route::get('/unsubmittedendOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'getUnsubmittedEndOfShiftReportSupervisor']);
+    Route::get('/unsubmittedEndOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'getUnsubmittedEndOfShiftReportSupervisor']);
 
 
 

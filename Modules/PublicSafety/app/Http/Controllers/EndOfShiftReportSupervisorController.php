@@ -76,7 +76,7 @@ class EndOfShiftReportSupervisorController extends Controller
 
             //build end of shift report data for response by merging request data with the new genereated id
             $supervisorReport = $request->all();
-            $supervisorReport['id'] = $documentRef->id(); // add Firestore ID to object
+            // $supervisorReport['id'] = $documentRef->id(); // add Firestore ID to object
 
             $response = [
                 'success' => true,
