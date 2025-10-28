@@ -1,22 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\PublicSafety\Http\Controllers\RoleController;
-use Modules\PublicSafety\Http\Controllers\PermissionController;
 use Modules\PublicSafety\Http\Controllers\UserController;
-use Modules\PublicSafety\Http\Controllers\UserCampusController;
 use Modules\PublicSafety\Http\Controllers\CampusController;
-use Modules\PublicSafety\Http\Controllers\MessageCategoryController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
 use Modules\PublicSafety\Http\Controllers\IncidentReportController;
 use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
-use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
-use Modules\PublicSafety\Models\IncidentReport;
 use Modules\PublicSafety\Http\Controllers\EndOfShiftReportPatrolController;
 use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
+use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
 
 
 
@@ -110,6 +105,16 @@ Route::group([
     Route::get('/generateEndOfShiftReportSupervisorPdf/{ID}', [EndOfShiftReportSupervisorController::class, 'generateEndOfShiftReportSupervisorPdf']);
     Route::get('/unsubmittedEndOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'getUnsubmittedEndOfShiftReportSupervisor']);
 
+    //lost and found tracking report
+    Route::post('/initialize/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'initialize']);
+    Route::get('/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'index']);
+    Route::post('/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'store']);
+    Route::get('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'show']);
+    Route::put('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'update']);
+    Route::delete('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'destroy']);
+    Route::get('/lostAndFoundTrackingTotal', [LostAndFoundTrackingController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/generateLostAndFoundPdf/{reportID}', [LostAndFoundTrackingController::class, 'generateLostAndFoundPdf']);
+    Route::get('/unsubmittedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getUnsubmittedLostAndFoundTracking']);
 
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
