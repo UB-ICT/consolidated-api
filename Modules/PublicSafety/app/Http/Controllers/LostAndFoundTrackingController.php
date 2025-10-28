@@ -89,6 +89,7 @@ class LostAndFoundTrackingController extends Controller
                 'remarks' => 'nullable|string',
                 'returnedToOwnerSignature' => 'required|string',
                 'ownerAcknowledgementSignature' => 'required|string',
+                'formSubmitted' => 'required|boolean',
             ]);
 
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
