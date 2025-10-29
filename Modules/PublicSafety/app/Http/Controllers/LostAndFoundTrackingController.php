@@ -22,6 +22,7 @@ class LostAndFoundTrackingController extends Controller
                 'facilityName' => '',
                 'time' => '',
                 'todaysDate' => now()->toDateString(),
+                'serialNumber' => '',
                 'itemDescription' => '',
                 'locationFound' => '',
                 'roomNo' => '',
@@ -37,6 +38,7 @@ class LostAndFoundTrackingController extends Controller
                 'remarks' => '',
                 'returnedToOwnerSignature' => '',
                 'ownerAcknowledgementSignature' => '',
+                'uploadedBy' => $request->user()->name ?? '',
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
@@ -74,6 +76,7 @@ class LostAndFoundTrackingController extends Controller
                 'facilityName' => 'nullable|string',
                 'time' => 'nullable|string',
                 'todaysDate' => 'required|string',
+                'serialNumber' => 'required|string',
                 'itemDescription' => 'required|string',
                 'locationFound' => 'nullable|string',
                 'roomNo' => 'nullable|string',
@@ -89,6 +92,7 @@ class LostAndFoundTrackingController extends Controller
                 'remarks' => 'nullable|string',
                 'returnedToOwnerSignature' => 'required|string',
                 'ownerAcknowledgementSignature' => 'required|string',
+                'uploadedBy' => 'required|string',
                 'formSubmitted' => 'required|boolean',
             ]);
 
@@ -263,14 +267,14 @@ class LostAndFoundTrackingController extends Controller
             $userName = $request->user()->name ?? '';
             $unsubmitted = FirestoreService::getCollectionWhere(
                 $this->collectionName,
-                'createdBy',
+                'uploadedBy',
                 '==',
                 $userName
             );
 
             //filter for reports where submitted == false
             $unsubmittedReport = collect($unsubmitted)
-                ->firstWhere('submitted', false);
+                ->firstWhere('formSubmitted', false);
 
             if ($unsubmittedReport) {
                 return response()->json([
