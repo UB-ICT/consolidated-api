@@ -252,12 +252,16 @@ class LostAndFoundTrackingController extends Controller
             $pdf = Pdf::loadView('publicsafety::lostandfoundtracking', [
                 'lostAndFoundTracking' => $lostAndFoundTracking,
                 'user' => $user,
+                'request' => $request,
             ]);
             // Return the generated PDF as a download
             return $pdf->download('lost_and_found_tracking_' . $lostAndFoundTrackingID . '.pdf');
         } catch (\Exception $e) {
-            Log::error('Error in LostAndFoundTrackingController@generateLostAndFoundPdf: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal Server Error'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
     }
 
