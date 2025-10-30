@@ -12,6 +12,7 @@ use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Http\Controllers\EndOfShiftReportPatrolController;
 use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
 use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
+use Modules\PublicSafety\Http\Controllers\LostPropertyController;
 
 
 
@@ -116,6 +117,15 @@ Route::group([
     Route::get('/generateLostAndFoundPdf/{reportID}', [LostAndFoundTrackingController::class, 'generateLostAndFoundPdf']);
     Route::get('/unsubmittedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getUnsubmittedLostAndFoundTracking']);
 
+    Route::post('/initialize/lostProperty', [LostPropertyController::class, 'initialize']);
+    Route::get('/lostProperty', [LostPropertyController::class, 'index']);
+    Route::post('/lostProperty', [LostPropertyController::class, 'store']);
+    Route::get('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'show']);
+    Route::put('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'update']);
+    Route::delete('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'destroy']);
+    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
+    Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
@@ -127,7 +137,6 @@ Route::group([
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
-
 
     Route::post('/uploadPhoto/{Id}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
 

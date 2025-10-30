@@ -9,43 +9,48 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-
-class LostAndFoundTrackingController extends Controller
+class LostPropertyController extends Controller
 {
     protected const COLLECTION_PREFIX = 'publicSafety_';
-    protected string $collectionName = self::COLLECTION_PREFIX . 'lostAndFoundTracking';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'lostProperty';
 
     public function initialize(Request $request)
     {
         try {
             $defaultReport = [
-                'facilityName' => '',
-                'time' => '',
-                'todaysDate' => now()->toDateString(),
-                'serialNumber' => '',
-                'itemDescription' => '',
-                'locationFound' => '',
-                'roomNo' => '',
-                'foundBy' => '',
-                'supervisorWhoReceivedItem' => '',
+                'complainantName' => '',
+                'complainantAddress' => '',
+                'complainantDOB' => '',
+                'complainantTelephone' => '',
+                'complaintID' => '',
+                'complainantEmail' => '',
+                'dateLost' => '',
+                'timeLost' => '',
+                'complaintAffiliation' => '',
+                'additionalDescription' => '',
+                'owner' => '',
+                'ownerSignature' => '',
+                'dateReported' => '',
+
                 'dateReturnedToOwner' => '',
                 'timeReturnedToOwner' => '',
-                'owner' => '',
+                'ownerName' => '',
                 'ownerDOB' => '',
                 'ownerAddress' => '',
-                'ownerIDNumber' => '',
                 'ownerTelephone' => '',
+                'ownerID' => '',
                 'remarks' => '',
-                'returnedToOwnerSignature' => '',
-                'ownerAcknowledgementSignature' => '',
-                'uploadedBy' => $request->user()->name ?? '',
+                'signatureDPS' => '',
+                'ownerSignatureReturn' => '',
+
+                'uploadedBy' => $request->user()->email,
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
-            Log::info('Initializing Lost and Found Tracking: ', $defaultReport);
+            Log::info('Initializing Lost Property: ', $defaultReport);
         } catch (\Exception $e) {
-            Log::error('Error in LostAndFoundTrackingController@initialize: ' . $e->getMessage());
+            Log::error('Error in LostPopertyController@initialize: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
@@ -55,49 +60,29 @@ class LostAndFoundTrackingController extends Controller
     public function index(Request $request)
     {
         try {
-            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
             $response = [
                 'success' => true,
-                'data' => $lostAndFoundTracking,
-                'message' => 'Lost and Found Tracking retrieved successfully',
+                'data' => $lostProperty,
+                'message' => 'Lost Property records retrieved successfully.'
             ];
         } catch (\Exception $e) {
-            Log::error('Error in LostAndFoundTrackingController@index: ' . $e->getMessage());
+            Log::error('Error in LostPopertyController@index: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
-        return response()->json($response);
+        return response()->json($response, 200);
     }
 
-    //create/store
     public function store(Request $request)
     {
         try {
             $request->validate([
-                'facilityName' => 'nullable|string',
-                'time' => 'nullable|string',
-                'todaysDate' => 'required|string',
-                'serialNumber' => 'required|string',
-                'itemDescription' => 'required|string',
-                'locationFound' => 'nullable|string',
-                'roomNo' => 'nullable|string',
-                'foundBy' => 'nullable|string',
-                'supervisorWhoReceivedItem' => 'nullable|string',
-                'dateReturnedToOwner' => 'nullable|string',
-                'timeReturnedToOwner' => 'nullable|string',
-                'owner' => 'nullable|string',
-                'ownerDOB' => 'nullable|string',
-                'ownerAddress' => 'nullable|string',
-                'ownerIDNumber' => 'nullable|string',
-                'ownerTelephone' => 'nullable|string',
-                'remarks' => 'nullable|string',
-                'returnedToOwnerSignature' => 'required|string',
-                'ownerAcknowledgementSignature' => 'required|string',
-                'uploadedBy' => 'required|string',
-                'formSubmitted' => 'required|boolean',
+                'complainantName' => 'required|string',
+                'dateLost' => 'required|date',
+                // Add other validation rules as needed
             ]);
-
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
-            // Get the document ID
+            //Get document ID
             $documentId = $documentRef->id();
 
             // Update the document to include the ID field
@@ -106,13 +91,14 @@ class LostAndFoundTrackingController extends Controller
             ]);
 
             //build lost and found tracking  data for response by merging query data with document id
-            $lostAndFoundTracking = $request->all();
-            $lostAndFoundTracking['id'] = $documentId;
+
+            $lostProperty = $request->all();
+            $lostProperty['id'] = $documentId;
 
             $response = [
                 'success' => true,
-                'data' => $lostAndFoundTracking,
-                'message' => 'Lost and Found Tracking created successfully',
+                'data' => $lostProperty,
+                'message' => 'Lost Property record created successfully.'
             ];
         } catch (\Exception $e) {
             $response = [
@@ -124,20 +110,20 @@ class LostAndFoundTrackingController extends Controller
         return response()->json($response);
     }
 
-    public function show(Request $request, string $lostAndFoundTrackingID)
+    public function show(Request $request, string $lostPropertyID)
     {
         try {
-            $lostAndFoundTracking = FirestoreService::getDocument($this->collectionName, $lostAndFoundTrackingID);
-            if ($lostAndFoundTracking) {
+            $lostProperty = FirestoreService::getDocument($this->collectionName, $lostPropertyID);
+            if ($lostProperty) {
                 $response = [
                     'success' => true,
-                    'message' => 'Lost and Found Tracking found',
-                    'data' => $lostAndFoundTracking
+                    'message' => 'Lost property record retrieved successfully',
+                    'data' => $lostProperty
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Lost and Found Tracking not found',
+                    'message' => 'Lost property record not found',
                     'data' => null
                 ];
             }
@@ -164,14 +150,13 @@ class LostAndFoundTrackingController extends Controller
             if ($success) {
                 $response = [
                     'success' => true,
-                    'message' => 'Lost data updated successfully',
+                    'message' => 'Lost property data updated successfully',
                     'data' => $data
                 ];
-                Log::info('Updated Lost and Found Tracking: ', $data);
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Lost data not found',
+                    'message' => 'Lost property data not found',
                     'data' => null
                 ];
             }
@@ -193,12 +178,12 @@ class LostAndFoundTrackingController extends Controller
             if ($success) {
                 $response = [
                     'success' => true,
-                    'message' => 'Lost data deleted successfully',
+                    'message' => 'Lost property data deleted successfully',
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Lost data not found',
+                    'message' => 'Lost property data not found',
                     'data' => null
                 ];
             }
@@ -214,16 +199,16 @@ class LostAndFoundTrackingController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalLoandFoundTracking(Request $request)
+    public function getTotalLostProperty(Request $request)
     {
         try {
-            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
 
-            $total = is_array($lostAndFoundTracking) ? count($lostAndFoundTracking) : 0;
+            $total = is_array($lostProperty) ? count($lostProperty) : 0;
             $response = [
                 'success' => true,
                 'data' => $total,
-                'message' => 'Total Lost and Found Tracking retrieved successfully',
+                'message' => 'Total Lost Property retrieved successfully',
             ];
         } catch (\Exception $e) {
             $response = [
@@ -235,27 +220,27 @@ class LostAndFoundTrackingController extends Controller
         return response()->json($response);
     }
 
-    public function generateLostAndFoundPdf(Request $request, string $lostAndFoundTrackingID)
+    public function generateLostPropertyPdf(Request $request, string $lostPropertyID)
     {
         try {
             $user = $request->user();
-            $lostAndFoundTracking = FirestoreService::getDocument($this->collectionName, $lostAndFoundTrackingID);
-            if (!$lostAndFoundTracking) {
+            $lostProperty = FirestoreService::getDocument($this->collectionName, $lostPropertyID);
+            if (!$lostProperty) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Lost and Found Tracking not found',
+                    'message' => 'Lost property not found',
                     'data' => null
                 ], 404);
             }
 
             // Load the view and pass the incident report data
-            $pdf = Pdf::loadView('publicsafety::lostandfoundtracking', [
-                'lostAndFoundTracking' => $lostAndFoundTracking,
+            $pdf = Pdf::loadView('publicsafety::lostproperty', [
+                'lostProperty' => $lostProperty,
                 'user' => $user,
                 'request' => $request,
             ]);
             // Return the generated PDF as a download
-            return $pdf->download('lost_and_found_tracking_' . '.pdf');
+            return $pdf->download('lost_property_' . '.pdf');
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -265,7 +250,7 @@ class LostAndFoundTrackingController extends Controller
         }
     }
 
-    public function getUnsubmittedLostAndFoundTracking(Request $request)
+    public function getUnsubmittedLostProperty(Request $request)
     {
         try {
             $userName = $request->user()->name ?? '';
@@ -284,18 +269,18 @@ class LostAndFoundTrackingController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $unsubmittedReport,
-                    'message' => 'Unsubmitted Lost and Found Tracking retrieved successfully',
+                    'message' => 'Unsubmitted Lost Property retrieved successfully',
                 ]);
             }
 
             return response()->json([
                 'success' => false,
                 'data' => null,
-                'message' => 'No unsubmitted Lost and Found Tracking found',
+                'message' => 'No unsubmitted Lost Property found',
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Error in LostAndFoundTrackingController@getUnsubmittedLostAndFoundTracking: ' . $e->getMessage());
+            Log::error('Error in LostPropertyController@getUnsubmittedLostProperty: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
