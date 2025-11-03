@@ -78,7 +78,34 @@ class LostPropertyController extends Controller
         try {
             $request->validate([
                 'complainantName' => 'required|string',
+                'composanintAddress' => 'required|string',
+                'complaintDOB' => 'required|date',
+                'complainantTelephone' => 'required|string',
+                'complaintID' => 'required|string',
+                'complainantEmail' => 'required|email',
                 'dateLost' => 'required|date',
+                'timeLost' => 'required|date',
+                'complaintAffiliation' => 'required|string',
+                'additionalDescription' => 'required|string',
+                'owner' => 'required|string',
+                'ownerSignature' => 'required|string',
+                'dateReported' => 'required|date',
+                'dateReturnedToOwner' => 'required|date',
+                'timeReturnedToOwner' => 'required|date',
+                'ownerName' => 'required|string',
+                'ownerDOB' => 'required|date',
+                'ownerAddress' => 'required|string',
+                'ownerTelephone' => 'required|string',
+                'ownerID' => 'required|string',
+                'remarks' => 'required|string',
+                'signatureDPS' => 'required|string',
+                'ownerSignatureReturn' => 'required|string',
+
+                'uploadedBy' => $request->user()->email,
+                'formSubmitted' => 'required|boolean',
+                'created_at' => 'required|date',
+                'updated_at' => 'required|date',
+
                 // Add other validation rules as needed
             ]);
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
