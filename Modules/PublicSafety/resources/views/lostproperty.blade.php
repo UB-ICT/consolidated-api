@@ -151,7 +151,7 @@
         </div>
         <div class="info-row">
           <span class="info-label">Complaint ID:</span>
-          <span class="info-value">{{ $lostProperty['complaintID'] ?? 'N/A' }}</span>
+          <span class="info-value">{{ $lostProperty['complainantID'] ?? 'N/A' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Complainant Email:</span>
@@ -166,8 +166,8 @@
           <span class="info-value">{{ $lostProperty['timeLost'] ?? 'N/A' }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Complaint Affiliation:</span>
-          <span class="info-value">{{ $lostProperty['complaintAffiliation'] ?? 'N/A' }}</span>
+          <span class="info-label">Complainant Affiliation:</span>
+          <span class="info-value">{{ $lostProperty['complainantAffiliation'] ?? 'N/A' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Additional Description:</span>
@@ -229,7 +229,7 @@
         </div>
         <div class="info-row">
           <span class="info-label">Owner Signature:</span>
-          <span class="info-value">{{ $lostProperty['ownerSignatureReturn'] ?? 'N/A' }}</span>
+          <span class="info-value">{{ $lostProperty['returnedToOwnerSignature'] ?? 'N/A' }}</span>
         </div>
       </div>
 

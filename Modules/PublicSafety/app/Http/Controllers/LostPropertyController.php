@@ -26,7 +26,7 @@ class LostPropertyController extends Controller
                 'complainantEmail' => '',
                 'dateLost' => '',
                 'timeLost' => '',
-                'complaintAffiliation' => '',
+                'complainantAffiliation' => '',
                 'additionalDescription' => '',
                 'owner' => '',
                 'ownerSignature' => '',
