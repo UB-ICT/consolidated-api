@@ -23,7 +23,7 @@ class ImpoundedReportTrackingFormController extends Controller
                 'studentID' => '',
                 'phoneNumber' => '',
                 'address' => '',
-                'todayDate' => '',
+                'todayDate' => now()->toDateString(),
 
                 //bicycle information form
                 'brand' => '',
@@ -37,6 +37,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'whatTimeBikeStolen' => '',
                 'bicycleRack' => '',
                 'whenWasBikeWasStolen' => '',
+                'signature' => '',
+                'dateOfSignature' => '',
 
                 //Disposition of property
                 'dateReturnedToOwner' => '',
@@ -124,6 +126,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'whatTimeBikeStolen' => 'required|string',
                 'bicycleRack' => 'nullable|string',
                 'whenWasBikeWasStolen' => 'required|string',
+                'signature' => 'required|string',
+                'dateOfSignature' => 'required|string',
 
                 //Disposition of property
                 'dateReturnedToOwner' => 'nullable|date',
@@ -333,7 +337,7 @@ class ImpoundedReportTrackingFormController extends Controller
     {
         try {
             $userName = $request->user()->name ?? '';
-            
+
             $unsubmitted = FirestoreService::getCollectionWhere(
                 $this->collectionName,
                 'uploadedBy',
