@@ -134,7 +134,7 @@
         <div class="section-content">
           <div class="info-row">
             <span class="info-label">Person Name:</span>
-            <span class="info-value">{{ $impoundedReport['personName'] ?? 'N/A' }}</span>
+            <span class="info-value">{{ $impoundedReport['name'] ?? 'N/A' }}</span>
           </div>
 
           <div class="info-row">

@@ -71,6 +71,9 @@ class ImpoundedReportTrackingFormController extends Controller
                 'ownerSignature2' => '',
                 'signaturePSD2' => '',
 
+                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
+                'formSubmitted' => false,
+
             ];
             Log::info('Initializing Impounded Report Tracking Form: ', $defaultReport);
 
@@ -115,46 +118,48 @@ class ImpoundedReportTrackingFormController extends Controller
                 'color' => 'required|string',
                 'style' => 'required|string',
                 'serialNumber' => 'required|string',
-                'purchaseDate' => 'required|date',
-                'purchasePrice' => 'required|numeric',
+                'purchaseDate' => 'nullable|date',
+                'purchasePrice' => 'nullable|numeric',
                 'locationOfBikeStolen' => 'required|string',
                 'whatTimeBikeStolen' => 'required|string',
-                'bicycleRack' => 'required|string',
+                'bicycleRack' => 'nullable|string',
                 'whenWasBikeWasStolen' => 'required|string',
 
                 //Disposition of property
-                'dateReturnedToOwner' => 'required|date',
-                'ownerName' => 'required|string',
-                'ownerAddress' => 'required|string',
-                'ownerDOB' => 'required|date',
-                'ownerIDNumber' => 'required|string',
-                'ownerTelephone' => 'required|string',
-                'remarks' => 'required|string',
-                'ownerSignature' => 'required|string',
-                'signaturePSD' => 'required|string',
+                'dateReturnedToOwner' => 'nullable|date',
+                'ownerName' => 'nullable|string',
+                'ownerAddress' => 'nullable|string',
+                'ownerDOB' => 'nullable|date',
+                'ownerIDNumber' => 'nullable|string',
+                'ownerTelephone' => 'nullable|string',
+                'remarks' => 'nullable|string',
+                'ownerSignature' => 'nullable|string',
+                'signaturePSD' => 'nullable|string',
+
 
                 //Impound Report Tracking Form:
-                "nameOfFinder" => "required|string",
-                "locationFound" => "required|string",
-                "trackingBrand" => "required|string",
-                "trackingModel" => "required|string",
-                "trackingColor" => "required|string",
-                "trackingStyle" => "required|string",
-                "trackingSerialNumber" => "required|string",
-                "supervisorWhoreceivedItems" => "required|string",
-                "trackingFormRemarks" => "required|string",
+                'nameOfFinder' => 'nullable|string',
+                'locationFound' => 'nullable|string',
+                'trackingBrand' => 'nullable|string',
+                'trackingModel' => 'nullable|string',
+                'trackingColor' => 'nullable|string',
+                'trackingStyle' => 'nullable|string',
+                'trackingSerialNumber' => 'nullable|string',
+                'supervisorWhoreceivedItems' => 'nullable|string',
+                'trackingFormRemarks' => 'nullable|string',
 
                 //Disposition of property 2
-                'dateReturnedToOwner2' => 'required|date',
-                'ownerName2' => 'required|string',
-                'ownerAddress2' => 'required|string',
-                'ownerDOB2' => 'required|date',
-                'ownerIDNumber2' => 'required|string',
-                'ownerTelephone2' => 'required|string',
-                'remarks2' => 'required|string',
-                'ownerSignature2' => 'required|string',
-                'signaturePSD2' => 'required|string',
-
+                'dateReturnedToOwner2' => 'nullable|date',
+                'ownerName2' => 'nullable|string',
+                'ownerAddress2' => 'nullable|string',
+                'ownerDOB2' => 'nullable|date',
+                'ownerIDNumber2' => 'nullable|string',
+                'ownerTelephone2' => 'nullable|string',
+                'remarks2' => 'nullable|string',
+                'ownerSignature2' => 'nullable|string',
+                'signaturePSD2' => 'nullable|string',
+                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
+                'formSubmitted' => false,
             ]);
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
             //Get document ID
@@ -308,7 +313,7 @@ class ImpoundedReportTrackingFormController extends Controller
             }
 
             // Load the view and pass the incident report data
-            $pdf = Pdf::loadView('publicsafety::impoundedReport', [
+            $pdf = Pdf::loadView('publicsafety::impoundedreporttracking', [
                 'impoundedReport' => $impoundedReport,
                 'user' => $user,
                 'request' => $request,
@@ -328,6 +333,7 @@ class ImpoundedReportTrackingFormController extends Controller
     {
         try {
             $userName = $request->user()->name ?? '';
+            
             $unsubmitted = FirestoreService::getCollectionWhere(
                 $this->collectionName,
                 'uploadedBy',
