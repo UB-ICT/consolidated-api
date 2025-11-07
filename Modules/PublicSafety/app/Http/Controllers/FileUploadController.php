@@ -6,6 +6,8 @@ use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 
 
 class FileUploadController extends Controller
@@ -44,7 +46,6 @@ class FileUploadController extends Controller
                     ];
                 }
             }
-
             return response()->json([
                 'success' => true,
                 'message' => 'Files uploaded successfully',

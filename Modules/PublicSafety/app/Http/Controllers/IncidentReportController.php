@@ -25,7 +25,7 @@ class IncidentReportController extends Controller
                 'description' => '',
                 'incidentReportStatus' => '',
                 'incidentType' => '',
-                "incidentFiles" => [],
+                "incidentFiles" => array(['incidentPicture' => '', 'generated_name' => '', 'original_name' => '']),
                 'buildingName' => '',
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'campus' => "",
@@ -43,7 +43,7 @@ class IncidentReportController extends Controller
         } catch (\Exception $e) {
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
-        return array_merge($defaultReport,  ['id' => $documentRef->id()]);
+        return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
     public function index(Request $request)

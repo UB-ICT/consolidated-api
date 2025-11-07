@@ -84,6 +84,8 @@ Route::group([
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
+    Route::post('/uploadIncidentReportPhoto/{reportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
+
 
 
     //end of shift report (patrol officer)
@@ -153,7 +155,6 @@ Route::group([
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
 
-    Route::post('/uploadPhoto/{Id}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
 
 
 
