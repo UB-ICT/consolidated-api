@@ -85,6 +85,7 @@ Route::group([
     Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
     Route::post('/uploadIncidentReportPhoto/{reportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
+    Route::get('/getFile/{fileType}/{reportID}', [FileUploadController::class, 'downloadFile']);
 
 
 
@@ -141,26 +142,21 @@ Route::group([
     Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
     Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
 
-
-
-
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
     Route::put('incidentStatus/{id}', [IncidentStatusController::class, 'update']);
     Route::delete('incidentStatus/{id}', [IncidentStatusController::class, 'destroy']);
-
 
     Route::get('incidentTypes', [IncidentTypeController::class, 'index']);
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
 
-
-
-
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
     Route::post('/menu', [MenuController::class, 'store']);
     Route::put('/menu/{id}', [MenuController::class, 'update']);
     Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
+
+
 });
