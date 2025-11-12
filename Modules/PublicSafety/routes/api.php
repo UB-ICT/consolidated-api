@@ -84,8 +84,8 @@ Route::group([
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
-    Route::post('/uploadIncidentReportPhoto/{reportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
-    Route::get('/getFile/{fileType}/{reportID}', [FileUploadController::class, 'downloadFile']);
+    Route::get('/getFile/{fileType}/{fileName}', [FileUploadController::class, 'downloadPublicSafetyFile']);
+    Route::post('/uploadPublicSafetyPhoto/{reportID}', [FileUploadController::class, 'uploadPublicSafetyPhoto']);
 
 
 
@@ -159,4 +159,11 @@ Route::group([
     Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
 
 
+});
+
+
+Route::group([
+    'prefix' => 'v1/publicSafety',
+    'namespace' => 'Modules\PublicSafety\Http\Controllers',
+], function () {
 });

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class FileUploadController extends Controller
 {
-    public function uploadIncidentReportPhoto(Request $request, string $reportId)
+    public function uploadPublicSafetyPhoto(Request $request, string $reportId)
     {
         try {
             $result = [];
@@ -33,16 +33,18 @@ class FileUploadController extends Controller
 
             foreach ($files as $file) {
                 if ($file->isValid()) {
-                    $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
+                    $fileName = Str::random(75) . '.' . $file->getClientOriginalExtension();
                     $file->storeAs('uploads/photos', $fileName);
 
                     // Generate a public URL for the file
                     $fileUrl = 'app/private/uploads/photos/' . $fileName;
 
+
                     $result[] = [
                         "generated_name" => $fileName,
                         "original_name" => $file->getClientOriginalName(),
-                        "url" => $fileUrl
+                        "url" => $fileUrl,
+                        "displayURL" => $fileUrl
                     ];
                 }
             }
@@ -61,7 +63,7 @@ class FileUploadController extends Controller
         }
     }
 
-    public function downloadFile(Request $request, string $fileType, string $fileName)
+    public function downloadPublicSafetyFile(Request $request, string $fileType, string $fileName)
     {
         try {
             $filePath = storage_path('app/private/uploads/' . $fileType . '/' . $fileName);
