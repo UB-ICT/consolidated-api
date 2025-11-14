@@ -22,6 +22,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'time' => '',
                 'uploadedBy' => $request->user()->name ?? '', //Patrol Officer
                 'campus' => '',
+                'endOfShiftReportPatrolFiles' => [],
                 'report' => '',
                 'formSubmitted' => false,
             ];
@@ -59,6 +60,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'date' => 'required|string',
                 'time' => 'required|string',
                 'uploadedBy' => 'required|string', //Patrol Officer
+                'endOfShiftReportPatrolFiles' => 'nullable|array',
                 'campus' => 'required|string',
                 'report' => 'required|string',
                 'formSubmitted' => 'required|boolean',

@@ -20,6 +20,7 @@ class EndOfShiftReportSupervisorController extends Controller
             $defaultReport = [
                 'date' => '',
                 'time' => '',
+                'endOfShiftReportSupervisorFiles' => [],
                 'uploadedBy' => $request->user()->name ?? '', //Supervisor Officer
                 'campus' => '',
                 'report' => '',
@@ -58,6 +59,7 @@ class EndOfShiftReportSupervisorController extends Controller
             $request->validate([
                 'date' => 'required|string',
                 'time' => 'required|string',
+                'endOfShiftReportSupervisorFiles' => 'nullable|array',
                 'uploadedBy' => 'required|string',
                 'campus' => 'required|string',
                 'report' => 'required|string',
