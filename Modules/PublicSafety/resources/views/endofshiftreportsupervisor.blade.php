@@ -158,6 +158,26 @@
       </div>
     </div>
 
+    <!-- Files -->
+    <div class="section">
+      <h2> End of Shift Report Pictures</h2>
+      <div class="section-content">
+        <div class="info-row">
+          @if(isset($supervisorReport['endOfShiftReportSupervisorFiles']) && is_array($supervisorReport['endOfShiftReportSupervisorFiles']))
+            @foreach($supervisorReport['endOfShiftReportSupervisorFiles'] as $file)
+              @if(isset($file['url']) && !empty($file['url']))
+                <img src="{{ storage_path($file['url']) }}" alt="End of Shift Report Supervisor File"
+                  style="max-width: 300px; height: auto; margin-bottom: 20px;">
+              @endif
+            @endforeach
+          @else
+            <p>No files uploaded.</p>
+          @endif
+        </div>
+      </div>
+
+    </div>
+
 
   </div>
 </body>

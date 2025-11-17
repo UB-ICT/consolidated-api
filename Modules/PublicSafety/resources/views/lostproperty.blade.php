@@ -233,6 +233,26 @@
         </div>
       </div>
 
+
+      <!-- FILES -->
+      <div class="section">
+        <h2> Lost Property Report Pictures</h2>
+        <div class="section-content">
+          <div class="info-row">
+            @if(isset($lostProperty['lostPropertyFiles']) && is_array($lostProperty['lostPropertyFiles']))
+              @foreach($lostProperty['lostPropertyFiles'] as $file)
+                @if(isset($file['url']) && !empty($file['url']))
+                  <img src="{{ storage_path($file['url']) }}" alt="Lost Property Report Picture"
+                    style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                @endif
+              @endforeach
+            @else
+              <p>No files uploaded.</p>
+            @endif
+          </div>
+        </div>
+      </div>
+
 </body>
 
 </html>

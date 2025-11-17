@@ -175,37 +175,43 @@
             <h2>Incident Files</h2>
             <div class="section-content">
                 <div class="info-row">
-                    <span class="info-value">{{ $incidentReport['incidentFiles']['incidentPicture'] ?? 'N/A'}}</span>
+                    @if(isset($incidentReport['incidentFiles']) && is_array($incidentReport['incidentFiles']))
+                        @foreach($incidentReport['incidentFiles'] as $file)
+                            @if(isset($file['url']) && !empty($file['url']))
+                                <img src="{{ storage_path($file['url']) }}" alt="Incident File"
+                                    style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                            @endif
+                        @endforeach
+                    @else
+                        <p>No files uploaded.</p>
+                    @endif
                 </div>
             </div>
-        </div>
 
-        <!-- PEOPLE -->
-        <div class="section">
-            <h2>People Involved</h2>
-            <div class="section-content">
-                <div class="info-row">
-                    <span class="info-label">Reported By: </span>
-                    <span class="info-value">{{ $incidentReport['reportedBy'] ?? 'N/A'}}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Contact: </span>
-                    <span class="info-value">{{ $incidentReport['contact'] ?? 'N/A'}}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Witnesses: </span>
-                    <span class="info-value">{{ $incidentReport['witnesses'] ?? 'N/A'}}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Uploaded By: </span>
-                    <span class="info-value">{{ $incidentReport['uploadedBy'] ?? 'N/A'}}</span>
+            <!-- PEOPLE -->
+            <div class="section">
+                <h2>People Involved</h2>
+                <div class="section-content">
+                    <div class="info-row">
+                        <span class="info-label">Reported By: </span>
+                        <span class="info-value">{{ $incidentReport['reportedBy'] ?? 'N/A'}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Contact: </span>
+                        <span class="info-value">{{ $incidentReport['contact'] ?? 'N/A'}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Witnesses: </span>
+                        <span class="info-value">{{ $incidentReport['witnesses'] ?? 'N/A'}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Uploaded By: </span>
+                        <span class="info-value">{{ $incidentReport['uploadedBy'] ?? 'N/A'}}</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-    </div>
+        </div>
 </body>
 
 </html>
-
-
