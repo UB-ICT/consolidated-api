@@ -62,7 +62,52 @@ class FileUploadController extends Controller
             ], 500);
         }
     }
-    
+
+    public function uploadSignatureCanvas(Request $request, string $reportId)
+    {
+        try {
+            if (!$reportId) {
+                throw new \Exception("Incident Report ID required");
+            }
+
+            if (!$request->signature) {
+                throw new \Exception("Signature data missing");
+            }
+
+            $signatureData = $request->signature;
+
+            // Remove base64 prefix: "data:image/png;base64,"
+            $signatureData = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
+            $signatureData = str_replace(' ', '+', $signatureData);
+
+            $fileName = Str::random(75) . '.png';
+            $filePath = storage_path("app/private/uploads/signatures/{$fileName}");
+
+            // Save decoded file
+            file_put_contents($filePath, base64_decode($signatureData));
+
+            $url = "app/private/uploads/signatures/{$fileName}";
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Signature saved successfully',
+                'data' => [
+                    'generated_name' => $fileName,
+                    'url' => $url,
+                    'displayURL' => $url
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Signature canvas upload error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
+    }
+
 
     public function downloadPublicSafetyFile(Request $request, string $fileType, string $fileName)
     {
@@ -91,7 +136,7 @@ class FileUploadController extends Controller
         return response($response, 200);
     }
 
-    
+
 
 
 }

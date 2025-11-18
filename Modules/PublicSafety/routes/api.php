@@ -156,8 +156,10 @@ Route::group([
 
     Route::get('/getFile/{fileType}/{fileName}', [FileUploadController::class, 'downloadPublicSafetyFile']);
     Route::post('/uploadPublicSafetyPhoto/{reportID}', [FileUploadController::class, 'uploadPublicSafetyPhoto']);
-    Route::post('/uploadPublicSafetySignature/{reportID}', [FileUploadController::class, 'uploadPublicSafetySignature']);
-
+    Route::post(
+        '/uploadSignatureCanvas/{reportID}',
+        [FileUploadController::class, 'uploadSignatureCanvas']
+    );
 
 });
 
