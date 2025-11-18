@@ -62,6 +62,7 @@ class FileUploadController extends Controller
             ], 500);
         }
     }
+    
 
     public function downloadPublicSafetyFile(Request $request, string $fileType, string $fileName)
     {
@@ -89,4 +90,8 @@ class FileUploadController extends Controller
 
         return response($response, 200);
     }
+
+    
+
+
 }

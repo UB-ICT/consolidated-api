@@ -229,15 +229,27 @@
           <div class="info-row">
             <span class="info-label">Return to Owner Signature: </span>
             <span class="info-value">{{ $lostAndFoundTracking['returnedToOwnerSignature'] ?? 'N/A'}}</span>
+
           </div>
 
           <div class="info-row">
             <span class="info-label">Owner Acknowledgement Signature: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['ownerAcknowledgementSignature'] ?? 'N/A'}}</span>
+
+            @if(isset($lostAndFoundTracking['ownerAcknowledgementSignature']) && !empty($lostAndFoundTracking['ownerAcknowledgementSignature']))
+              <span class="info-value">
+                <img
+                  src="{{ asset('storage/uploads/signatures/' . $lostAndFoundTracking['ownerAcknowledgementSignature']) }}"
+                  alt="Owner Signature" style="max-width:200px; height:auto;">
+              </span>
+            @else
+              <span class="info-value">N/A</span>
+            @endif
           </div>
+
         </div>
       </div>
     </div>
+  </div>
 
   </div>
 </body>
