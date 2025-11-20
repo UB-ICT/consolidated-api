@@ -177,72 +177,13 @@
           <span class="info-label">Owner:</span>
           <span class="info-value">{{ $lostProperty['owner'] ?? 'N/A' }}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Owner Signature:</span>
-          <span class="info-value">{{ $lostProperty['ownerSignature'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Date Reported:</span>
-          <span class="info-value">{{ $lostProperty['dateReported'] ?? 'N/A' }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Return Of Recovered Item To Owner</h2>
-      <div class="section-content">
-        <div class="info-row">
-          <span class="info-label">Date Returned To Owner:</span>
-          <span class="info-value">{{ $lostProperty['dateReturnedToOwner'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Time Returned To Owner:</span>
-          <span class="info-value">{{ $lostProperty['timeReturnedToOwner'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner Name:</span>
-          <span class="info-value">{{ $lostProperty['ownerName'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner DOB:</span>
-          <span class="info-value">{{ $lostProperty['ownerDOB'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner Address:</span>
-          <span class="info-value">{{ $lostProperty['ownerAddress'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner Telephone:</span>
-          <span class="info-value">{{ $lostProperty['ownerTelephone'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner ID:</span>
-          <span class="info-value">{{ $lostProperty['ownerID'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Remarks:</span>
-          <span class="info-value">{{ $lostProperty['remarks'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Signature of DPS Rep:</span>
-          <span class="info-value">{{ $lostProperty['signatureDPS'] ?? 'N/A' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Owner Signature:</span>
-          <span class="info-value">{{ $lostProperty['returnedToOwnerSignature'] ?? 'N/A' }}</span>
-        </div>
-      </div>
-
-
-      <!-- FILES -->
-      <div class="section">
-        <h2> Lost Property Report Pictures</h2>
         <div class="section-content">
+          
           <div class="info-row">
-            @if(isset($lostProperty['lostPropertyFiles']) && is_array($lostProperty['lostPropertyFiles']))
-              @foreach($lostProperty['lostPropertyFiles'] as $file)
+            @if(isset($lostProperty['ownerSignature']) && is_array($lostProperty['ownerSignature']))
+              @foreach($lostProperty['ownerSignature'] as $file)
                 @if(isset($file['url']) && !empty($file['url']))
-                  <img src="{{ storage_path($file['url']) }}" alt="Lost Property Report Picture"
+                  <img src="{{ storage_path($file['url']) }}" alt="Owner Signature"
                     style="max-width: 300px; height: auto; margin-bottom: 20px;">
                 @endif
               @endforeach
@@ -251,7 +192,103 @@
             @endif
           </div>
         </div>
+
+
       </div>
+      <div class="info-row">
+        <span class="info-label">Date Reported:</span>
+        <span class="info-value">{{ $lostProperty['dateReported'] ?? 'N/A' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILES -->
+  <div class="section">
+    <h2> Lost Property Report Pictures</h2>
+    <div class="section-content">
+      <div class="info-row">
+        @if(isset($lostProperty['lostPropertyFiles']))
+          @foreach($lostProperty['lostPropertyFiles'] as $file)
+            @if(isset($file['url']) && !empty($file['url']))
+              <img src="{{ storage_path($file['url']) }}" alt="Lost Property Report Picture"
+                style="max-width: 300px; height: auto; margin-bottom: 20px;">
+            @endif
+          @endforeach
+        @else
+          <p>No files uploaded.</p>
+        @endif
+      </div>
+    </div>
+  </div>
+
+
+  <div class="section">
+    <h2>Return Of Recovered Item To Owner</h2>
+    <div class="section-content">
+      <div class="info-row">
+        <span class="info-label">Date Returned To Owner:</span>
+        <span class="info-value">{{ $lostProperty['dateReturnedToOwner'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Time Returned To Owner:</span>
+        <span class="info-value">{{ $lostProperty['timeReturnedToOwner'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Owner Name:</span>
+        <span class="info-value">{{ $lostProperty['ownerName'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Owner DOB:</span>
+        <span class="info-value">{{ $lostProperty['ownerDOB'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Owner Address:</span>
+        <span class="info-value">{{ $lostProperty['ownerAddress'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Owner Telephone:</span>
+        <span class="info-value">{{ $lostProperty['ownerTelephone'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Owner ID:</span>
+        <span class="info-value">{{ $lostProperty['ownerID'] ?? 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Remarks:</span>
+        <span class="info-value">{{ $lostProperty['remarks'] ?? 'N/A' }}</span>
+      </div>
+
+      <div class="section-content">
+        <h2>Signature of  DPS Rep</h2>
+          <div class="info-row">
+            @if(isset($lostProperty['signatureDPS']) && is_array($lostProperty['signatureDPS']))
+              @foreach($lostProperty['signatureDPS'] as $file)
+                @if(isset($file['url']) && !empty($file['url']))
+                  <img src="{{ storage_path($file['url']) }}" alt="Signature of DPS Rep"
+                    style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                @endif
+              @endforeach
+            @else
+              <p>No files uploaded.</p>
+            @endif
+          </div>
+        </div>
+        <div class="info-row">
+
+          @if(isset($lostProperty['returnedToOwnerSignature']) && is_array($lostProperty['returnedToOwnerSignature']))
+            @foreach($lostProperty['returnedToOwnerSignature'] as $file)
+              @if(isset($file['url']) && !empty($file['url']))
+                <img src="{{ storage_path($file['url']) }}" alt="Owner Signature"
+                  style="max-width: 300px; height: auto; margin-bottom: 20px;">
+              @endif
+            @endforeach
+          @else
+            <p>No files uploaded.</p>
+          @endif
+        </div>
+      </div>
+
+
 
 </body>
 

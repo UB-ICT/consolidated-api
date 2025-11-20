@@ -30,7 +30,7 @@ class LostPropertyController extends Controller
                 'lostPropertyFiles' => [],
                 'additionalDescription' => '',
                 'owner' => '',
-                'ownerSignature' => '',
+                'ownerSignature' => [],
                 'dateReported' => '',
 
                 'dateReturnedToOwner' => '',
@@ -42,8 +42,8 @@ class LostPropertyController extends Controller
                 'ownerID' => '',
                 'ownerEmail' => '',
                 'remarks' => '',
-                'signatureDPS' => '',
-                'returnedToOwnerSignature' => '',
+                'signatureDPS' => [],
+                'returnedToOwnerSignature' => [],
 
                 'uploadedBy' => $request->user()->name,
                 'formSubmitted' => false,
@@ -91,7 +91,7 @@ class LostPropertyController extends Controller
                 'lostPropertyFiles' => 'nullable|array',
                 'additionalDescription' => 'required|string',
                 'owner' => 'required|string',
-                'ownerSignature' => 'required|string',
+                'ownerSignature' => 'nullable|array',
                 'dateReported' => 'required|date',
                 'dateReturnedToOwner' => 'required|date',
                 'timeReturnedToOwner' => 'required|date',
@@ -101,8 +101,8 @@ class LostPropertyController extends Controller
                 'ownerTelephone' => 'required|string',
                 'ownerID' => 'required|string',
                 'remarks' => 'required|string',
-                'signatureDPS' => 'required|string',
-                'returnedToOwnerSignature' => 'required|string',
+                'signatureDPS' => 'nullable|array',
+                'returnedToOwnerSignature' => 'nullable|array',
 
                 'uploadedBy' => $request->user()->email,
                 'formSubmitted' => 'required|boolean',
@@ -270,7 +270,7 @@ class LostPropertyController extends Controller
                 'request' => $request,
             ]);
             // Return the generated PDF as a download
-            return $pdf->download('lost_property_' . '.pdf');
+            return $pdf->download('lost_property_' . $lostPropertyID . '.pdf');
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

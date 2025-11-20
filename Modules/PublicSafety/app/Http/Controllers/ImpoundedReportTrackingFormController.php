@@ -49,8 +49,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'ownerIDNumber' => '',
                 'ownerTelephone' => '',
                 'remarks' => '',
-                'ownerSignature' => '',
-                'signaturePSD' => '',
+                'ownerSignature' => [],
+                'signaturePSD' => [],
 
                 //Impound Report Tracking Form:
                 "nameOfFinder" => "",
@@ -71,8 +71,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'ownerIDNumber2' => '',
                 'ownerTelephone2' => '',
                 'remarks2' => '',
-                'ownerSignature2' => '',
-                'signaturePSD2' => '',
+                'ownerSignature2' => [],
+                'signaturePSD2' => [],
 
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'formSubmitted' => false,
