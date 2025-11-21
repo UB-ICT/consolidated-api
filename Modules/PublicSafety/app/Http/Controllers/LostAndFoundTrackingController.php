@@ -74,10 +74,10 @@ class LostAndFoundTrackingController extends Controller
     {
         try {
             $request->validate([
-                'facilityName' => 'nullable|string',
+                'facilityName' => 'required|string',
                 'time' => 'nullable|string',
                 'todaysDate' => 'required|string',
-                'serialNumber' => 'required|string',
+                'serialNumber' => 'nullable|string',
                 'itemDescription' => 'required|string',
                 'locationFound' => 'nullable|string',
                 'roomNo' => 'nullable|string',

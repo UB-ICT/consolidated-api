@@ -80,9 +80,9 @@ class IncidentReportController extends Controller
                 'uploadedBy' => 'required|string',
                 'date' => 'required|string',
                 'time' => 'required|string',
-                'reportedBy' => 'string',
-                'contact' => 'string',
-                'witnesses' => 'string',
+                'reportedBy' => 'nullable|string',
+                'contact' => 'nullable|string',
+                'witnesses' => 'nullable|string',
                 'formSubmitted' => 'required|boolean',
             ]);
 
