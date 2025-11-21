@@ -170,86 +170,102 @@
           <span class="info-value">{{ $lostAndFoundTracking['itemDescription'] ?? 'N/A'}}</span>
         </div>
       </div>
+    </div>
 
-      <!-- FILES -->
-      <div class="section">
-        <h2> Lost and Found Tracking Pictures</h2>
-        <div class="section-content">
-          <div class="info-row">
-            @if(isset($lostAndFoundTracking['lostAndFoundTrackingFiles']) && is_array($lostAndFoundTracking['lostAndFoundTrackingFiles']))
-              @foreach($lostAndFoundTracking['lostAndFoundTrackingFiles'] as $file)
-                @if(isset($file['url']) && !empty($file['url']))
-                  <img src="{{ storage_path($file['url']) }}" alt="Lost and Found Tracking File"
-                    style="max-width: 300px; height: auto; margin-bottom: 20px;">
-                @endif
-              @endforeach
-            @else
-              <p>No files uploaded.</p>
-            @endif
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>Disposition of property</h2>
-        <div class="section-content">
-          <div class="info-row">
-            <span class="info-label">Date Returned to owner: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['dateReturnedToOwner'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Time Returned to Owner: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['timeReturnedToOwner'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Owner: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['owner'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Owner DOB: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['ownerDOB'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Owner Address: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['ownerAddress'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"> Owner ID Number:</span>: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['ownerIDNumber'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Owner Telephone: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['ownerTelephone'] ?? 'N/A'}}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Remarks: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['remarks'] ?? 'N/A'}}</span>
-          </div>
-
-          <div class="info-row">
-            <span class="info-label">Return to Owner Signature: </span>
-            <span class="info-value">{{ $lostAndFoundTracking['returnedToOwnerSignature'] ?? 'N/A'}}</span>
-
-          </div>
-
-          <div class="info-row">
-            <span class="info-label">Owner Acknowledgement Signature: </span>
-
-            @if(isset($lostAndFoundTracking['ownerAcknowledgementSignature']) && !empty($lostAndFoundTracking['ownerAcknowledgementSignature']))
-              <span class="info-value">
-                <img
-                  src="{{ asset('storage/uploads/signatures/' . $lostAndFoundTracking['ownerAcknowledgementSignature']) }}"
-                  alt="Owner Signature" style="max-width:200px; height:auto;">
-              </span>
-            @else
-              <span class="info-value">N/A</span>
-            @endif
-          </div>
-
+    <!-- FILES -->
+    <div class="section">
+      <h2> Lost and Found Tracking Pictures</h2>
+      <div class="section-content">
+        <div class="info-row">
+          @if(isset($lostAndFoundTracking['lostAndFoundTrackingFiles']) && is_array($lostAndFoundTracking['lostAndFoundTrackingFiles']))
+            @foreach($lostAndFoundTracking['lostAndFoundTrackingFiles'] as $file)
+              @if(isset($file['url']) && !empty($file['url']))
+                <img src="{{ storage_path($file['url']) }}" alt="Lost and Found Tracking File"
+                  style="max-width: 300px; height: auto; margin-bottom: 20px;">
+              @endif
+            @endforeach
+          @else
+            <p>No files uploaded.</p>
+          @endif
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="section">
+      <h2>Disposition of property</h2>
+      <div class="section-content">
+        <div class="info-row">
+          <span class="info-label">Date Returned to owner: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['dateReturnedToOwner'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Time Returned to Owner: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['timeReturnedToOwner'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Owner: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['owner'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Owner DOB: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['ownerDOB'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Owner Address: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['ownerAddress'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label"> Owner ID Number:</span>: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['ownerIDNumber'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Owner Telephone: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['ownerTelephone'] ?? 'N/A'}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Remarks: </span>
+          <span class="info-value">{{ $lostAndFoundTracking['remarks'] ?? 'N/A'}}</span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="section">
+      <h2>Returned to Owner by: </h2>
+      <div class="section-content">
+        <div class="info-row">
+          @if(isset($lostAndFoundTracking['returnedToOwnerSignature']) && is_array($lostAndFoundTracking['returnedToOwnerSignature']))
+            @foreach ($lostAndFoundTracking['returnedToOwnerSignature'] as $file)
+              @if(isset($file['url']) && !empty($file['url']))
+                <img src="{{ storage_path($file['url']) }}" alt="Returned to Owner Signature"
+                  style="max-width: 300px; height: auto; margin-bottom: 20px;">
+              @endif
+            @endforeach
+          @else
+            <p>No signatures uploaded.</p>
+          @endif
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Owner Acknowledgement Signature: </h2>
+      <div class="section-content">
+        <div class="info-row">
+          @if(isset($lostAndFoundTracking['ownerAcknowledgementSignature']) && is_array($lostAndFoundTracking['ownerAcknowledgementSignature']))
+            @foreach ($lostAndFoundTracking['ownerAcknowledgementSignature'] as $file)
+              @if(isset($file['url']) && !empty($file['url']))
+                <img src="{{ storage_path($file['url']) }}" alt="Owner Acknowledgement Signature"
+                  style="max-width: 300px; height: auto; margin-bottom: 20px;">
+              @endif
+            @endforeach
+          @else
+            <span class="info-value">N/A</span>
+          @endif
+        </div>
+      </div>
+    </div>
+
 
   </div>
 </body>

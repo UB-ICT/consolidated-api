@@ -158,6 +158,7 @@
           </div>
         </div>
       </div>
+
       <div class="section">
         <h2>Bicycle Information Form:</h2>
         <div class="section-content">
@@ -205,6 +206,206 @@
             <span class="info-label">When was bike was stolen:</span>
             <span class="info-value">{{ $impoundedReport['whenWasBikeWasStolen'] ?? 'N/A' }}</span>
           </div>
+          <div class="section">
+            <h2>Signature</h2>
+            <div class="section-content">
+              <div class="info-row">
+                @if(isset($impoundedReport['signature']) && is_array($impoundedReport['signature']))
+                  @foreach ($impoundedReport['signature'] as $file)
+                    @if (isset($file['url']) && !empty($file['url']))
+                      <img src="{{ storage_path($file['url']) }}" alt="Signature"
+                        style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                    @endif
+                  @endforeach
+                @else
+                  <p>No Signature uploaded.</p>
+                @endif
+              </div>
+            </div>
+            <div class="info-row">
+              <span class="info-label"> Date </span>
+              <span class="info-value">{{ $impoundedReport['dateOfSignature'] ?? 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Disposition Of Property</h2>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="info-label">Date Returned to Owner: </span>
+            <span class="info-value">{{ $impoundedReport['dateOfReturnedToOwner'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Name: </span>
+            <span class="info-value">{{ $impoundedReport['ownerName'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Address: </span>
+            <span class="info-value">{{ $impoundedReport['ownerAddress'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner DOB: </span>
+            <span class="info-value">{{ $impoundedReport['ownerDOB'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner ID Number</span>
+            <span class="info-value">{{ $impoundedReport['ownerIDNumber'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Telephone</span>
+            <span class="info-value">{{ $impoundedReport['ownerTelephone'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Remarks</span>
+            <span class="info-value">{{ $impoundedReport['remarks'] ?? 'N/A' }}</span>
+          </div>
+          <div class="section">
+            <h2>Owner's Signature</h2>
+            <div class="section-content">
+              <div class="info-row">
+                @if(isset($impoundedReport['ownerSignature']) && is_array($impoundedReport['ownerSignature']))
+                  @foreach ($impoundedReport['ownerSignature'] as $file)
+                    @if (isset($file['url']) && !empty($file['url']))
+                      <img src="{{ storage_path($file['url']) }}" alt="Owner's Signature"
+                        style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                    @endif
+                  @endforeach
+                @else
+                  <p>No Signature uploaded.</p>
+                @endif
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <h2>Signature of PSD Rep</h2>
+            <div class="section-content">
+              <div class="info-row">
+                @if(isset($impoundedReport['signaturePSD']) && is_array($impoundedReport['signaturePSD']))
+                  @foreach ($impoundedReport['signaturePSD'] as $file)
+                    @if (isset($file['url']) && !empty($file['url']))
+                      <img src="{{ storage_path($file['url']) }}" alt="Signature of PSD Rep"
+                        style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                    @endif
+                  @endforeach
+                @else
+                  <p>No Signature uploaded.</p>
+                @endif
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="section">
+        <h2>Impound Report Tracking Form:</h2>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="info-label">Name of Finder:</span>
+            <span class="info-value">{{ $impoundedReport['nameOfFinder'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Location Found:</span>
+            <span class="info-value">{{ $impoundedReport['locationFound'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Brand:</span>
+            <span class="info-value">{{ $impoundedReport['trackingBrand'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label"> Model </span>
+            <span class="info-value">{{ $impoundedReport['trackingModel'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">color:</span>
+            <span class="info-value">{{ $impoundedReport['trackingColor'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">style:</span>
+            <span class="info-value">{{ $impoundedReport['trackingStyle'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Serial Number:</span>
+            <span class="info-value">{{ $impoundedReport['trackingSerialNumber'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Supervisor Who Received Item(s):</span>
+            <span class="info-value">{{ $impoundedReport['supervisorWhoreceivedItems'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Remarks:</span>
+            <span class="info-value">{{ $impoundedReport['trackingFormRemarks'] ?? 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Disposition of Property</h2>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="info-label">Date Returned to Owner:</span>
+            <span class="info-value">{{ $impoundedReport['dateReturnedToOwner2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Name:</span>
+            <span class="info-value">{{ $impoundedReport['ownerName2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Address:</span>
+            <span class="info-value">{{ $impoundedReport['ownerAddress2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner DOB:</span>
+            <span class="info-value">{{ $impoundedReport['ownerDOB2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner ID Number:</span>
+            <span class="info-value">{{ $impoundedReport['ownerIDNumber2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Owner Telephone:</span>
+            <span class="info-value">{{ $impoundedReport['ownerTelephone2'] ?? 'N/A' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Remarks:</span>
+            <span class="info-value">{{ $impoundedReport['remarks2'] ?? 'N/A' }}</span>
+          </div>
+
+          <div class="section">
+            <h2>Owner's Signature</h2>
+            <div class="info-row">
+              @if(isset($impoundedReport['ownerSignature2']) && is_array($impoundedReport['ownerSignature2']))
+                @foreach ($impoundedReport['ownerSignature2'] as $file)
+                  @if (isset($file['url']) && !empty($file['url']))
+                    <img src="{{ storage_path($file['url']) }}" alt="Owner's Signature"
+                      style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                  @endif
+                @endforeach
+              @else
+                <p>No Signature uploaded.</p>
+              @endif
+            </div>
+          </div>
+          <div class="section">
+            <h2>Signature of PSD Rep</h2>
+            <div class="section-content">
+              <div class="info-row">
+                @if(isset($impoundedReport['signaturePSD2']) && is_array($impoundedReport['signaturePSD2']))
+                  @foreach ($impoundedReport['signaturePSD2'] as $file)
+                    @if (isset($file['url']) && !empty($file['url']))
+                      <img src="{{ storage_path($file['url']) }}" alt="Signature of PSD Rep"
+                        style="max-width: 300px; height: auto; margin-bottom: 20px;">
+                    @endif
+                  @endforeach
+                @else
+                  <p>No Signature uploaded.</p>
+                @endif
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -226,98 +427,6 @@
           </div>
         </div>
 
-        <div class="section">
-          <h2>Impound Report Tracking Form:</h2>
-          <div class="section-content">
-            <div class="info-row">
-              <span class="info-label">Name of Finder:</span>
-              <span class="info-value">{{ $impoundedReport['nameOfFinder'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Location Found:</span>
-              <span class="info-value">{{ $impoundedReport['locationFound'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Brand:</span>
-              <span class="info-value">{{ $impoundedReport['trackingBrand'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label"> Model </span>
-              <span class="info-value">{{ $impoundedReport['trackingModel'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">color:</span>
-              <span class="info-value">{{ $impoundedReport['trackingColor'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">style:</span>
-              <span class="info-value">{{ $impoundedReport['trackingStyle'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Serial Number:</span>
-              <span class="info-value">{{ $impoundedReport['trackingSerialNumber'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Supervisor Who Received Item(s):</span>
-              <span class="info-value">{{ $impoundedReport['supervisorWhoreceivedItems'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Remarks:</span>
-              <span class="info-value">{{ $impoundedReport['trackingFormRemarks'] ?? 'N/A' }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="section">
-          <h2>Disposition of Property</h2>
-          <div class="section-content">
-            <div class="info-row">
-              <span class="info-label">Date Returned to Owner:</span>
-              <span class="info-value">{{ $impoundedReport['dateReturnedToOwner2'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Owner Name:</span>
-              <span class="info-value">{{ $impoundedReport['ownerName2'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Owner Address:</span>
-              <span class="info-value">{{ $impoundedReport['ownerAddress2'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Owner DOB:</span>
-              <span class="info-value">{{ $impoundedReport['ownerDOB2'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Owner ID Number:</span>
-              <span class="info-value">{{ $impoundedReport['ownerIDNumber2'] ?? 'N/A' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Owner Telephone:</span>
-              <span class="info-value">{{ $impoundedReport['ownerTelephone2'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Remarks:</span>
-              <span class="info-value">{{ $impoundedReport['remarks2'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Owner Signature</span>
-              <span class="info-value">{{ $impoundedReport['ownerSignature2'] ?? 'N/A' }}</span>
-            </div>
-
-            <div class="info-row">
-              <span class="info-label">Signature of DPS Rep:</span>
-              <span class="info-value">{{ $impoundedReport['signatureDPS2'] ?? 'N/A' }}</span>
-            </div>
-          </div>
-        </div>
       </div>
   </Body>
 

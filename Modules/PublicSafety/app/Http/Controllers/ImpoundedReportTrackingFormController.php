@@ -116,17 +116,17 @@ class ImpoundedReportTrackingFormController extends Controller
                 'todayDate' => 'required|date',
 
                 //bicycle information form
-                'brand' => 'required|string',
-                'model' => 'required|string',
+                'brand' => 'nullable|string',
+                'model' => 'nullable|string',
                 'color' => 'required|string',
                 'style' => 'required|string',
                 'impoundedReportFiles' => 'nullable|array',
-                'serialNumber' => 'required|string',
+                'serialNumber' => 'nullable|string',
                 'purchaseDate' => 'nullable|date',
                 'purchasePrice' => 'nullable|numeric',
                 'locationOfBikeStolen' => 'required|string',
                 'whatTimeBikeStolen' => 'required|string',
-                'bicycleRack' => 'nullable|string',
+                'bicycleRack' => 'required|string',
                 'whenWasBikeWasStolen' => 'required|string',
                 'signature' => 'required|string',
                 'dateOfSignature' => 'required|string',
@@ -141,7 +141,6 @@ class ImpoundedReportTrackingFormController extends Controller
                 'remarks' => 'nullable|string',
                 'ownerSignature' => 'nullable|string',
                 'signaturePSD' => 'nullable|string',
-
 
                 //Impound Report Tracking Form:
                 'nameOfFinder' => 'nullable|string',
@@ -162,8 +161,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'ownerIDNumber2' => 'nullable|string',
                 'ownerTelephone2' => 'nullable|string',
                 'remarks2' => 'nullable|string',
-                'ownerSignature2' => 'nullable|string',
-                'signaturePSD2' => 'nullable|string',
+                'ownerSignature2' => 'nullable|array',
+                'signaturePSD2' => 'nullable|array',
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'formSubmitted' => false,
             ]);
