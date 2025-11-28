@@ -45,16 +45,30 @@ return [
             'sslmode' => 'prefer',
         ],
 
-        'mongodb' => [
-            'driver' => 'mongodb',
-            'dsn' => env('MONGODB_URI'),
-            'database' => env('MONGODB_DATABASE', 'testmongodb'),
-        ],
+        // 'mongodb' => [
+        //     'driver' => 'mongodb',
+        //     'dsn' => env('MONGODB_URI'),
+        //     'database' => env('MONGODB_DATABASE', 'testmongodb'),
+        // ],
 
         'firestore' => [
             'driver' => 'mongodb',
             'dsn' => env('MONGODB_URI'),
             'database' => env('MONGODB_DATABASE', 'testmongodb'),
+        ],
+
+        'sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'host' => env('DB_HOST', 'xenegrade-r3-production.claff23atn4b.us-east-1.rds.amazonaws.com'),
+            'port' => env('DB_PORT', '1433'),
+            'database' => env('DB_DATABASE', 'UBelize'),
+            'username' => env('DB_USERNAME', 'UBelizeREadOnly'),
+            'password' => env('DB_PASSWORD', 'Jh7^4z9t!m2945'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'encrypt' => env('DB_ENCRYPT', 'yes'),                 // yes/no
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
         ],
     ],
 

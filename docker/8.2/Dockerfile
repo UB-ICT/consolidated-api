@@ -55,9 +55,11 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.2
 
+# --------------------------------------------------------------------
+# GRPC (unchanged)
+# --------------------------------------------------------------------
 RUN apt-get update && \
     apt-get install -y libz-dev zlib1g-dev autoconf build-essential libprotobuf-dev protobuf-compiler && \
     pecl install grpc-1.51.1 && \
@@ -65,8 +67,36 @@ RUN apt-get update && \
     echo "extension=grpc.so" > /etc/php/8.2/cli/conf.d/20-grpc.ini && \
     if [ -d "/etc/php/8.2/fpm/conf.d" ]; then echo "extension=grpc.so" > /etc/php/8.2/fpm/conf.d/20-grpc.ini; fi
 
+# --------------------------------------------------------------------
+# Microsoft ODBC Driver 18 for SQL Server
+# --------------------------------------------------------------------
+RUN apt-get update \
+    && apt-get install -y curl gnupg2 apt-transport-https ca-certificates \
+    && mkdir -p /etc/apt/keyrings \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/keyrings/microsoft.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/24.04/prod noble main" \
+    > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 \
+    && ln -sfn /opt/mssql-tools18/bin/sqlcmd /usr/bin/sqlcmd \
+    && ln -sfn /opt/mssql-tools18/bin/bcp /usr/bin/bcp
+
+# --------------------------------------------------------------------
+# SQLSRV + PDO_SQLSRV PHP Extensions
+# --------------------------------------------------------------------
+RUN apt-get update \
+    && apt-get install -y unixodbc-dev gnupg2 \
+    && pecl install sqlsrv pdo_sqlsrv \
+    && echo "extension=sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-sqlsrv.ini \
+    && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-pdo_sqlsrv.ini \
+    && if [ -d "/etc/php/8.2/fpm/conf.d" ]; then \
+    echo "extension=sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-sqlsrv.ini; \
+    echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-pdo_sqlsrv.ini; \
+    fi
+
+# --------------------------------------------------------------------
+
 RUN userdel -r ubuntu
-# Use a different GID that doesn't conflict with system groups
 RUN groupadd --force -g 1337 sail
 RUN useradd -ms /bin/bash --no-user-group -g 1337 -u 1337 sail
 
