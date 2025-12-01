@@ -69,5 +69,5 @@ class GoogleSheetService
 
         return $filtered;
     }
-
+ 
 }
