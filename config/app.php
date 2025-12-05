@@ -124,8 +124,14 @@ return [
     ],
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5174'),
-    
-//     'providers' => [
+
+    'frontend_url_annual_report' => env('FRONTEND_URL_ANNUAL_REPORT', 'http://localhost:5174'),
+
+
+    'frontend_url_public_safety' => env('FRONTEND_URL_PUBLIC_SAFETY', 'http://localhost:5173'),
+
+
+    //     'providers' => [
 //         'users' => [
 //         'driver' => 'eloquent',
 //         'model' => App\Models\User::class,
@@ -137,8 +143,8 @@ return [
 
 
     'aliases' => [
-    'JWTAuth' => PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth::class,
-    'JWTFactory' => PHPOpenSourceSaver\JWTAuth\Facades\JWTFactory::class,
-],
+        'JWTAuth' => PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth::class,
+        'JWTFactory' => PHPOpenSourceSaver\JWTAuth\Facades\JWTFactory::class,
+    ],
 
 ];

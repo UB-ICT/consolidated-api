@@ -4,7 +4,9 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
+use GPBMetadata\Google\Firestore\V1Beta1\Firestore;
 use Illuminate\Http\Request;
+
 
 
 class IncidentStatusController extends Controller
@@ -13,22 +15,17 @@ class IncidentStatusController extends Controller
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'incidentStatuses';
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+
+
+    public function index(Request $request)
     {
         try {
-            $data = $request->all();
-            $data['created_at'] = now()->toDateTimeString();
-            $data['updated_at'] = now()->toDateTimeString();
-            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
+            $incidentStatus = FirestoreService::getCollection($this->collectionName);
+
             $response = [
                 'success' => true,
-                'message' => "Incident Status Created Successfully",
-                'data' => [
-                    'IncidentStatusID' => $documentRef->id()
-                ]
+                'message' => "Incident report initialized successfully",
+                'data' => $incidentStatus
             ];
         } catch (\Exception $e) {
             $response = [
@@ -37,8 +34,38 @@ class IncidentStatusController extends Controller
                 'data' => null,
             ];
         }
-        return response($response, 201);
+        return response($response, 200);
     }
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'incidentStatus' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $data = [
+                'incidentStatus' => $validated['incidentStatus'],
+            ];
+
+            $documentRef = FirestoreService::createIncidentStatus($data);
+
+            return response()->json([
+                'id' => $documentRef->id(),
+                'incidentStatus' => $data['incidentStatus'], // frontend expects this
+
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 
     /**
      * Display the specified resource.

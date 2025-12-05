@@ -20,7 +20,7 @@ class StaffController extends Controller
             'reportsTo' => "",
             'deadline' => "",
             'missionStatement' => "",
-            'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => '', 'completionRate'  => ''],
+            'strategicGoals' => ['strategicGoalsUnderReview' => '', 'implmentationPlans' => '', 'plansToAchieveNotCompletedGoals' => '', 'strategicGoals' => '', 'completionRate' => ''],
             'accomplishments' => ['accomplishmentList' => '', 'accomplishmentAdvancement' => '', 'impactfulChange' => '', 'why' => '', 'applicableOpportunities' => ''],
             'researchPartnerships' => ['externalFunding' => '', 'researchPublications' => '', 'partnershipAgencies' => '', 'scholarships' => ''],
             'studentSuccess' => ['studentClubs' => '', 'studentSurveys' => '', 'initiatives' => ''],
@@ -393,6 +393,37 @@ class StaffController extends Controller
         return $html;
     }
 
+
+
+    private function convertDocToPdf($inputPath)
+    {
+        $outputDir = storage_path('app/temp');
+        if (!file_exists($outputDir)) {
+            mkdir($outputDir, 0755, true);
+        }
+
+        $outputPdf = $outputDir . '/' . uniqid('converted_') . '.pdf';
+
+        $command = 'libreoffice --headless --convert-to pdf '
+            . escapeshellarg($inputPath)
+            . ' --outdir '
+            . escapeshellarg($outputDir);
+
+        exec($command . ' 2>&1', $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            Log::error("LibreOffice conversion failed: " . implode("\n", $output));
+            return null;
+        }
+
+        // LibreOffice outputs same filename but with .pdf extension
+        $convertedFile = $outputDir . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.pdf';
+
+        return file_exists($convertedFile) ? $convertedFile : null;
+    }
+
+
+
     /**
      * Get meeting PDF file paths from the report data
      */
@@ -422,8 +453,34 @@ class StaffController extends Controller
                             Log::info('Looking for file: ' . $filePath);
 
                             if (file_exists($filePath)) {
-                                Log::info('Found meeting PDF: ' . $filePath);
-                                $pdfPaths[] = $filePath;
+
+                                $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+                                // If PDF, use as-is
+                                if ($extension === 'pdf') {
+                                    Log::info('Found meeting PDF: ' . $filePath);
+                                    $pdfPaths[] = $filePath;
+                                }
+
+                                // If DOC or DOCX → convert to PDF
+                                elseif (in_array($extension, ['doc', 'docx'])) {
+
+                                    Log::info("Found DOC/DOCX: $filePath — converting to PDF...");
+
+                                    $convertedPdf = $this->convertDocToPdf($filePath);
+
+                                    if ($convertedPdf && file_exists($convertedPdf)) {
+                                        Log::info("Conversion successful → $convertedPdf");
+                                        $pdfPaths[] = $convertedPdf;
+                                    } else {
+                                        Log::warning("Failed to convert DOC/DOCX → PDF: $filePath");
+                                    }
+                                }
+
+                                // If unsupported file type
+                                else {
+                                    Log::warning("Unsupported meeting file type: $filePath");
+                                }
                             } else {
                                 Log::warning('Meeting PDF not found: ' . $filePath);
                             }

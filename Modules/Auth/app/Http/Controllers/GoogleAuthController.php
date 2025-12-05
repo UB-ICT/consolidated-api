@@ -19,18 +19,81 @@ class GoogleAuthController extends Controller
     /**
      * Redirect the user to Google's OAuth page.
      */
-    public function redirect()
+    public function redirect(Request $request)
     {
-        return Socialite::driver('google')->redirect();
+        $system = $request->get('system'); // "annual" or "public"
+
+        return Socialite::driver('google')
+            ->with(['state' => $system])
+            ->redirect();
     }
 
     /**
      * Handle the callback from Google.
      */
-    public function callback()
-    {
-        $user = Socialite::driver('google')->user();
+    // public function callback()
+    // {
+    //     $user = Socialite::driver('google')->user();
 
+    //     $_user = User::where('email', $user->email)->first();
+
+    //     if (!$_user) {
+    //         $_user = User::updateOrCreate([
+    //             'name' => $user->name,
+    //             'email' => $user->email,
+    //             'google_id' => $user->id,
+    //             'password' => bcrypt(Str::random(16)),
+    //             'email_verified_at' => now(),
+    //         ]);
+    //     }
+
+    //     //check which system the user belongs to
+    //     $isAnnualReports = $this->isUserInAnnualReportsGroup($_user->email);
+    //     $isPublicSafety = $this->isUserInPublicSafetyGroup($_user->email);
+
+    //     Log::info('Is annual report?', ['isAnnualReports' => $isAnnualReports]);
+
+
+    //     if (!$isAnnualReports && !$isPublicSafety) {
+    //         Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in any authorized Google group');
+    //         return redirect(config('app.frontend_url') . '?error=access_denied');
+    //     }
+
+    //     Auth::login($_user);
+    //     if ($isAnnualReports) {
+    //         $tokenName = 'annual-reports-login';
+    //     }
+
+
+    //     if ($isPublicSafety) {
+    //         $tokenName = 'public-safety-login';
+    //     }
+
+
+    //     $token = $_user->createToken($tokenName)->plainTextToken;
+    //     Log::info('TokenF: ' . $token);
+    //     Log::info('Token name: ' . $tokenName);
+    //     Log::info('Is annual report?', ['isAnnualReports' => $isAnnualReports]);
+
+    //     return redirect(config('app.frontend_url') . '?token=' . $token . '&system=' . ($isAnnualReports ? 'annual-reports-login' : 'public-safety-login'));
+
+    // }
+
+
+    public function callback(Request $request)
+    {
+
+        $system = request()->get('state'); // "annual" or "public"
+
+        // Safety: default system if missing
+        if (!$system) {
+            $system = 'public'; // or choose 'annual' if preferred
+        }
+
+        // 2. Get Google user
+        $user = Socialite::driver('google')->stateless()->user();
+
+        // 1. Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
 
         if (!$_user) {
@@ -43,30 +106,61 @@ class GoogleAuthController extends Controller
             ]);
         }
 
-        //check which system the user belongs to
+        // 2. Check Groups
         $isAnnualReports = $this->isUserInAnnualReportsGroup($_user->email);
         $isPublicSafety = $this->isUserInPublicSafetyGroup($_user->email);
 
+        Log::info("Group Check", [
+            'email' => $_user->email,
+            'annual' => $isAnnualReports,
+            'public' => $isPublicSafety
+        ]);
 
+        // 3. Deny if in neither group
         if (!$isAnnualReports && !$isPublicSafety) {
-            Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in any authorized Google group');
+            Log::warning('Google login denied: ' . $_user->email);
             return redirect(config('app.frontend_url') . '?error=access_denied');
         }
 
         Auth::login($_user);
+
+        // 6. Determine allowed abilities
+        $abilities = [];
+        $systemsAvailable = [];
+
         if ($isAnnualReports) {
-            $tokenName = 'annual-reports-login';
+            $abilities[] = 'access-annual-reports';
+            $systemsAvailable[] = 'annual';
         }
 
-        // if ($isPublicSafety) {
-        //     $tokenName = 'public-safety-login';
-        // }
+        if ($isPublicSafety) {
+            $abilities[] = 'access-public-safety';
+            $systemsAvailable[] = 'public';
+        }
 
+        // 7. Create ONE token with multiple abilities
+        $token = $_user->createToken('google-login', $abilities)->plainTextToken;
 
-        $token = $_user->createToken($tokenName)->plainTextToken;
-        Log::info('Token name: ' . $tokenName);
-        return redirect(config('app.frontend_url') . '?token=' . $token . '&system=' . ($isAnnualReports ? 'annual-reports' : 'public-safety'));
+        // 8. Choose frontend redirect URL based on original system click
+        if ($system === 'annual') {
+            $redirectUrl = config('app.frontend_url_annual_report');
+        } else {
+            $redirectUrl = config('app.frontend_url_public_safety');
+        }
+
+        // 9. If user only belongs to 1 system but clicked the other → correct redirect
+        if ($system === 'annual' && !$isAnnualReports) {
+            $redirectUrl = config('app.frontend_url_public_safety');
+        }
+
+        if ($system === 'public' && !$isPublicSafety) {
+            $redirectUrl = config('app.frontend_url_annual_report');
+        }
+
+        // 10. Build response redirect
+        return redirect($redirectUrl . '?token=' . $token . '&system=' . $system);
     }
+
 
     /**
      * Check if user is in the api_annual_reports Google group
@@ -247,9 +341,14 @@ class GoogleAuthController extends Controller
 
         // Check if token was created for annual reports system
         $token = $user->currentAccessToken();
-        if (!str_contains($token->name, 'annual-reports')) {
+
+        if (!$token || !in_array('access-annual-reports', $token->abilities ?? [])) {
             return response()->json(['error' => 'Unauthorized for this system'], 401);
         }
+
+        // if (!str_contains($token->name, 'annual-reports')) {
+        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
+        // }
 
         if (!$this->isUserInAnnualReportsGroup($user->email)) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -264,6 +363,33 @@ class GoogleAuthController extends Controller
     }
 
 
+    // public function getPublicSafetyUserInfo(Request $request)
+    // {
+    //     $user = $request->user();
+
+    //     if (!$user) {
+    //         return response()->json(['error' => 'Unauthorized'], 401);
+    //     }
+
+    //     // Check if token was created for public safety system
+    //     $token = $user->currentAccessToken();
+    //     if (!str_contains($token->name, 'public-safety')) {
+    //         return response()->json(['error' => 'Unauthorized for this system'], 401);
+    //     }
+
+    //     if (!$this->isUserInPublicSafetyGroup($user->email)) {
+    //         return response()->json(['error' => 'Unauthorized'], 401);
+    //     }
+
+    //     $mailingGroups = $this->getUserMailingGroups($user->email);
+    //     $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
+
+    //     return response()->json([
+    //         'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
+    //     ]);
+    // }
+
+
     public function getPublicSafetyUserInfo(Request $request)
     {
         $user = $request->user();
@@ -272,12 +398,14 @@ class GoogleAuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Check if token was created for public safety system
+        // Check Sanctum token abilities instead of token name
         $token = $user->currentAccessToken();
-        if (!str_contains($token->name, 'public-safety')) {
+
+        if (!$token || !in_array('access-public-safety', $token->abilities ?? [])) {
             return response()->json(['error' => 'Unauthorized for this system'], 401);
         }
 
+        // Check group membership
         if (!$this->isUserInPublicSafetyGroup($user->email)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -289,6 +417,7 @@ class GoogleAuthController extends Controller
             'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
         ]);
     }
+
 
     private function formatUserResponse($user, $mailingGroups, $menus)
     {

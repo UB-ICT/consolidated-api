@@ -1,18 +1,22 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\PublicSafety\Http\Controllers\RoleController;
-use Modules\PublicSafety\Http\Controllers\PermissionController;
 use Modules\PublicSafety\Http\Controllers\UserController;
-use Modules\PublicSafety\Http\Controllers\UserCampusController;
 use Modules\PublicSafety\Http\Controllers\CampusController;
-use Modules\PublicSafety\Http\Controllers\MessageCategoryController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
 use Modules\PublicSafety\Http\Controllers\IncidentReportController;
 use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
-use Modules\PublicSafety\Http\Controllers\MessageController;
+use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
+use Modules\PublicSafety\Http\Controllers\EndOfShiftReportPatrolController;
+use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
+use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
+use Modules\PublicSafety\Http\Controllers\LostPropertyController;
+use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
+
+
+
 
 
 /*
@@ -62,23 +66,106 @@ Route::group([
     Route::put('buildings/{buildingID}', [BuildingController::class, 'update']);
     Route::delete('buildings/{buildingID}', [BuildingController::class, 'destroy']);
 
+    Route::get('incidentTypes', [IncidentTypeController::class, 'index']);
+    Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
+    Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
+    Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
+
     // Route::apiResource('messageCategories', MessageCategoryController::class);
     // Route::apiResource('messages', MessageController::class);
     // Route::apiResource('userCampuses', UserCampusController::class);
-    // Route::apiResource('incidentStatuses', IncidentStatusController::class);
 
+    Route::post('/initialize/incidentReports', [IncidentReportController::class, 'initialize']);
     Route::get('/incidentReports', [IncidentReportController::class, 'index']);
     Route::post('/incidentReports', [IncidentReportController::class, 'store']);
     Route::get('incidentReports/{incidentReportID}', [IncidentReportController::class, 'show']);
     Route::put('incidentReports/{incidentReportID}', [IncidentReportController::class, 'update']);
     Route::delete('incidentReports/{incidentReportID}', [IncidentReportController::class, 'destroy']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
+    Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
+    Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
 
-    Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
+    //end of shift report (patrol officer)
+    Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
+    Route::get('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'index']);
+    Route::post('/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'store']);
+    Route::get('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'show']);
+    Route::put('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'update']);
+    Route::delete('/endOfShiftReportPatrols/{endOfShiftReportPatrolID}', [EndOfShiftReportPatrolController::class, 'destroy']);
+    Route::get('/endOfShiftReportPatrolsTotal', [EndOfShiftReportPatrolController::class, 'getTotalEndOfShiftReportPatrol']);
+    Route::get('/generateEndOfShiftReportPatrolPdf/{reportID}', [EndOfShiftReportPatrolController::class, 'generateEndOfShiftReportPatrolPdf']);
+    Route::get('/unsubmittedEndOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'getUnsubmittedEndOfShiftReportPatrols']);
+
+    //end of shift report (Shift Supervisor)
+    Route::post('/initialize/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'initialize']);
+    Route::get('/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'index']);
+    Route::post('/endOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'store']);
+    Route::get('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'show']);
+    Route::put('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'update']);
+    Route::delete('/endOfShiftReportSupervisor/{ID}', [EndOfShiftReportSupervisorController::class, 'destroy']);
+    Route::get('/endOfShiftReportSupervisorTotal', [EndOfShiftReportSupervisorController::class, 'getTotalEndOfShiftReportSupervisor']);
+    Route::get('/generateEndOfShiftReportSupervisorPdf/{ID}', [EndOfShiftReportSupervisorController::class, 'generateEndOfShiftReportSupervisorPdf']);
+    Route::get('/unsubmittedEndOfShiftReportSupervisor', [EndOfShiftReportSupervisorController::class, 'getUnsubmittedEndOfShiftReportSupervisor']);
+
+    //lost and found tracking report
+    Route::post('/initialize/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'initialize']);
+    Route::get('/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'index']);
+    Route::post('/lostAndFoundTracking', [LostAndFoundTrackingController::class, 'store']);
+    Route::get('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'show']);
+    Route::put('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'update']);
+    Route::delete('/lostAndFoundTracking/{lostAndFoundTrackingID}', [LostAndFoundTrackingController::class, 'destroy']);
+    Route::get('/lostAndFoundTrackingTotal', [LostAndFoundTrackingController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/generateLostAndFoundPdf/{reportID}', [LostAndFoundTrackingController::class, 'generateLostAndFoundPdf']);
+    Route::get('/unsubmittedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getUnsubmittedLostAndFoundTracking']);
+
+    Route::post('/initialize/lostProperty', [LostPropertyController::class, 'initialize']);
+    Route::get('/lostProperty', [LostPropertyController::class, 'index']);
+    Route::post('/lostProperty', [LostPropertyController::class, 'store']);
+    Route::get('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'show']);
+    Route::put('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'update']);
+    Route::delete('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'destroy']);
+    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
+    Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
+
+    Route::post('/initialize/impoundedReport', [ImpoundedReportTrackingFormController::class, 'initialize']);
+    Route::get('/impoundedReport', [ImpoundedReportTrackingFormController::class, 'index']);
+    Route::post('/impoundedReport', [ImpoundedReportTrackingFormController::class, 'store']);
+    Route::get('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'show']);
+    Route::put('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'update']);
+    Route::delete('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'destroy']);
+    Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReportTracking']);
+    Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
+    Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
+
+    Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
+    Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
+    Route::put('incidentStatus/{id}', [IncidentStatusController::class, 'update']);
+    Route::delete('incidentStatus/{id}', [IncidentStatusController::class, 'destroy']);
+
+    Route::get('incidentTypes', [IncidentTypeController::class, 'index']);
+    Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
+    Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
+    Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
     Route::post('/menu', [MenuController::class, 'store']);
     Route::put('/menu/{id}', [MenuController::class, 'update']);
     Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
+
+    Route::get('/getFile/{fileType}/{fileName}', [FileUploadController::class, 'downloadPublicSafetyFile']);
+    Route::post('/uploadPublicSafetyPhoto/{reportID}', [FileUploadController::class, 'uploadPublicSafetyPhoto']);
+    Route::post(
+        '/uploadSignatureCanvas/{reportID}',
+        [FileUploadController::class, 'uploadSignatureCanvas']
+    );
+
+});
+
+
+Route::group([
+    'prefix' => 'v1/publicSafety',
+    'namespace' => 'Modules\PublicSafety\Http\Controllers',
+], function () {
 });

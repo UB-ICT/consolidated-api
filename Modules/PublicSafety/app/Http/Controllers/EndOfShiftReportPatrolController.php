@@ -2,7 +2,6 @@
 
 namespace Modules\PublicSafety\Http\Controllers;
 
-
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
@@ -10,37 +9,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class IncidentReportController extends Controller
+class EndOfShiftReportPatrolController extends Controller
 {
-
     protected const COLLECTION_PREFIX = 'publicSafety_';
-    protected string $collectionName = self::COLLECTION_PREFIX . 'incidentReports';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'endOfShiftReportPatrols';
 
     public function initialize(Request $request)
     {
         try {
             $defaultReport = [
-                'action' => '',
-                'caseNumber' => $this->generateCaseNumber(),
-                'description' => '',
-                'incidentReportStatus' => '',
-                'incidentType' => '',
-                'buildingName' => '',
-                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
-                'campus' => "",
-                'date' => "",
-                'time' => "",
-                'incidentFiles' => [],
-                'reportedBy' => "",
-                'contact' => "",
-                'witnesses' => "",
+                'date' => '',
+                'time' => '',
+                'uploadedBy' => $request->user()->name ?? '', //Patrol Officer
+                'campus' => '',
+                'endOfShiftReportPatrolFiles' => [],
+                'report' => '',
                 'formSubmitted' => false,
-                'created_at' => now()->toDateTimeString(),
-                'updated_at' => now()->toDateTimeString()
             ];
-
-            Log::info('Initializing Incident Report: ', $defaultReport);
         } catch (\Exception $e) {
+            Log::info('Initializing End of Shift Report (Patrol Officer)', $defaultReport);
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
@@ -49,11 +36,11 @@ class IncidentReportController extends Controller
     public function index(Request $request)
     {
         try {
-            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            $patrolReports = FirestoreService::getCollection($this->collectionName);
             $response = [
                 'success' => true,
-                'message' => 'Incident Reports retrieved successfully',
-                'data' => $incidentReports
+                'message' => 'end of shift report retrieved successfully',
+                'data' => $patrolReports
             ];
         } catch (\Exception $e) {
             $response = [
@@ -70,23 +57,17 @@ class IncidentReportController extends Controller
     {
         try {
             $request->validate([
-                'action' => 'required|string',
-                'description' => 'required|string',
-                'caseNumber' => 'required|string',
-                'incidentReportStatus' => 'required|string',
-                'incidentType' => 'required|string',
-                'buildingName' => 'required|string',
-                'incidentFiles' => 'nullable|array',
-                'uploadedBy' => 'required|string',
                 'date' => 'required|string',
                 'time' => 'required|string',
-                'reportedBy' => 'nullable|string',
-                'contact' => 'nullable|string',
-                'witnesses' => 'nullable|string',
+                'uploadedBy' => 'required|string', //Patrol Officer
+                'endOfShiftReportPatrolFiles' => 'nullable|array',
+                'campus' => 'required|string',
+                'report' => 'required|string',
                 'formSubmitted' => 'required|boolean',
             ]);
 
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
+
             // Get the document ID
             $documentId = $documentRef->id();
 
@@ -95,14 +76,14 @@ class IncidentReportController extends Controller
                 ['path' => 'id', 'value' => $documentId]
             ]);
 
-            // Build incident report data for response by merging request data with the generated id
-            $incidentReport = $request->all();
-            $incidentReport['id'] = $documentRef->id(); // add Firestore ID to object
+            //build end of shift report data for response by merging request data with the new genereated id
+            $patrolReport = $request->all();
+            $patrolReport['id'] = $documentRef->id(); // add Firestore ID to object
 
             $response = [
                 'success' => true,
-                'message' => "incidentReport Created Successfully",
-                'data' => $incidentReport
+                'message' => 'End of Shift Report (Patrol Officer) created successfully',
+                'data' => $patrolReport
             ];
         } catch (\Exception $e) {
             $response = [
@@ -115,20 +96,20 @@ class IncidentReportController extends Controller
     }
 
     //read
-    public function show(Request $request, string $incidentReportID)
+    public function show(Request $request, string $patrolReportID)
     {
         try {
-            $incidentReport = FirestoreService::getDocument($this->collectionName, $incidentReportID);
-            if ($incidentReport) {
+            $patrolReport = FirestoreService::getDocument($this->collectionName, $patrolReportID);
+            if ($patrolReport) {
                 $response = [
                     'success' => true,
-                    'message' => 'incident Report found',
-                    'data' => $incidentReport
+                    'message' => 'end of shift report found',
+                    'data' => $patrolReport
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'End of Shift Report (Patrol Officer) not found',
                     'data' => null,
                 ];
             }
@@ -139,7 +120,6 @@ class IncidentReportController extends Controller
                 'data' => null,
             ];
         }
-        // Return response with HTTP status code 201 (Created)
         return response($response, 200);
     }
 
@@ -148,8 +128,7 @@ class IncidentReportController extends Controller
     {
         try {
             $data = $request->all();
-            // Add updated timestamp
-            // $data['updated_at'] = now()->toDateTimeString();
+
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
@@ -158,14 +137,14 @@ class IncidentReportController extends Controller
             if ($success) {
                 $response = [
                     'success' => true,
-                    'message' => 'incidentReport data updated successfully',
+                    'message' => 'end of shift report data updated successfully',
                     'data' => $data
                 ];
-                Log::info('Updated Incident Report: ', $data);
+                Log::info('Updated End of Shift Report (Patrol Officer): ', $data);
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'incidentReport not found',
+                    'message' => 'end of shift report not found',
                     'data' => null
                 ];
             }
@@ -190,12 +169,12 @@ class IncidentReportController extends Controller
             if ($success) {
                 $response = [
                     'success' => true,
-                    'message' => 'Incident Report data deleted successfully',
+                    'message' => 'End of Shift Report (Patrol Officer) data deleted successfully',
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'End of Shift Report (Patrol Officer) not found',
                     'data' => null
                 ];
             }
@@ -211,51 +190,18 @@ class IncidentReportController extends Controller
     }
 
 
-    /**
-     * Verify all referenced documents exist
-     */
-    private function verifyReferencesExist(array $data)
-    {
-        $references = [
-            'incidentStatusId' => self::COLLECTION_PREFIX . 'incidentStatuses',
-            'campusId' => self::COLLECTION_PREFIX . 'campuses',
-            'buildingId' => self::COLLECTION_PREFIX . 'buildings',
-            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
-        ];
-
-        foreach ($references as $field => $collection) {
-            if (!empty($data[$field])) {
-                $exists = FirestoreService::getDocument($collection, $data[$field]);
-                if (!$exists) {
-                    throw new \Exception("The specified {$field} does not exist");
-                }
-            }
-        }
-    }
-
-    /**
-     * Generate a unique case number
-     */
-    private function generateCaseNumber()
-    {
-        return 'CASE-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
-    }
-
-
-
-
-    public function getTotalIncidentReport()
+    public function getTotalEndOfShiftReportPatrol(Request $request)
     {
         try {
-            // Get all incident reports from Firestore
-            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            //Get all all end of shift reports from firestore
+            $patrolReports = FirestoreService::getCollection($this->collectionName);
 
             // Count the number of documents
-            $total = is_array($incidentReports) ? count($incidentReports) : 0;
+            $total = is_array($patrolReports) ? count($patrolReports) : 0;
 
             $response = [
                 'success' => true,
-                'message' => 'Total incident reports retrieved successfully',
+                'message' => 'Total end of shift report retrieved successfully',
                 'data' => ['total' => $total]
             ];
         } catch (\Exception $e) {
@@ -268,28 +214,28 @@ class IncidentReportController extends Controller
         return response($response, 200);
     }
 
-    public function generateIncidentReportPdf(Request $request, string $reportID)
+    public function generateEndOfShiftReportPatrolPdf(Request $request, string $reportID)
     {
         try {
             $user = $request->user();
-            $incidentReport = FirestoreService::getDocument($this->collectionName, $reportID);
-            if (!$incidentReport) {
+            $patrolReport = FirestoreService::getDocument($this->collectionName, $reportID);
+            if (!$patrolReport) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'End of Shift Report (Patrol Officer) not found',
                     'data' => null,
                 ], 404);
             }
 
             // Load the view and pass the incident report data
-            $pdf = Pdf::loadView('publicsafety::incidentreport', [
-                'incidentReport' => $incidentReport,
+            $pdf = Pdf::loadView('publicsafety::endofshiftreportpatrol', [
+                'patrolReport' => $patrolReport,
                 'user' => $user,
                 'request' => $request
             ]);
 
             // Return the generated PDF as a download
-            return $pdf->download('incident_report_' . $reportID . '.pdf');
+            return $pdf->download('end_of_shift_report_patrol_' . $reportID . '.pdf');
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -299,7 +245,7 @@ class IncidentReportController extends Controller
         }
     }
 
-    public function getUnsubmittedIncidentReports(Request $request)
+    public function getUnsubmittedEndOfShiftReportPatrols(Request $request)
     {
         try {
             $userName = $request->user()->name ?? '';
@@ -318,14 +264,14 @@ class IncidentReportController extends Controller
             if ($unsubmittedReport) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Unsubmitted incident report found',
+                    'message' => 'Unsubmitted end of shift report found',
                     'data' => $unsubmittedReport,
                 ]);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'No unsubmitted incident report found',
+                'message' => 'No unsubmitted end of shift report found',
                 'data' => null,
             ]);
         } catch (\Exception $e) {
