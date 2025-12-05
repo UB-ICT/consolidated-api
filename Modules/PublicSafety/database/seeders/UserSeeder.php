@@ -22,10 +22,5 @@ class UserSeeder extends Seeder
             'campus_id' => 2,
             'user_status_id' => 3,
         ]);
-
-       
-      
-
-     
     }
 }

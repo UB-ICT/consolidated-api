@@ -19,6 +19,7 @@ return [
         '%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1, http://127.0.0.1:5173/,  http://127.0.0.1:5173/, http://localhost:5173/, http://127.0.0.1:8088',
         'https://api.ub.edu.bz',
+        'http://localhost:5174',
         Sanctum::currentApplicationUrlWithPort()
     ))),
 

@@ -4,115 +4,98 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Modules\PublicSafety\Transformers\MenuResource;
-use Modules\PublicSafety\Transformers\MenuCollection;
-use Modules\PublicSafety\Http\Requests\StoreMenuRequest;
-use Modules\PublicSafety\Http\Requests\UpdateMenuRequest;
-use Modules\PublicSafety\Models\Menu;
-use Modules\PublicSafety\Models\Role;
+use App\Services\FirestoreService;
 
 class MenuController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
+    protected string $collectionName = 'menus';
+
+    //DISPLAY
     public function index()
     {
-        return new MenuCollection(Menu::with('subMenus')->paginate());
+        try {
+            $menus = FirestoreService::getPublicSafetyMenuItems($this->collectionName);
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    //store
+    public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'path' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'order' => 'integer|min:0',
+            'is_active' => 'boolean',
+            'component' => 'nullable|string',
+            'roles' => 'array'
+        ]);
+        try {
+            $documentRef = FirestoreService::createPublicSafetyMenuItem($this->collectionName, $validated);
+            return response()->json([
+                'id' => $documentRef->id(),
+                ...$validated
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreMenuRequest $request)
-    {
-        return new MenuResource(Menu::create($request->all()));
 
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Menu $menu)
-    {
-        // return new MenuResource($menu);
-        $menu->load('subMenus');
-        return new MenuResource($menu);
-    }
-
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Menu $menu)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMenuRequest $request, Menu $menu)
+    public function update(Request $request, string $id)
     {
-        $menu->update($request->all());
-        return response()->json(['message' => 'updated successfully'], 200);
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'path' => 'sometimes|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
+            'permission' => 'nullable|string'
+        ]);
+        try {
+            $success = FirestoreService::updatePublicSafetyMenuItem($this->collectionName, $id, $validated);
+            if ($success) {
+                return response()->json(['id' => $id, ...$validated]);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Menu $menu)
+    public function destroy(string $id)
     {
-        $menu->delete();
-        return response()->json(['message' => 'deleted successfully'], 200);
+        try {
+            $success = FirestoreService::deletePublicSafetyMenuItem($this->collectionName, $id);
+            if ($success) {
+                return response()->json(['message' => 'Menu item deleted']);
+            }
+            return response()->json(['error' => 'Menu item not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    public function getMenus(Request $request)
+
+    public function active()
     {
-        // Check if role_id is provided in the request
-        if (!$request->has('role_id')) {
-            return response()->json(['error' => 'Role ID is required'], 400);
+        try {
+            $menus = FirestoreService::getPublicSafetyActiveMenuItems($this->collectionName);
+            usort($menus, fn($a, $b) => $a['order'] <=> $b['order']);
+            return response()->json($menus);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $roleId = $request->role_id;
-        $menus = $this->getMenusByRole($roleId);
-
-        return response()->json($menus);
-    }
-
-    private function getMenusByRole($roleId)
-    {
-        // //$role receives a role and with(['menus.subMenus']) ensures menus and their submenus are loaded in a single query
-        $role = Role::with(['menus.subMenus'])->find($roleId);
-
-        if (!$role) {
-            return [];
-        }
-
-        return $role->menus->map(function ($menu) {
-            return [
-                'id' => $menu->id,
-                'icon' => $menu->icon,
-                'name' => $menu->name,
-                'path' => $menu->path,
-                'subMenu' => $menu->subMenus->map(function ($subMenu) {
-                    return [
-                        'id' => $subMenu->id,
-                        'icon' => $subMenu->icon,
-                        'name' => $subMenu->name,
-                        'path' => $subMenu->path,
-                        'menuId' => $subMenu->menu_id,
-                    ];
-                }),
-            ];
-        });
     }
 }

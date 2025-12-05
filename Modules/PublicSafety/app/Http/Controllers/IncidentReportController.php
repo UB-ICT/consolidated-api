@@ -4,90 +4,336 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Transformers\IncidentReportResource;
-use Modules\PublicSafety\Transformers\IncidentReportCollection;
-use Modules\PublicSafety\Http\Requests\StoreIncidentReportRequest;
-use Modules\PublicSafety\Http\Requests\UpdateIncidentReportRequest;
-use Modules\PublicSafety\Models\IncidentReport;
-use Modules\PublicSafety\Models\IncidentFile;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class IncidentReportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+
+    protected const COLLECTION_PREFIX = 'publicSafety_';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'incidentReports';
+
+    public function initialize(Request $request)
     {
-        return new IncidentReportCollection(IncidentReport::paginate());
+        try {
+            $defaultReport = [
+                'action' => '',
+                'caseNumber' => $this->generateCaseNumber(),
+                'description' => '',
+                'incidentReportStatus' => '',
+                'incidentType' => '',
+                'buildingName' => '',
+                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
+                'campus' => "",
+                'date' => "",
+                'time' => "",
+                'incidentFiles' => [],
+                'reportedBy' => "",
+                'contact' => "",
+                'witnesses' => "",
+                'formSubmitted' => false,
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString()
+            ];
+
+            Log::info('Initializing Incident Report: ', $defaultReport);
+        } catch (\Exception $e) {
+        }
+        $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
+        return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreIncidentReportRequest $request)
+    public function index(Request $request)
     {
-        return new IncidentReportResource(IncidentReport::create($request->all()));
+        try {
+            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            $response = [
+                'success' => true,
+                'message' => 'Incident Reports retrieved successfully',
+                'data' => $incidentReports
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(IncidentReport $incidentReport)
+    //create/store
+    public function store(Request $request)
     {
-        return new IncidentReportResource($incidentReport);
+        try {
+            $request->validate([
+                'action' => 'required|string',
+                'description' => 'required|string',
+                'caseNumber' => 'required|string',
+                'incidentReportStatus' => 'required|string',
+                'incidentType' => 'required|string',
+                'buildingName' => 'required|string',
+                'incidentFiles' => 'nullable|array',
+                'uploadedBy' => 'required|string',
+                'date' => 'required|string',
+                'time' => 'required|string',
+                'reportedBy' => 'nullable|string',
+                'contact' => 'nullable|string',
+                'witnesses' => 'nullable|string',
+                'formSubmitted' => 'required|boolean',
+            ]);
+
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
+            // Get the document ID
+            $documentId = $documentRef->id();
+
+            // Update the document to include the ID field
+            $documentRef->update([
+                ['path' => 'id', 'value' => $documentId]
+            ]);
+
+            // Build incident report data for response by merging request data with the generated id
+            $incidentReport = $request->all();
+            $incidentReport['id'] = $documentRef->id(); // add Firestore ID to object
+
+            $response = [
+                'success' => true,
+                'message' => "incidentReport Created Successfully",
+                'data' => $incidentReport
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 201);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateIncidentReportRequest $request, IncidentReport $incidentReport)
+    //read
+    public function show(Request $request, string $incidentReportID)
     {
-        $incidentReport->update($request->all());
-        return response()->json(['message' => 'incidentReport updated successfully'], 200);
+        try {
+            $incidentReport = FirestoreService::getDocument($this->collectionName, $incidentReportID);
+            if ($incidentReport) {
+                $response = [
+                    'success' => true,
+                    'message' => 'incident Report found',
+                    'data' => $incidentReport
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Incident Report not found',
+                    'data' => null,
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
+    }
 
+    //update
+    public function update(Request $request, string $id)
+    {
+        try {
+            $data = $request->all();
+            // Add updated timestamp
+            // $data['updated_at'] = now()->toDateTimeString();
+            $success = FirestoreService::updateDocument(
+                $this->collectionName,
+                $id,
+                $data
+            );
+            if ($success) {
+                $response = [
+                    'success' => true,
+                    'message' => 'incidentReport data updated successfully',
+                    'data' => $data
+                ];
+                Log::info('Updated Incident Report: ', $data);
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'incidentReport not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        return response($response, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(IncidentReport $incidentReport)
+    public function destroy(string $id)
     {
-        $incidentReport->delete();
-        return response()->json(['message' => 'incidentReport deleted successfully'], 200);
+        try {
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
+
+            if ($success) {
+                $response = [
+                    'success' => true,
+                    'message' => 'Incident Report data deleted successfully',
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Incident Report not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
     }
 
-    public function getTotalIncidentReport(IncidentReport $incidentReport)
+
+    /**
+     * Verify all referenced documents exist
+     */
+    private function verifyReferencesExist(array $data)
     {
-        $incidentReport = IncidentReport::count();
-        return response()->json(['total' => $incidentReport], 200);
+        $references = [
+            'incidentStatusId' => self::COLLECTION_PREFIX . 'incidentStatuses',
+            'campusId' => self::COLLECTION_PREFIX . 'campuses',
+            'buildingId' => self::COLLECTION_PREFIX . 'buildings',
+            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
+        ];
+
+        foreach ($references as $field => $collection) {
+            if (!empty($data[$field])) {
+                $exists = FirestoreService::getDocument($collection, $data[$field]);
+                if (!$exists) {
+                    throw new \Exception("The specified {$field} does not exist");
+                }
+            }
+        }
     }
 
-    public function uploadIncidentFile(Request $request)
+    /**
+     * Generate a unique case number
+     */
+    private function generateCaseNumber()
     {
-        $request->validate([
-            'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'incidentId' => 'required|exists:incident_reports,id'
-        ]);
+        return 'CASE-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+    }
 
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('incident_files', $fileName, 'public');
 
-            $incidentFile = IncidentFile::create([
-                'incident_report_id' => $request->incidentId,
-                'path' => Storage::url($filePath),
-                'name' => $fileName
+
+
+    public function getTotalIncidentReport()
+    {
+        try {
+            // Get all incident reports from Firestore
+            $incidentReports = FirestoreService::getCollection($this->collectionName);
+
+            // Count the number of documents
+            $total = is_array($incidentReports) ? count($incidentReports) : 0;
+
+            $response = [
+                'success' => true,
+                'message' => 'Total incident reports retrieved successfully',
+                'data' => ['total' => $total]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
+
+    public function generateIncidentReportPdf(Request $request, string $reportID)
+    {
+        try {
+            $user = $request->user();
+            $incidentReport = FirestoreService::getDocument($this->collectionName, $reportID);
+            if (!$incidentReport) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incident Report not found',
+                    'data' => null,
+                ], 404);
+            }
+
+            // Load the view and pass the incident report data
+            $pdf = Pdf::loadView('publicsafety::incidentreport', [
+                'incidentReport' => $incidentReport,
+                'user' => $user,
+                'request' => $request
             ]);
 
-            return response()->json($incidentFile, 201);
+            // Return the generated PDF as a download
+            return $pdf->download('incident_report_' . $reportID . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-
-        return response()->json(['error' => 'File upload failed'], 400);
     }
 
+    public function getUnsubmittedIncidentReports(Request $request)
+    {
+        try {
+            $userName = $request->user()->name ?? '';
 
+            $unsubmitted = FirestoreService::getCollectionWhere(
+                $this->collectionName,
+                'uploadedBy',
+                '=',
+                $userName
+            );
 
+            // Filter for reports where formSubmitted == false
+            $unsubmittedReport = collect($unsubmitted)
+                ->firstWhere('formSubmitted', false);
+
+            if ($unsubmittedReport) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Unsubmitted incident report found',
+                    'data' => $unsubmittedReport,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No unsubmitted incident report found',
+                'data' => null,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
 }

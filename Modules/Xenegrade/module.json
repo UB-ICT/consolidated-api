@@ -1,0 +1,11 @@
+{
+    "name": "Xenegrade",
+    "alias": "xenegrade",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Xenegrade\\Providers\\XenegradeServiceProvider"
+    ],
+    "files": []
+}

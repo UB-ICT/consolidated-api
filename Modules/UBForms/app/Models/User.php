@@ -13,13 +13,10 @@ use LdapRecord\Laravel\Auth\AuthenticatesWithLdap;
 use Laravel\Sanctum\HasApiTokens;
 use LdapRecord\Laravel\Auth\HasLdapUser;
 
-/* This creates a user collection in mongo db */
-
-
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    protected $connection = 'pgsql'; // Specify the MongoDB connection name
+    protected $connection = 'pgsql';
     protected $collection = 'users'; // Specify the collection name if different from the default
 
     //use HasFactory, Notifiable;

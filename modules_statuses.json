@@ -3,5 +3,6 @@
     "Message": true,
     "PublicSafety": true,
     "UBForms": true,
-    "UBFormBuilder": true
+    "UBFormBuilder": true,
+    "Xenegrade": true
 }
