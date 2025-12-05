@@ -56,6 +56,20 @@ return [
             'dsn' => env('MONGODB_URI'),
             'database' => env('MONGODB_DATABASE', 'testmongodb'),
         ],
+
+        'sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'host' => env('XENEGRADE_HOST', 'xenegrade-r3-production.claff23atn4b.us-east-1.rds.amazonaws.com'),
+            'port' => env('XENEGRADE_PORT', '1433'),
+            'database' => env('XENEGRADE_DATABASE', 'UBelize'),
+            'username' => env('XENEGRADE_USERNAME', 'UBelizeREadOnly'),
+            'password' => env('XENEGRADE_PASSWORD', 'Jh7^4z9t!m2945'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'encrypt' => env('DB_ENCRYPT', 'yes'),                 // yes/no
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
+        ],
     ],
 
     /*
