@@ -43,22 +43,29 @@ class GoogleAuthController extends Controller
             ]);
         }
 
-        // Check if user is in the api_annual_reports Google group
-        if (!$this->isUserInAnnualReportsGroup($_user->email)) {
-            Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in api_annual_reports Google group');
-            return redirect(config('app.frontend_url') . '?error=access_denied');
-        }
+        //check which system the user belongs to
+        $isAnnualReports = $this->isUserInAnnualReportsGroup($_user->email);
+        $isPublicSafety = $this->isUserInPublicSafetyGroup($_user->email);
 
-        //Check if user is in the public_safety Google group
-        if (!$this->isUserInPublicSafetyGroup($_user->email)) {
-            Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in public_safety Google group');
+
+        if (!$isAnnualReports && !$isPublicSafety) {
+            Log::warning('Google login attempt denied for user: ' . $_user->email . ' - Not in any authorized Google group');
             return redirect(config('app.frontend_url') . '?error=access_denied');
         }
 
         Auth::login($_user);
-        $token = $_user->createToken('google-login')->plainTextToken;
+        if ($isAnnualReports) {
+            $tokenName = 'annual-reports-login';
+        }
 
-        return redirect(config('app.frontend_url') . '?token=' . $token);
+        if ($isPublicSafety) {
+            $tokenName = 'public-safety-login';
+        }
+
+
+        $token = $_user->createToken($tokenName)->plainTextToken;
+        Log::info('Token name: ' . $tokenName);
+        return redirect(config('app.frontend_url') . '?token=' . $token . '&system=' . ($isAnnualReports ? 'annual-reports' : 'public-safety'));
     }
 
     /**
@@ -105,7 +112,7 @@ class GoogleAuthController extends Controller
             $client->setAuthConfig(storage_path('app/google-service-account.json'));
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $groupEmail = 'public_safety@ub.edu.bz';
+            $groupEmail = 'api_public_safety@ub.edu.bz';
             $client->setSubject($email);
 
             // Create Directory service
@@ -155,10 +162,8 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
                 'api_annual_report_Deans@ub.edu.bz',
-                'public_safety_developers@ub.edu.bz',
-                'public_safety_admin@ub.edu.bz',
-                'public_safety_security@ub.edu.bz',
-
+                'api_public_safety_Admin@ub.edu.bz',
+                'api_public_safety_Security@ub.edu.bz',
             ];
 
             $userGroups = [];
@@ -184,7 +189,7 @@ class GoogleAuthController extends Controller
     /**
      * Get menus from Firebase based on user mailing groups
      */
-    private function getMenusByMailingGroups($mailingGroups)
+    private function getMenusByMailingGroups($mailingGroups, $system)
     {
         try {
             // Get all menus from Firebase using the specific menu method
@@ -194,11 +199,15 @@ class GoogleAuthController extends Controller
             $userMenus = [];
 
             foreach ($allMenus as $menu) {
+                // Skip if menu is not for the current system
+                if (isset($menu['system']) && $menu['system'] !== $system) {
+                    continue;
+                }
+
                 // Check if menu has roles field and if any of user's mailing groups match
                 if (isset($menu['roles']) && is_array($menu['roles'])) {
                     foreach ($menu['roles'] as $menuRole) {
                         if (in_array($menuRole, $mailingGroups)) {
-                            // Add menu to flat list without role grouping
                             $userMenus[] = [
                                 'id' => $menu['id'] ?? null,
                                 'name' => $menu['name'] ?? '',
@@ -207,7 +216,7 @@ class GoogleAuthController extends Controller
                                 'order' => $menu['order'] ?? 0,
                                 'is_active' => $menu['is_active'] ?? true
                             ];
-                            break; // Add menu only once even if user is in multiple matching groups
+                            break;
                         }
                     }
                 }
@@ -228,43 +237,74 @@ class GoogleAuthController extends Controller
     /**
      * Get user info from token.
      */
-    public function getUserInfo(Request $request)
+    public function getAnnualReportUserInfo(Request $request)
     {
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Check if token was created for annual reports system
+        $token = $user->currentAccessToken();
+        if (!str_contains($token->name, 'annual-reports')) {
+            return response()->json(['error' => 'Unauthorized for this system'], 401);
+        }
+
         if (!$this->isUserInAnnualReportsGroup($user->email)) {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $mailingGroups = $this->getUserMailingGroups($user->email);
+        $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
+
+        return response()->json([
+            'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
+        ]);
+    }
+
+
+    public function getPublicSafetyUserInfo(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Check if token was created for public safety system
+        $token = $user->currentAccessToken();
+        if (!str_contains($token->name, 'public-safety')) {
+            return response()->json(['error' => 'Unauthorized for this system'], 401);
         }
 
         if (!$this->isUserInPublicSafetyGroup($user->email)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        // Get user's mailing groups
         $mailingGroups = $this->getUserMailingGroups($user->email);
-
-        // Get menus based on mailing groups
-        $menus = $this->getMenusByMailingGroups($mailingGroups);
+        $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
 
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at,
-                'google_id' => $user->google_id,
-                'role_id' => $user->role_id,
-                'campus_id' => $user->campus_id,
-                'user_status_id' => $user->user_status_id,
-                'profile_picture' => $user->profile_picture,
-                'mailing_groups' => $mailingGroups,
-                'menus' => $menus
-            ]
+            'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
         ]);
+    }
+
+    private function formatUserResponse($user, $mailingGroups, $menus)
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at,
+            'google_id' => $user->google_id,
+            'role_id' => $user->role_id,
+            'campus_id' => $user->campus_id,
+            'user_status_id' => $user->user_status_id,
+            'profile_picture' => $user->profile_picture,
+            'mailing_groups' => $mailingGroups,
+            'menus' => $menus
+        ];
     }
 
     //mock google login soo that i can test in postman

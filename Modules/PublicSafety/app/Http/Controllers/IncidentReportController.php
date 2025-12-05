@@ -18,18 +18,16 @@ class IncidentReportController extends Controller
     {
         try {
             $defaultReport = [
-                'report' => '',
-                'disposition' => '',
-                'caseNumber' => $this->generateCaseNumber(),
                 'action' => '',
-                'location' => '',
-                'uploadedBy' => $request->user()->id ?? '', // Assuming you have authentication
-                'incidentReoccured' => false,
-                'frequency' => 0,
-                'incidentFiles' => ['pictureURL' => array(['incidentPictures' => ''])], // Changed from incidentFile to incidentFiles (array)
-                'incidentStatusId' => '',
+                'caseNumber' => $this->generateCaseNumber(),
+                'disposition' => '',
+                'incidentStatus' => '',
+                'incidentType' => '',
+                'incidentFiles' => ['id' => '', 'name' => '', 'path' => ''], // Changed from incidentFile to incidentFiles (array)
                 'buildingId' => '',
-                'incidentTypeId' => '',
+                'buildingLocation' => '',
+                'report' => '',
+                'uploadedBy' => $request->user()->id ?? '', // Assuming you have authentication
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
@@ -49,33 +47,44 @@ class IncidentReportController extends Controller
         return response($response, 200);
     }
 
+    public function index(Request $request)
+    {
+        try {
+            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            $response = [
+                'success' => true,
+                'message' => 'Incident Reports retrieved successfully',
+                'data' => $incidentReports
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
 
     //create/store
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'report' => 'required|string',
-                'disposition' => 'required|string',
+
+            $data = $request->all();
+
+            $request->validate([
                 'action' => 'required|string',
-                'location' => 'required|string',
-                'uploadedBy' => 'required|string',
-                'incidentReoccured' => 'required|boolean',
-                'frequency' => 'nullable|integer',
-                'incidentStatusId' => 'required|string',
-                'campusId' => 'required|string',
-                'buildingId' => 'required|string',
-                'incidentTypeId' => 'required|string',
+                'caseNumber' => 'nullable|string',
+                'disposition' => 'required|string',
+                'incidentStatus' => 'required|string',
+                'incidentType' => 'required|string',
                 'incidentFiles' => 'nullable|array',
-                'incidentFiles.*.id' => 'nullable|string',
-                'incidentFiles.*.url' => 'required|string'
+                'buildingId' => 'required|string',
+                // 'buildingLocation' => 'required|string',
+                'report' => 'required|string',
+                'uploadedBy' => 'required|string',
             ]);
-
-            if ($validator->fails()) {
-                throw new \Exception($validator->errors()->first());
-            }
-
-            $data = $validator->validated();
 
             // Verify references exist
             $this->verifyReferencesExist($data);
@@ -84,12 +93,20 @@ class IncidentReportController extends Controller
             if (empty($data['caseNumber'])) {
                 $data['caseNumber'] = $this->generateCaseNumber();
             }
-
-
-
             $data['created_at'] = now()->toDateTimeString();
             $data['updated_at'] = now()->toDateTimeString();
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
+            // Get the document ID
+            $documentId = $documentRef->id();
+
+            // Update the document to include the ID field
+            $documentRef->update([
+                ['path' => 'id', 'value' => $documentId]
+            ]);
+
+            // Also add ID to the data array for response
+            $data['id'] = $documentId;
+
             $response = [
                 'success' => true,
                 'message' => "incidentReport Created Successfully",
@@ -239,33 +256,27 @@ class IncidentReportController extends Controller
 
 
 
-    // public function getTotalIncidentReport(IncidentReport $incidentReport)
-    // {
-    //     $incidentReport = IncidentReport::count();
-    //     return response()->json(['total' => $incidentReport], 200);
-    // }
+    public function getTotalIncidentReport()
+    {
+        try {
+            // Get all incident reports from Firestore
+            $incidentReports = FirestoreService::getCollection($this->collectionName);
 
-    // public function uploadIncidentFile(Request $request)
-    // {
-    //     $request->validate([
-    //         'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-    //         'incidentId' => 'required|exists:incident_reports,id'
-    //     ]);
+            // Count the number of documents
+            $total = is_array($incidentReports) ? count($incidentReports) : 0;
 
-    //     if ($request->hasFile('file')) {
-    //         $file = $request->file('file');
-    //         $fileName = time() . '_' . $file->getClientOriginalName();
-    //         $filePath = $file->storeAs('incident_files', $fileName, 'public');
-
-    //         $incidentFile = IncidentFile::create([
-    //             'incident_report_id' => $request->incidentId,
-    //             'path' => Storage::url($filePath),
-    //             'name' => $fileName
-    //         ]);
-
-    //         return response()->json($incidentFile, 201);
-    //     }
-
-    //     return response()->json(['error' => 'File upload failed'], 400);
-    // }
+            $response = [
+                'success' => true,
+                'message' => 'Total incident reports retrieved successfully',
+                'data' => ['total' => $total]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 200);
+    }
 }
