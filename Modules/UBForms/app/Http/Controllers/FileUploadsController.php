@@ -4,7 +4,6 @@ namespace Modules\UBForms\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-// use Illuminate\Facade\Log;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Log;
 use exception;

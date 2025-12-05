@@ -4,20 +4,58 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+
 
 class FileUploadController extends Controller
 {
-    public function upload(Request $request)
+    public function uploadIncidentReportPhoto(Request $request, string $incidentReportId, )
     {
-        $request->validate([
-            'file' => 'required|file|max:2048', // Max 2MB
-        ]);
+        try {
+            $result = [];
+            // Validate required parameters
+            if (!$incidentReportId) {
+                throw new \Exception('Incident Report ID required');
+            }
 
-        if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('uploads', 'public');
-            return response()->json(['message' => 'File uploaded successfully', 'path' => $path]);
+            if (!$request->hasFile('file')) {
+                throw new \Exception('No files were uploaded');
+            }
+
+            $files = $request->file('file');
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                if ($file->isValid()) {
+                    $fileName = Str::random(20) . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('uploads/photos', $fileName);
+
+                    // Generate a public URL for the file
+                    $fileUrl = 'app/private/uploads/photos/' . $fileName;
+
+                    $result[] = [
+                        "generated_name" => $fileName,
+                        "original_name" => $file->getClientOriginalName(),
+                        "url" => $fileUrl
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Files uploaded successfully',
+                'data' => $result
+            ]);
+        } catch (\Exception $e) {
+            Log::error('File upload error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
         }
-
-        return response()->json(['message' => 'No file uploaded'], 400);
     }
 }

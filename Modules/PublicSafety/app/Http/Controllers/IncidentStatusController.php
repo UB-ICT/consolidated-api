@@ -3,53 +3,139 @@
 namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\PublicSafety\Transformers\IncidentStatusResource;
-use Modules\PublicSafety\Transformers\IncidentStatusCollection;
-use Modules\PublicSafety\Http\Requests\StoreIncidentStatusRequest;
-use Modules\PublicSafety\Http\Requests\UpdateIncidentStatusRequest;
-use Modules\PublicSafety\Models\IncidentStatus;
+use App\Services\FirestoreService;
+use Illuminate\Http\Request;
+
 
 class IncidentStatusController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return new IncidentStatusCollection(IncidentStatus::paginate());
-    }
+
+    protected const COLLECTION_PREFIX = 'publicSafety_';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'incidentStatuses';
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreIncidentStatusRequest $request)
+    public function store(Request $request)
     {
-        return new IncidentStatusResource(IncidentStatus::create($request->all()));
+        try {
+            $data = $request->all();
+            $data['created_at'] = now()->toDateTimeString();
+            $data['updated_at'] = now()->toDateTimeString();
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $data);
+            $response = [
+                'success' => true,
+                'message' => "Incident Status Created Successfully",
+                'data' => [
+                    'IncidentStatusID' => $documentRef->id()
+                ]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        return response($response, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(IncidentStatus $incidentStatus)
+    public function show(Request $request, string $IncidentStatusID)
     {
-        return new IncidentStatusResource($incidentStatus);
+        try {
+            $incidentStatus = FirestoreService::getDocument($this->collectionName, $IncidentStatusID);
+            if ($incidentStatus) {
+                $response = [
+                    'success' => true,
+                    'message' => 'incidentStatus found',
+                    'data' => [
+                        'incidentStatus' => $incidentStatus
+                    ]
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'incidentStatus not found',
+                    'data' => null,
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateIncidentStatusRequest $request, IncidentStatus $incidentStatus)
+    public function update(Request $request, string $id)
     {
-        $incidentStatus->update($request->all());
-        return response()->json(['message' => 'updated successfully'], 200);
+        try {
+            $data = $request->all();
+            // Add updated timestamp
+            $data['updated_at'] = now()->toDateTimeString();
+            $success = FirestoreService::updateDocument(
+                $this->collectionName,
+                $id,
+                $data
+            );
+            if ($success) {
+                $response = [
+                    'success' => true,
+                    'message' => 'incidentStatus data updated successfully',
+                    'data' => $data
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'incidentStatus not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        return response($response, 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(IncidentStatus $incidentStatus)
+    //delete
+    public function destroy(string $id)
     {
-        $incidentStatus->delete();
-        return response()->json(['message' => 'deleted successfully'], 200);
+        try {
+            $success = FirestoreService::deleteDocument($this->collectionName, $id);
+
+            if ($success) {
+                $response = [
+                    'success' => true,
+                    'message' => 'Incident Status data deleted successfully',
+                ];
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Incident Status not found',
+                    'data' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+        // Return response with HTTP status code 201 (Created)
+        return response($response, 200);
     }
 }

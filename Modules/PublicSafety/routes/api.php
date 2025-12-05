@@ -13,12 +13,9 @@ use Modules\PublicSafety\Http\Controllers\IncidentStatusController;
 use Modules\PublicSafety\Http\Controllers\UserStatusController;
 use Modules\PublicSafety\Http\Controllers\IncidentTypeController;
 use Modules\PublicSafety\Http\Controllers\MenuController;
-use Modules\PublicSafety\Http\Controllers\SubMenuController;
 use Modules\PublicSafety\Http\Controllers\MenuRoleController;
 use Modules\PublicSafety\Http\Controllers\FileUploadController;
-use Modules\PublicSafety\Http\Controllers\PDFController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
-// use Modules\PublicSafety\Services\FCMService;
 
 
 /*
@@ -31,10 +28,6 @@ use Modules\PublicSafety\Http\Controllers\MessageController;
  * is assigned the "api" middleware group. Enjoy building your API!
  *
  */
-
-// Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-//     Route::apiResource('publicsafety', PublicSafetyController::class)->names('publicsafety');
-// });
 
 
 // This will be the only unprotected route because this is used for authentication
@@ -55,29 +48,16 @@ Route::group([
     Route::apiResource('buildings', BuildingController::class);
     Route::apiResource('incidentStatuses', IncidentStatusController::class);
     Route::apiResource('incidentReports', IncidentReportController::class);
-    Route::post('uploadIncidentFile', [IncidentReportController::class, 'uploadIncidentFile']);
+    Route::post('/uploadIncidentReportPhoto/{IncidentReportID}', [FileUploadController::class, 'uploadIncidentReportPhoto']);
     Route::apiResource('userStatuses', UserStatusController::class);
     Route::apiResource('incidentTypes', IncidentTypeController::class);
-    Route::apiResource('menus', MenuController::class);
-    Route::get('menus', [MenuController::class, 'getMenus']);
-    Route::apiResource('menuRoles', MenuRoleController::class);
-    Route::apiResource('subMenus', SubMenuController::class);
     Route::get('usersTotal', [UserController::class, 'getTotalUsers']);
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::post('assignRoles', [RoleController::class, 'assignRoleToUser']);
-    Route::post('upload', [FileUploadController::class, 'upload']);
-    Route::get('download-pdf/{id}', [PDFController::class, 'downloadIncidentReport']);
+
+    //menus
+    Route::get('/menu', [MenuController::class, 'index']);
+    Route::post('/menu', [MenuController::class, 'store']);
+    Route::put('/menu/{id}', [MenuController::class, 'update']);
+    Route::delete('/menu/{id}', [MenuController::class, 'destroy']);
 });
-
-
-
-
-// Route::post('/v1/publicSafety/send-notification', function (Request $request, FCMService $fcmService) {
-//     $request->validate([
-//         // 'deviceToken' => 'required|string',
-//         'title' => 'required|string',
-//         'body' => 'required|string',
-//     ]);
-
-//     return $fcmService->sendNotification($request->deviceToken, $request->title, $request->body);
-// })->middleware('auth:sanctum');

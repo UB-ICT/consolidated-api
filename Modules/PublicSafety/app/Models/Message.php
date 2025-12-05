@@ -23,11 +23,6 @@ class Message extends Model
         'updated_at',
     ];
 
-
-    // protected static function newFactory(): MessageFactory
-    // {
-    //     // return MessageFactory::new();
-    // }
     public function messageCategory()
     {
         return $this->belongsTo(MessageCategory::class);
