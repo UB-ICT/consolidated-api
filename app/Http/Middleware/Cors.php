@@ -25,7 +25,8 @@ class Cors
             'http://127.0.0.1:8088',
             'http://localhost:8088',
             'https://api.ub.edu.bz',
-            'https://forms.ub.edu.bz'
+            'https://forms.ub.edu.bz',
+            'https://ceval.ub.edu.bz'
             // '*' // Allow all origins for debugging
         ];
 
