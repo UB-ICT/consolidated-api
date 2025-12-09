@@ -28,8 +28,9 @@ class LecturerCourseController extends Controller
             ->where('vs.Session', $semester)
             ->where('vs.StaffFName1', $lecturer->staFName)
             ->where('vs.StaffLName1', $lecturer->staLName)
+            ->where('vs.CourseStatus','Offered')
             ->select(
-                'vs.couID',
+                'vs.SectionID',
                 'vs.CourseID',
                 'vs.CourseCode',
                 'vs.Session',

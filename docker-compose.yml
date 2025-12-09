@@ -1,5 +1,6 @@
 services:
     laravel.test:
+        platform: linux/amd64
         build:
             context: ./docker/8.2
             dockerfile: Dockerfile

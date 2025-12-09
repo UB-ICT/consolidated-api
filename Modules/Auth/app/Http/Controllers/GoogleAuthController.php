@@ -141,6 +141,9 @@ class GoogleAuthController extends Controller
         // 7. Create ONE token with multiple abilities
         $token = $_user->createToken('google-login', $abilities)->plainTextToken;
 
+        // 7.5. Instantiate courseEvaluation record for the user
+        $this->instantiateCourseEvaluation($_user->email);
+
         // 8. Choose frontend redirect URL based on original system click
         if ($system === 'annual') {
             $redirectUrl = config('app.frontend_url_annual_report');
@@ -449,9 +452,41 @@ class GoogleAuthController extends Controller
         Auth::login($_user);
         $token = $_user->createToken('postman-login')->plainTextToken;
 
+        // Instantiate courseEvaluation record for the user
+        $this->instantiateCourseEvaluation($_user->email);
+
         return response()->json([
             'token' => $token,
             'user' => $_user
         ]);
+    }
+
+    /**
+     * Instantiate courseEvaluation record for a user
+     * Creates the document if it doesn't exist
+     */
+    private function instantiateCourseEvaluation(string $email)
+    {
+        try {
+            $firestore = FirestoreService::firestore();
+            $collectionName = 'courseEvaluation';
+            $docRef = $firestore->collection($collectionName)->document($email);
+            $snapshot = $docRef->snapshot();
+
+            if (!$snapshot->exists()) {
+                // Create document with empty courses array
+                $docRef->set([
+                    'email' => $email,
+                    'courses' => []
+                ]);
+                Log::info('Course evaluation record created for user', ['email' => $email]);
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the login process
+            Log::error('Error instantiating course evaluation record: ' . $e->getMessage(), [
+                'email' => $email,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

@@ -11,7 +11,7 @@ class CourseSectionController extends Controller
     public function getCourseRows($courseCode, $courseSection)
     {
         $spreadsheetId = env('GOOGLE_SHEET_ID'); // Add your sheet ID to .env
-        $range = 'Sheet2!A1:Z1000'; // Adjust range as needed
+        $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
 
         $rows = GoogleSheetService::getRowsByCourse($spreadsheetId, $range, $courseCode, $courseSection);
 
