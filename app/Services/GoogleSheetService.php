@@ -41,10 +41,8 @@ class GoogleSheetService
      */
     public static function getRowsByCourse(string $spreadsheetId, string $range, string $courseCode, string $courseSection, ?string $semester = null): array
     {
-        logger('getRowsByCourse: ' . $spreadsheetId . ' ' . $range . ' ' . $courseCode . ' ' . $courseSection . ' ' . $semester);
         $rows = self::readSheet($spreadsheetId, $range);
 
-        logger('rows: ' . json_encode($rows));
         if (empty($rows)) {
             return [];
         }

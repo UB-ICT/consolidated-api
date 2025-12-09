@@ -92,8 +92,6 @@ class XenegradeController extends Controller
             $spreadsheetId = env('GOOGLE_SHEET_ID'); // Add your sheet ID to .env
             $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
 
-            logger('spreadsheetId: ' . $spreadsheetId);
-
             if (!$spreadsheetId) {
                 Log::error('Google Sheet ID not configured for email role check', ['email' => $email]);
                 return response()->json([

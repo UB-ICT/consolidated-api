@@ -328,8 +328,6 @@ class CourseEvaluationController extends Controller
         // Get course data from Google Sheet
         $rows = GoogleSheetService::getRowsByCourse($spreadsheetId, $range, $courseCode, $courseSection, $semester);
 
-        logger('rows: ' . json_encode($rows));
-        
         if (empty($rows)) {
             return $this->getEmptyCourseStructure($courseCode, $courseSection, $academicYear, $semester);
         }

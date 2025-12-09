@@ -18,7 +18,7 @@ class LecturerCourseController extends Controller
             ->first();
 
         if (!$lecturer) {
-            return response()->json(['error' => 'Lecturer not found'], 404);
+            return response()->json(['error' => 'Lecturer not found'], 405);
         }
 
         // 2. Get courses from vinSections and COURSE tables (SQL Server)
