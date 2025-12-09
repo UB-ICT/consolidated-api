@@ -179,6 +179,7 @@ class GoogleAuthController extends Controller
             $groupEmail = 'api_annual_reports@ub.edu.bz';
             $client->setSubject('luis.herrera@ub.edu.bz');
             
+<<<<<<< Updated upstream
             // Create Directory service
             $service = new GoogleDirectory($client);
             // Check if user is a member of the api_annual_reports group
@@ -207,6 +208,8 @@ class GoogleAuthController extends Controller
             $groupEmail = 'api_public_safety@ub.edu.bz';
             $client->setSubject($email);
 
+=======
+>>>>>>> Stashed changes
             // Create Directory service
             $service = new GoogleDirectory($client);
             // Check if user is a member of the api_annual_reports group
@@ -235,7 +238,12 @@ class GoogleAuthController extends Controller
             $client->setAuthConfig(storage_path('app/google-service-account.json'));
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
+<<<<<<< Updated upstream
             $client->setSubject('luis.herrera@ub.edu.bz');
+=======
+	    
+	    $client->setSubject('luis.herrera@ub.edu.bz');
+>>>>>>> Stashed changes
             
             // Create Directory service
             $service = new GoogleDirectory($client);
