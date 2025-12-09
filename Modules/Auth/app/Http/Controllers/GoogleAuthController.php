@@ -161,7 +161,7 @@ class GoogleAuthController extends Controller
         }
 
         // 10. Build response redirect
-        return redirect($redirectUrl . '?token=' . $token . '&system=' . $system);
+        return redirect( 'https://ceval.ub.edu.bz' /*$redirectUrl*/ . '?token=' . $token . '&system=' . $system);
     }
 
 
@@ -236,6 +236,7 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $client->setSubject('luis.herrera@ub.edu.bz');
+	    
             
             // Create Directory service
             $service = new GoogleDirectory($client);
