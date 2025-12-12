@@ -107,36 +107,30 @@ class GoogleAuthController extends Controller
         }
 
         // 2. Check Groups
-        $isAnnualReports = $this->isUserInAnnualReportsGroup($_user->email);
-        $isPublicSafety = $this->isUserInPublicSafetyGroup($_user->email);
-
-        Log::info("Group Check", [
-            'email' => $_user->email,
-            'annual' => $isAnnualReports,
-            'public' => $isPublicSafety
-        ]);
+        // $isAnnualReports = $this->isUserInAnnualReportsGroup($_user->email);
+        // $isPublicSafety = $this->isUserInPublicSafetyGroup($_user->email);
 
         // 3. Deny if in neither group
-        if (!$isAnnualReports && !$isPublicSafety) {
-            Log::warning('Google login denied: ' . $_user->email);
-            return redirect(config('app.frontend_url') . '?error=access_denied');
-        }
+        // if (!$isAnnualReports && !$isPublicSafety) {
+        //     Log::warning('Google login denied: ' . $_user->email);
+        //     return redirect(config('app.frontend_url') . '?error=access_denied');
+        // }
 
         Auth::login($_user);
 
         // 6. Determine allowed abilities
         $abilities = [];
-        $systemsAvailable = [];
+        // $systemsAvailable = [];
 
-        if ($isAnnualReports) {
-            $abilities[] = 'access-annual-reports';
-            $systemsAvailable[] = 'annual';
-        }
+        // if ($isAnnualReports) {
+        //     $abilities[] = 'access-annual-reports';
+        //     $systemsAvailable[] = 'annual';
+        // }
 
-        if ($isPublicSafety) {
-            $abilities[] = 'access-public-safety';
-            $systemsAvailable[] = 'public';
-        }
+        // if ($isPublicSafety) {
+        //     $abilities[] = 'access-public-safety';
+        //     $systemsAvailable[] = 'public';
+        // }
 
         // 7. Create ONE token with multiple abilities
         $token = $_user->createToken('google-login', $abilities)->plainTextToken;
@@ -144,21 +138,21 @@ class GoogleAuthController extends Controller
         // 7.5. Instantiate courseEvaluation record for the user
         $this->instantiateCourseEvaluation($_user->email);
 
-        // 8. Choose frontend redirect URL based on original system click
-        if ($system === 'annual') {
-            $redirectUrl = config('app.frontend_url_annual_report');
-        } else {
-            $redirectUrl = config('app.frontend_url_public_safety');
-        }
+        // // 8. Choose frontend redirect URL based on original system click
+        // if ($system === 'annual') {
+        //     $redirectUrl = config('app.frontend_url_annual_report');
+        // } else {
+        //     $redirectUrl = config('app.frontend_url_public_safety');
+        // }
 
-        // 9. If user only belongs to 1 system but clicked the other → correct redirect
-        if ($system === 'annual' && !$isAnnualReports) {
-            $redirectUrl = config('app.frontend_url_public_safety');
-        }
+        // // 9. If user only belongs to 1 system but clicked the other → correct redirect
+        // if ($system === 'annual' && !$isAnnualReports) {
+        //     $redirectUrl = config('app.frontend_url_public_safety');
+        // }
 
-        if ($system === 'public' && !$isPublicSafety) {
-            $redirectUrl = config('app.frontend_url_annual_report');
-        }
+        // if ($system === 'public' && !$isPublicSafety) {
+        //     $redirectUrl = config('app.frontend_url_annual_report');
+        // }
 
         // 10. Build response redirect
         return redirect( 'https://ceval.ub.edu.bz' /*$redirectUrl*/ . '?token=' . $token . '&system=' . $system);
