@@ -336,23 +336,23 @@ class GoogleAuthController extends Controller
         // Check if token was created for annual reports system
         $token = $user->currentAccessToken();
 
-        if (!$token || !in_array('access-annual-reports', $token->abilities ?? [])) {
-            return response()->json(['error' => 'Unauthorized for this system'], 401);
-        }
+        // if (!$token || !in_array('access-annual-reports', $token->abilities ?? [])) {
+        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
+        // }
 
         // if (!str_contains($token->name, 'annual-reports')) {
         //     return response()->json(['error' => 'Unauthorized for this system'], 401);
         // }
 
-        if (!$this->isUserInAnnualReportsGroup($user->email)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        // if (!$this->isUserInAnnualReportsGroup($user->email)) {
+        //     return response()->json(['error' => 'Unauthorized'], 401);
+        // }
 
-        $mailingGroups = $this->getUserMailingGroups($user->email);
-        $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
+        // $mailingGroups = $this->getUserMailingGroups($user->email);
+        // $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
+            'user' => $this->formatUserResponse($user, [], [])
         ]);
     }
 
