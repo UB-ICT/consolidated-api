@@ -27,8 +27,6 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array
      */
     protected $connection = 'pgsql';
-    protected $keyType = 'string';
-    public $incrementing = false;
     protected $fillable = [
         'name',
         'email',

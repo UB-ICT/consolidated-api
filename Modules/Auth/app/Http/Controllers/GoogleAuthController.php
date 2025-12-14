@@ -97,13 +97,27 @@ class GoogleAuthController extends Controller
         $_user = User::where('email', $user->email)->first();
 
         if (!$_user) {
-            $_user = User::updateOrCreate([
-                'name' => $user->name,
-                'email' => $user->email,
-                'google_id' => $user->id,
-                'password' => bcrypt(Str::random(16)),
-                'email_verified_at' => now(),
-            ]);
+            $_user = User::updateOrCreate(
+                ['email' => $user->email],
+                [
+                    'name' => $user->name,
+                    'google_id' => $user->id,
+                    'password' => bcrypt(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]
+            );
+        } else {
+            // Update existing user with google_id if not set
+            if (empty($_user->google_id)) {
+                $_user->google_id = $user->id;
+                $_user->save();
+            }
+        }
+
+        // Ensure user has an ID before proceeding
+        if (!$_user->id) {
+            Log::error('User ID is null after creation/retrieval', ['email' => $user->email]);
+            return redirect('https://ceval.ub.edu.bz' . '?error=user_creation_failed');
         }
 
         // 2. Check Groups
