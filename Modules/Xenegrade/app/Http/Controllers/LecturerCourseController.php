@@ -14,7 +14,7 @@ class LecturerCourseController extends Controller
         $lecturer = DB::connection('sqlsrv')
             ->table('staff')
             ->where('staEmail', $email)
-            ->where('staType', 'Instructor')
+            //#->where('staType', 'Instructor')
             ->first();
 
         if (!$lecturer) {
