@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\PublicSafety\Http\Controllers\PublicSafetyAuthController;
 use Modules\PublicSafety\Http\Controllers\UserController;
 use Modules\PublicSafety\Http\Controllers\CampusController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
@@ -32,15 +33,18 @@ use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
 
 
 // This will be the only unprotected route because this is used for authentication
+Route::prefix('')->group(function () {
+
+    // Google OAuth
+    // Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
+    // Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
+});
 
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',
     'middleware' => 'auth:sanctum',
 ], function () {
-
-
-    // Route::apiResource('users', UserController::class);
 
     Route::get('users', [UserController::class, 'index']);
     Route::post('users', [UserController::class, 'store']);
@@ -70,10 +74,6 @@ Route::group([
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
-
-    // Route::apiResource('messageCategories', MessageCategoryController::class);
-    // Route::apiResource('messages', MessageController::class);
-    // Route::apiResource('userCampuses', UserCampusController::class);
 
     Route::post('/initialize/incidentReports', [IncidentReportController::class, 'initialize']);
     Route::get('/incidentReports', [IncidentReportController::class, 'index']);
@@ -161,11 +161,4 @@ Route::group([
         [FileUploadController::class, 'uploadSignatureCanvas']
     );
 
-});
-
-
-Route::group([
-    'prefix' => 'v1/publicSafety',
-    'namespace' => 'Modules\PublicSafety\Http\Controllers',
-], function () {
 });

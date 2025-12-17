@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\GoogleAuthController;
+use Modules\PublicSafety\Http\Controllers\PublicSafetyAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,11 +28,11 @@ Route::get('/v1/login', function () {
 Route::middleware(['web'])->group(function () {
     Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
-    // Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
-
+    Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
+    Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
 });
 
 Route::prefix('api')->middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [GoogleAuthController::class, 'getAnnualReportUserInfo']);
-    Route::get('/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo']);
+    // Route::get('/user', [GoogleAuthController::class, 'getAnnualReportUserInfo']);
+    // Route::get('/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo']);
 });

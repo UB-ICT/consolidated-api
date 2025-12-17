@@ -40,6 +40,7 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
         'redirect_uri' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
+        'public_safety_redirect_uri' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI'),
         'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
     ]
-];  
+];
