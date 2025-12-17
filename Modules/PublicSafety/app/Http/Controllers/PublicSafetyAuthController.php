@@ -6,10 +6,13 @@ namespace Modules\PublicSafety\Http\Controllers;
 use Illuminate\Routing\Controller;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Illuminate\Http\Request;
 use App\Services\FirestoreService;
+use Google\Client as GoogleClient;
+use Google\Service\Directory as GoogleDirectory;
 // use Illuminate\Http\Request;
 
 class PublicSafetyAuthController extends Controller
@@ -21,11 +24,28 @@ class PublicSafetyAuthController extends Controller
      * This route MUST be public (no auth middleware),
      * because the user does not have a token yet.
      */
-    public function redirect()
+    public function redirect(Request $request)
     {
+        // Construct redirect URI dynamically to ensure it matches the actual callback URL
+        // This ensures it works across different environments (local, staging, production)
+        $redirectUri = config('services.google_public_safety.redirect_uri');
+        Log::info('Redirect URI11: ' . $redirectUri);
+        
+        // If not set in config, construct absolute URL from request
+        if (!$redirectUri) {
+            $baseUrl = rtrim(config('app.url'), '/');
+            // Fallback to request URL if APP_URL is not set
+            if ($baseUrl === 'http://localhost:3031') {
+                $baseUrl = $request->getSchemeAndHttpHost();
+            }
+            $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
+        }
+
+        Log::info('Redirect URI: ' . $redirectUri);
+        
         return Socialite::driver('google')
             ->stateless()
-            ->redirectUrl(config('services.google.public_safety_redirect_uri'))
+            ->redirectUrl($redirectUri)
             ->redirect();
     }
 
@@ -40,13 +60,30 @@ class PublicSafetyAuthController extends Controller
      *  - create a Sanctum token
      *  - initialize Firestore data
      */
-    public function callback()
+    public function callback(Request $request)
     {
         $googleUser = null;
 
         try {
             // 1. Fetch authenticated user information from Google
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            // Construct redirect URI dynamically to match what was sent in redirect()
+            $redirectUri = config('services.google_public_safety.redirect_uri');
+            
+            // If not set in config, construct absolute URL from request
+            if (!$redirectUri) {
+                $baseUrl = rtrim(config('app.url'), '/');
+                // Fallback to request URL if APP_URL is not set
+                if ($baseUrl === 'http://localhost') {
+                    $baseUrl = $request->getSchemeAndHttpHost();
+                }
+                $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
+            }
+           
+            Log::info('Redirect URI: ' . $redirectUri);
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->redirectUrl($redirectUri)
+                ->user();
 
             // 2. Create or update the local user record
             $user = User::updateOrCreate(
