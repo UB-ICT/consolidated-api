@@ -18,4 +18,4 @@ use Modules\Auth\Http\Controllers\GoogleAuthController;
 Route::post('/v1/auth/login', [AuthController::class, 'login']);
 Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 // Route::get('/v1/user', [GoogleAuthController::class, 'getAnnualReportUserInfo'])->middleware('auth:sanctum');
-// Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo'])->middleware('auth:sanctum');
+Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo'])->middleware('auth:sanctum');

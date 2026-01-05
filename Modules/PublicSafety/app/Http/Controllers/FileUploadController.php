@@ -31,6 +31,7 @@ class FileUploadController extends Controller
                 $files = [$files];
             }
 
+
             foreach ($files as $file) {
                 if ($file->isValid()) {
                     $fileName = Str::random(75) . '.' . $file->getClientOriginalExtension();
@@ -46,15 +47,21 @@ class FileUploadController extends Controller
                         "url" => $fileUrl,
                         "displayURL" => $fileUrl
                     ];
+                    Log::info($fileName);
+                    Log::info($file->getClientOriginalName());
+                    Log::info($fileUrl);
+
                 }
+
             }
             return response()->json([
                 'success' => true,
                 'message' => 'Files uploaded successfully',
                 'data' => $result
             ]);
+
         } catch (\Exception $e) {
-            Log::error('File upload error: ' . $e->getMessage());
+            Log::error('File upload errorssds: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

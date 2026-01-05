@@ -124,7 +124,7 @@ Route::group([
     Route::get('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'show']);
     Route::put('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'update']);
     Route::delete('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'destroy']);
-    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLostProperty']);
     Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
     Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
 
@@ -134,7 +134,7 @@ Route::group([
     Route::get('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'show']);
     Route::put('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'update']);
     Route::delete('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'destroy']);
-    Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReportTracking']);
+    Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReport']);
     Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
     Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
 
@@ -161,4 +161,10 @@ Route::group([
         [FileUploadController::class, 'uploadSignatureCanvas']
     );
 
+
+
+});
+
+Route::get('/phpinfo', function () {
+    phpinfo();
 });

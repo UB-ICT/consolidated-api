@@ -171,7 +171,39 @@ class LostPropertyController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
+            $data = $request->only([
+                'complainantName',
+                'complainantAddress',
+                'complainantDOB',
+                'complainantTelephone',
+                'complainantID',
+                'complainantEmail',
+                'dateLost',
+                'timeLost',
+                'complainantAffiliation',
+                'lostPropertyFiles',
+                'additionalDescription',
+                'owner',
+                'ownerSignature',
+                'dateReported',
+
+                'dateReturnedToOwner',
+                'timeReturnedToOwner',
+                'ownerName',
+                'ownerDOB',
+                'ownerAddress',
+                'ownerTelephone',
+                'ownerID',
+                'ownerEmail',
+                'remarks',
+                'signatureDPS',
+                'returnedToOwnerSignature',
+
+                'uploadedBy',
+                'formSubmitted',
+                'created_at',
+                'updated_at'
+            ]);
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
@@ -229,7 +261,7 @@ class LostPropertyController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalLostProperty(Request $request)
+    public function getTotalLostProperty()
     {
         try {
             $lostProperty = FirestoreService::getCollection($this->collectionName);
@@ -237,8 +269,9 @@ class LostPropertyController extends Controller
             $total = is_array($lostProperty) ? count($lostProperty) : 0;
             $response = [
                 'success' => true,
-                'data' => $total,
                 'message' => 'Total Lost Property retrieved successfully',
+                'data' => ['total' => $total],
+
             ];
         } catch (\Exception $e) {
             $response = [

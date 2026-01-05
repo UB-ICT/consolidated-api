@@ -127,8 +127,15 @@ class EndOfShiftReportPatrolController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
-
+            $data = $request->only([
+                'date',
+                'time',
+                'campus',
+                'uploadedBy',
+                'report',
+                'endOfShiftReportPatrolFiles',
+                'formSubmitted',
+            ]);
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
