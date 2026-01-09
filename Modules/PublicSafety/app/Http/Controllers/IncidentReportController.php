@@ -72,6 +72,7 @@ class IncidentReportController extends Controller
             // Validate the incoming request
             $request->validate([
                 'action' => 'required|string',
+                'campus' => 'required|string',
                 'description' => 'required|string',
                 'caseNumber' => 'required|string',
                 'incidentReportStatus' => 'required|string',
@@ -156,6 +157,7 @@ class IncidentReportController extends Controller
         try {
             $data = $request->only([
                 'action',
+                'campus',
                 'description',
                 'caseNumber',
                 'incidentReportStatus',
