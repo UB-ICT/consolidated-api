@@ -15,6 +15,8 @@ use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
 use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
 use Modules\PublicSafety\Http\Controllers\LostPropertyController;
 use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
+use Modules\PublicSafety\Http\Controllers\ConversationController;
+use Modules\PublicSafety\Http\Controllers\MessageController;
 
 
 
@@ -161,8 +163,42 @@ Route::group([
         [FileUploadController::class, 'uploadSignatureCanvas']
     );
 
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations', [ConversationController::class, 'store']);
+    Route::get('/conversations/{id}', [ConversationController::class, 'show']);
 
+    // Marks isDeleted = true
+    // Does NOT delete messages
+    // Safe for emergency/public-safety audits
+    Route::delete('/conversations/{id}', [ConversationController::class, 'destroy']);
 
+    // Get messages for a conversation (chat window)
+    Route::get(
+        '/conversations/{conversationId}/messages',
+        [MessageController::class, 'index']
+    );
+
+    // Send a message
+    Route::post(
+        '/messages',
+        [MessageController::class, 'store']
+    );
+
+    Route::patch(
+        '/messages/{messageId}/read',
+        [MessageController::class, 'markAsRead']
+    );
+
+    Route::delete(
+        '/messages/{messageId}',
+        [MessageController::class, 'destroy']
+    );
+
+    // Get media, files, or links for a conversation
+    Route::get(
+        '/messages/{conversationId}/media',
+        [MessageController::class, 'media']
+    );
 });
 
 Route::get('/phpinfo', function () {

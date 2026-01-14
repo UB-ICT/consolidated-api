@@ -275,33 +275,6 @@ class GoogleAuthController extends Controller
     }
 
 
-    // public function getPublicSafetyUserInfo(Request $request)
-    // {
-    //     $user = $request->user();
-
-    //     if (!$user) {
-    //         return response()->json(['error' => 'Unauthorized'], 401);
-    //     }
-
-    //     // Check if token was created for public safety system
-    //     $token = $user->currentAccessToken();
-    //     if (!str_contains($token->name, 'public-safety')) {
-    //         return response()->json(['error' => 'Unauthorized for this system'], 401);
-    //     }
-
-    //     if (!$this->isUserInPublicSafetyGroup($user->email)) {
-    //         return response()->json(['error' => 'Unauthorized'], 401);
-    //     }
-
-    //     $mailingGroups = $this->getUserMailingGroups($user->email);
-    //     $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
-
-    //     return response()->json([
-    //         'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
-    //     ]);
-    // }
-
-
     public function getPublicSafetyUserInfo(Request $request)
     {
         $user = $request->user();
