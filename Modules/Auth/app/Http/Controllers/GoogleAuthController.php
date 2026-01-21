@@ -22,9 +22,27 @@ class GoogleAuthController extends Controller
     public function redirect(Request $request)
     {
         $system = $request->get('system'); // "annual" or "public"
+        
+        // Get the caller domain from referer or origin
+        $callerDomain = $request->header('referer') 
+            ?? $request->header('origin') 
+            ?? $request->get('redirect_uri')
+            ?? 'https://forms.ub.edu.bz';
+        
+        // Extract domain from URL if it's a full URL
+        if (filter_var($callerDomain, FILTER_VALIDATE_URL)) {
+            $parsedUrl = parse_url($callerDomain);
+            $callerDomain = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . (isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '');
+        }
+        
+        // Encode system and caller domain in state
+        $state = json_encode([
+            'system' => $system,
+            'domain' => $callerDomain
+        ]);
 
         return Socialite::driver('google')
-            ->with(['state' => $system])
+            ->with(['state' => base64_encode($state)])
             ->redirect();
     }
 
@@ -82,12 +100,25 @@ class GoogleAuthController extends Controller
 
     public function callback(Request $request)
     {
+        $stateParam = request()->get('state');
+        $system = 'public'; // default
+        $callerDomain = 'https://forms.ub.edu.bz'; // default
 
-        $system = request()->get('state'); // "annual" or "public"
-
-        // Safety: default system if missing
-        if (!$system) {
-            $system = 'public'; // or choose 'annual' if preferred
+        // Decode state if it's base64 encoded JSON
+        if ($stateParam) {
+            try {
+                $decodedState = json_decode(base64_decode($stateParam), true);
+                if (is_array($decodedState)) {
+                    $system = $decodedState['system'] ?? $system;
+                    $callerDomain = $decodedState['domain'] ?? $callerDomain;
+                } else {
+                    // Fallback: if state is not JSON, treat it as just the system
+                    $system = $stateParam;
+                }
+            } catch (\Exception $e) {
+                // If decoding fails, treat state as just the system
+                $system = $stateParam;
+            }
         }
 
         // 2. Get Google user
@@ -117,7 +148,7 @@ class GoogleAuthController extends Controller
         // Ensure user has an ID before proceeding
         if (!$_user->id) {
             Log::error('User ID is null after creation/retrieval', ['email' => $user->email]);
-            return redirect('https://ceval.ub.edu.bz' . '?error=user_creation_failed');
+            return redirect($callerDomain . '?error=user_creation_failed');
         }
 
         // 2. Check Groups
@@ -168,8 +199,8 @@ class GoogleAuthController extends Controller
         //     $redirectUrl = config('app.frontend_url_annual_report');
         // }
 
-        // 10. Build response redirect
-        return redirect( 'https://ceval.ub.edu.bz' /*$redirectUrl*/ . '?token=' . $token . '&system=' . $system);
+        // 10. Build response redirect using caller domain
+        return redirect($callerDomain . '?token=' . $token . '&system=' . $system);
     }
 
 
