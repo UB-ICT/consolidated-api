@@ -22,19 +22,19 @@ class GoogleAuthController extends Controller
     public function redirect(Request $request)
     {
         $system = $request->get('system'); // "annual" or "public"
-        
+
         // Get the caller domain from referer or origin
-        $callerDomain = $request->header('referer') 
-            ?? $request->header('origin') 
+        $callerDomain = $request->header('referer')
+            ?? $request->header('origin')
             ?? $request->get('redirect_uri')
             ?? 'https://forms.ub.edu.bz';
-        
+
         // Extract domain from URL if it's a full URL
         if (filter_var($callerDomain, FILTER_VALIDATE_URL)) {
             $parsedUrl = parse_url($callerDomain);
             $callerDomain = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . (isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '');
         }
-        
+
         // Encode system and caller domain in state
         $state = json_encode([
             'system' => $system,
@@ -141,8 +141,8 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $groupEmail = 'api_annual_reports@ub.edu.bz';
-            $client->setSubject('luis.herrera@ub.edu.bz');
-            
+            $client->setSubject($email);
+
             // Create Directory service
             $service = new GoogleDirectory($client);
             // Check if user is a member of the api_annual_reports group
@@ -200,8 +200,8 @@ class GoogleAuthController extends Controller
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $client->setSubject('luis.herrera@ub.edu.bz');
-	    
-            
+
+
             // Create Directory service
             $service = new GoogleDirectory($client);
 
@@ -218,6 +218,7 @@ class GoogleAuthController extends Controller
                 // 'api_public_safety_Security@ub.edu.bz',
             ];
 
+
             $userGroups = [];
 
             // Check if user is a member of any relevant group
@@ -230,7 +231,6 @@ class GoogleAuthController extends Controller
                     continue;
                 }
             }
-
             return $userGroups;
         } catch (Exception $e) {
             Log::error('Error getting user mailing groups for ' . $email . ': ' . $e->getMessage());
@@ -337,7 +337,7 @@ class GoogleAuthController extends Controller
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
-        
+        Log::info('Annual Report User Info accessed for ' . $user->email . ' with groups: ' . json_encode($mailingGroups));
 
         return response()->json([
             'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus),
@@ -387,6 +387,7 @@ class GoogleAuthController extends Controller
             'profile_picture' => $user->profile_picture,
             'mailing_groups' => $mailingGroups,
             'menus' => $menus
+
         ];
     }
 

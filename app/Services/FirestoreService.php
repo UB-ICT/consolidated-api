@@ -21,7 +21,7 @@ class FirestoreService
         if (is_null(self::$firestore)) {
             Log::info('GOOGLE_CLOUD_PROJECT_ID: ' . json_encode(env('GOOGLE_CLOUD_PROJECT_ID')));
             Log::info('FIREBASE_CREDENTIALS_PATH: ' . json_encode(env('FIREBASE_CREDENTIALS_PATH')));
-            
+
             self::$firestore = new FirestoreClient([
                 'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
                 'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS_PATH'))
