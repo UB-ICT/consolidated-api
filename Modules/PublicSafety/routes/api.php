@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\PublicSafety\Http\Controllers\PublicSafetyAuthController;
 use Modules\PublicSafety\Http\Controllers\UserController;
 use Modules\PublicSafety\Http\Controllers\CampusController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
@@ -14,6 +15,8 @@ use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
 use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
 use Modules\PublicSafety\Http\Controllers\LostPropertyController;
 use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
+use Modules\PublicSafety\Http\Controllers\ConversationController;
+use Modules\PublicSafety\Http\Controllers\MessageController;
 
 
 
@@ -32,15 +35,18 @@ use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
 
 
 // This will be the only unprotected route because this is used for authentication
+Route::prefix('')->group(function () {
+
+    // Google OAuth
+    // Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
+    // Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
+});
 
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',
     'middleware' => 'auth:sanctum',
 ], function () {
-
-
-    // Route::apiResource('users', UserController::class);
 
     Route::get('users', [UserController::class, 'index']);
     Route::post('users', [UserController::class, 'store']);
@@ -70,10 +76,6 @@ Route::group([
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
-
-    // Route::apiResource('messageCategories', MessageCategoryController::class);
-    // Route::apiResource('messages', MessageController::class);
-    // Route::apiResource('userCampuses', UserCampusController::class);
 
     Route::post('/initialize/incidentReports', [IncidentReportController::class, 'initialize']);
     Route::get('/incidentReports', [IncidentReportController::class, 'index']);
@@ -124,7 +126,7 @@ Route::group([
     Route::get('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'show']);
     Route::put('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'update']);
     Route::delete('/lostProperty/{lostPropertyID}', [LostPropertyController::class, 'destroy']);
-    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLoandFoundTracking']);
+    Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLostProperty']);
     Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
     Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
 
@@ -134,7 +136,7 @@ Route::group([
     Route::get('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'show']);
     Route::put('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'update']);
     Route::delete('/impoundedReport/{impoundedReportID}', [ImpoundedReportTrackingFormController::class, 'destroy']);
-    Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReportTracking']);
+    Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReport']);
     Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
     Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
 
@@ -161,11 +163,44 @@ Route::group([
         [FileUploadController::class, 'uploadSignatureCanvas']
     );
 
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations', [ConversationController::class, 'store']);
+    Route::get('/conversations/{id}', [ConversationController::class, 'show']);
+
+    // Marks isDeleted = true
+    // Does NOT delete messages
+    // Safe for emergency/public-safety audits
+    Route::delete('/conversations/{id}', [ConversationController::class, 'destroy']);
+
+    // Get messages for a conversation (chat window)
+    Route::get(
+        '/conversations/{conversationId}/messages',
+        [MessageController::class, 'index']
+    );
+
+    // Send a message
+    Route::post(
+        '/messages',
+        [MessageController::class, 'store']
+    );
+
+    Route::patch(
+        '/messages/{messageId}/read',
+        [MessageController::class, 'markAsRead']
+    );
+
+    Route::delete(
+        '/messages/{messageId}',
+        [MessageController::class, 'destroy']
+    );
+
+    // Get media, files, or links for a conversation
+    Route::get(
+        '/messages/{conversationId}/media',
+        [MessageController::class, 'media']
+    );
 });
 
-
-Route::group([
-    'prefix' => 'v1/publicSafety',
-    'namespace' => 'Modules\PublicSafety\Http\Controllers',
-], function () {
+Route::get('/phpinfo', function () {
+    phpinfo();
 });

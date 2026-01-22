@@ -4,5 +4,6 @@
     "PublicSafety": true,
     "UBForms": true,
     "UBFormBuilder": true,
-    "Xenegrade": true
+    "Xenegrade": true,
+    "EmailBlast": true
 }

@@ -69,8 +69,10 @@ class IncidentReportController extends Controller
     public function store(Request $request)
     {
         try {
+            // Validate the incoming request
             $request->validate([
                 'action' => 'required|string',
+                'campus' => 'required|string',
                 'description' => 'required|string',
                 'caseNumber' => 'required|string',
                 'incidentReportStatus' => 'required|string',
@@ -86,23 +88,27 @@ class IncidentReportController extends Controller
                 'formSubmitted' => 'required|boolean',
             ]);
 
-            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
-            // Get the document ID
-            $documentId = $documentRef->id();
+            // Prepare the data to save
+            $incidentData = $request->all();
+            $incidentData['created_at'] = now()->toDateTimeString();
+            $incidentData['updated_at'] = now()->toDateTimeString();
 
-            // Update the document to include the ID field
+            // Save the document in Firestore and get the reference
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $incidentData);
+
+            // Add Firestore document ID to the incident data
+            $incidentData['id'] = $documentRef->id();
+
+            // Update the document to include its ID field
             $documentRef->update([
-                ['path' => 'id', 'value' => $documentId]
+                ['path' => 'id', 'value' => $incidentData['id']]
             ]);
 
-            // Build incident report data for response by merging request data with the generated id
-            $incidentReport = $request->all();
-            $incidentReport['id'] = $documentRef->id(); // add Firestore ID to object
-
+            // Return only the newly created incident report
             $response = [
                 'success' => true,
-                'message' => "incidentReport Created Successfully",
-                'data' => $incidentReport
+                'message' => 'Incident Report Created Successfully',
+                'data' => $incidentData
             ];
         } catch (\Exception $e) {
             $response = [
@@ -111,8 +117,10 @@ class IncidentReportController extends Controller
                 'data' => null,
             ];
         }
+
         return response($response, 201);
     }
+
 
     //read
     public function show(Request $request, string $incidentReportID)
@@ -147,35 +155,55 @@ class IncidentReportController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
-            // Add updated timestamp
-            // $data['updated_at'] = now()->toDateTimeString();
-            $success = FirestoreService::updateDocument(
-                $this->collectionName,
-                $id,
-                $data
-            );
+            $data = $request->only([
+                'action',
+                'campus',
+                'description',
+                'caseNumber',
+                'incidentReportStatus',
+                'incidentType',
+                'buildingName',
+                'incidentFiles',
+                'uploadedBy',
+                'date',
+                'time',
+                'reportedBy',
+                'contact',
+                'witnesses',
+                'formSubmitted',
+            ]);
+            $data['updated_at'] = now()->toDateTimeString(); // Always track update time
+
+            // Update the document in Firestore
+            $success = FirestoreService::updateDocument($this->collectionName, $id, $data);
+
             if ($success) {
+                // Fetch the updated document to return
+                $updatedReport = FirestoreService::getDocument($this->collectionName, $id);
+
                 $response = [
                     'success' => true,
-                    'message' => 'incidentReport data updated successfully',
-                    'data' => $data
+                    'message' => 'Incident Report updated successfully',
+                    'data' => $updatedReport
                 ];
-                Log::info('Updated Incident Report: ', $data);
+
+                Log::info('Updated Incident Report: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'incidentReport not found',
+                    'message' => 'Incident Report not found',
                     'data' => null
                 ];
             }
         } catch (\Exception $e) {
+            Log::error('Incident Report update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
             ];
         }
+
         return response($response, 200);
     }
 

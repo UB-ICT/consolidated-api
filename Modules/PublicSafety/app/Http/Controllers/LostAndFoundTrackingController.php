@@ -157,7 +157,32 @@ class LostAndFoundTrackingController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
+            $data = $request->only(
+                [
+                    'facilityName',
+                    'time',
+                    'todaysDate',
+                    'serialNumber',
+                    'itemDescription',
+                    'locationFound',
+                    'roomNo',
+                    'foundBy',
+                    'lostAndFoundTrackingFiles',
+                    'supervisorWhoReceivedItem',
+                    'dateReturnedToOwner',
+                    'timeReturnedToOwner',
+                    'owner',
+                    'ownerDOB',
+                    'ownerAddress',
+                    'ownerIDNumber',
+                    'ownerTelephone',
+                    'remarks',
+                    'returnedToOwnerSignature',
+                    'ownerAcknowledgementSignature',
+                    'uploadedBy',
+                    'formSubmitted',
+                ]
+            );
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,

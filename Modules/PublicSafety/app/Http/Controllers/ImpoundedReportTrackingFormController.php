@@ -224,6 +224,66 @@ class ImpoundedReportTrackingFormController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $data = $request->only([
+            'name',
+            'studentID',
+            'phoneNumber',
+            'address',
+            'todayDate',
+
+            //bicycle information form
+            'brand',
+            'model',
+            'color',
+            'style',
+            'impoundedReportFiles',
+            'serialNumber',
+            'purchaseDate',
+            'purchasePrice',
+            'locationOfBikeStolen',
+            'whatTimeBikeStolen',
+            'bicycleRack',
+            'whenWasBikeWasStolen',
+            'signature',
+            'dateOfSignature',
+
+            //Disposition of property
+            'dateReturnedToOwner',
+            'ownerName',
+            'ownerAddress',
+            'ownerDOB',
+            'ownerIDNumber',
+            'ownerTelephone',
+            'remarks',
+            'ownerSignature',
+            'signaturePSD',
+
+            //Impound Report Tracking Form:
+            "nameOfFinder",
+            "locationFound",
+            "trackingBrand",
+            "trackingModel",
+            "trackingColor",
+            "trackingStyle",
+            "trackingSerialNumber",
+            "supervisorWhoreceivedItems",
+            "trackingFormRemarks",
+
+            //Disposition of property 2
+            'dateReturnedToOwner2',
+            'ownerName2',
+            'ownerAddress2',
+            'ownerDOB2',
+            'ownerIDNumber2',
+            'ownerTelephone2',
+            'remarks2',
+            'ownerSignature2',
+            'signaturePSD2',
+
+            'uploadedBy',
+            'formSubmitted',
+        ]);
+
         try {
             $data = $request->all();
             $success = FirestoreService::updateDocument(

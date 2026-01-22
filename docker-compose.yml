@@ -33,11 +33,11 @@ services:
         image: "postgres:15"
         container_name: api-db
         ports:
-            - "${PGSQL_PORT:-5432}:5432"
+            - "${DB_PORT:-5432}:5432"
         environment:
-            POSTGRES_DB: "${PGSQL_DATABASE}"
-            POSTGRES_USER: "${PGSQL_USERNAME}"
-            POSTGRES_PASSWORD: "${PGSQL_PASSWORD}"
+            POSTGRES_DB: "${DB_DATABASE}"
+            POSTGRES_USER: "${DB_USERNAME}"
+            POSTGRES_PASSWORD: "${DB_PASSWORD}"
         volumes:
             - "sail-pgsql:/var/lib/postgresql/data"
             - "./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql"
@@ -49,9 +49,9 @@ services:
                 - pg_isready
                 - "-q"
                 - "-d"
-                - "${PGSQL_DATABASE}"
+                - "${DB_DATABASE}"
                 - "-U"
-                - "${PGSQL_USERNAME}"
+                - "${DB_USERNAME}"
             retries: 3
             timeout: 5s
     redis:

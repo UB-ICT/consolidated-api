@@ -514,54 +514,23 @@ class FacultyController extends Controller
     /**
      * Clean up temporary directory
      */
-    private function cleanupTempDirectory($tempDir)
-    {
-        try {
-            if (file_exists($tempDir)) {
-                $files = glob($tempDir . '/*');
-                foreach ($files as $file) {
-                    if (is_file($file)) {
-                        unlink($file);
-                    }
+   private function cleanupTempDirectory($tempDir)
+{
+    try {
+        if (file_exists($tempDir)) {
+            $files = glob($tempDir . '/*');
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
                 }
-                rmdir($tempDir);
             }
-        } catch (\Exception $e) {
-            Log::warning('Could not clean up temp directory: ' . $e->getMessage());
+            rmdir($tempDir);
         }
+    } catch (\Exception $e) {
+        Log::warning('Could not clean up temp directory: ' . $e->getMessage());
     }
-<<<<<<< Updated upstream
-
-=======
+}
     
-    //recently added this
-    private function convertDocToPdf($inputPath)
-    {
-        $outputDir = storage_path('app/temp');
-        if (!file_exists($outputDir)) {
-            mkdir($outputDir, 0755, true);
-        }
-
-        $outputPdf = $outputDir . '/' . uniqid('converted_') . '.pdf';
-
-        $command = 'libreoffice --headless --convert-to pdf '
-            . escapeshellarg($inputPath)
-            . ' --outdir '
-            . escapeshellarg($outputDir);
-
-        exec($command . ' 2>&1', $output, $returnCode);
-
-        if ($returnCode !== 0) {
-            Log::error("LibreOffice conversion failed: " . implode("\n", $output));
-            return null;
-        }
-
-        // LibreOffice outputs same filename but with .pdf extension
-        $convertedFile = $outputDir . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.pdf';
->>>>>>> Stashed changes
-
-        return file_exists($convertedFile) ? $convertedFile : null;
-    }
 
     /**
      * Get meeting PDF file paths from the report data
@@ -590,17 +559,10 @@ class FacultyController extends Controller
 
                             $filePath = storage_path('app/private/uploads/meetings/' . $fileName);
                             Log::info('Looking for file: ' . $filePath);
-<<<<<<< Updated upstream
 
                             if (file_exists($filePath)) {
 
                                 $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-=======
-                            
-                          if (file_exists($filePath)) {
-
-    $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
->>>>>>> Stashed changes
 
                                 // If PDF, use as-is
                                 if ($extension === 'pdf') {

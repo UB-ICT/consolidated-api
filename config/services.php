@@ -41,5 +41,21 @@ return [
         'redirect' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
         'redirect_uri' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
         'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
+    ],
+
+    'google_public_safety' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI',  'http://localhost:3031/auth/google/public-safety-callback'),
+        'redirect_uri' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI',  'http://localhost:3031/auth/google/public-safety-callback'),
+        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
+    ],
+
+    'google_annual_report' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI',  'http://localhost:3031/auth/google/annual-report-callback'),
+        'redirect_uri' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI',  'http://localhost:3031/auth/google/annual-report-callback'),
+        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
     ]
-];  
+];
