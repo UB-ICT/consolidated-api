@@ -37,21 +37,29 @@ class FirestoreService
 
     public static function getCollection(string $collectionName): array
     {
-        self::initializeFirestore();
-        Log::info(' menus ....'. $collectionName .'');
-        $collection = self::$firestore->collection($collectionName);
-        $documents = $collection->documents();
+        try {
+            self::initializeFirestore();
+            $collection = self::$firestore->collection($collectionName);
+            $documents = $collection->documents();
 
-        $result = [];
-        foreach ($documents as $document) {
-            if ($document->exists()) {
-                $data = $document->data();
-                $data['id'] = $document->id(); // Add the document ID
-                $result[] = $data;
+            $result = [];
+            foreach ($documents as $document) {
+                if ($document->exists()) {
+                    $data = $document->data();
+                    $data['id'] = $document->id(); // Add the document ID
+                    $result[] = $data;
+                }
             }
-        }
 
-        return $result;
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Error retrieving collection from Firestore', [
+                'collection' => $collectionName,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [];
+        }
     }
 
     public static function getCollectionWhere(string $collection, string $field, string $operator, $value): array

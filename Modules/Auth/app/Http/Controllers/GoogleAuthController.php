@@ -95,7 +95,6 @@ class GoogleAuthController extends Controller
 
         // Ensure user has an ID before proceeding
         if (!$_user->id) {
-            Log::error('User ID is null after creation/retrieval', ['email' => $user->email]);
             return redirect($callerDomain . '?error=user_creation_failed');
         }
 
@@ -249,15 +248,23 @@ class GoogleAuthController extends Controller
             $allMenus = FirestoreService::getMenuItems();
 
             $userMenus = [];
+            $skippedBySystem = 0;
+            $skippedByRoles = 0;
+            $menusWithoutRoles = 0;
 
             foreach ($allMenus as $menu) {
                 // Skip if menu is not for the current system
-                if (isset($menu['system']) && $menu['system'] !== $system) {
+                // Only skip if system is explicitly set and doesn't match
+                // Menus without a system field are considered global and included
+                if (isset($menu['system']) && !empty($menu['system']) && $menu['system'] !== $system) {
+                    $skippedBySystem++;
                     continue;
                 }
 
                 // Check if menu has roles field and if any of user's mailing groups match
-                if (isset($menu['roles']) && is_array($menu['roles'])) {
+                // If menu has no roles field, consider it public and include it
+                if (isset($menu['roles']) && is_array($menu['roles']) && !empty($menu['roles'])) {
+                    $matched = false;
                     foreach ($menu['roles'] as $menuRole) {
                         if (in_array($menuRole, $mailingGroups)) {
                             $userMenus[] = [
@@ -268,9 +275,24 @@ class GoogleAuthController extends Controller
                                 'order' => $menu['order'] ?? 0,
                                 'is_active' => $menu['is_active'] ?? true
                             ];
+                            $matched = true;
                             break;
                         }
                     }
+                    if (!$matched) {
+                        $skippedByRoles++;
+                    }
+                } else {
+                    // Menu has no roles or empty roles array - include it as public menu
+                    $userMenus[] = [
+                        'id' => $menu['id'] ?? null,
+                        'name' => $menu['name'] ?? '',
+                        'path' => $menu['path'] ?? '',
+                        'icon' => $menu['icon'] ?? '',
+                        'order' => $menu['order'] ?? 0,
+                        'is_active' => $menu['is_active'] ?? true
+                    ];
+                    $menusWithoutRoles++;
                 }
             }
 
@@ -420,7 +442,6 @@ class GoogleAuthController extends Controller
                     'email' => $email,
                     'courses' => []
                 ]);
-                Log::info('Course evaluation record created for user', ['email' => $email]);
             }
         } catch (\Exception $e) {
             // Log error but don't fail the login process
