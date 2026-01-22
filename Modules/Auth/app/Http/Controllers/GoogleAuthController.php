@@ -214,8 +214,8 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
                 'api_annual_report_Deans@ub.edu.bz',
-                // 'api_public_safety_Admin@ub.edu.bz',
-                // 'api_public_safety_Security@ub.edu.bz',
+                'api_public_safety_Admin@ub.edu.bz',
+                'api_public_safety_Security@ub.edu.bz',
             ];
 
 
@@ -357,14 +357,14 @@ class GoogleAuthController extends Controller
         // Check Sanctum token abilities instead of token name
         $token = $user->currentAccessToken();
 
-        if (!$token || !in_array('access-public-safety', $token->abilities ?? [])) {
-            return response()->json(['error' => 'Unauthorized for this system'], 401);
-        }
+        // if (!$token || !in_array('access-public-safety', $token->abilities ?? [])) {
+        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
+        // }
 
-        // Check group membership
-        if (!$this->isUserInPublicSafetyGroup($user->email)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        // // Check group membership
+        // if (!$this->isUserInPublicSafetyGroup($user->email)) {
+        //     return response()->json(['error' => 'Unauthorized'], 401);
+        // }
 
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
