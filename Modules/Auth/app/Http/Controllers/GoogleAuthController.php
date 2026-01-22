@@ -248,7 +248,6 @@ class GoogleAuthController extends Controller
             // Get all menus from Firebase using the specific menu method
             $allMenus = FirestoreService::getMenuItems();
 
-            Log::info('All menus: ' . json_encode($mailingGroups));
             $userMenus = [];
 
             foreach ($allMenus as $menu) {
@@ -313,11 +312,14 @@ class GoogleAuthController extends Controller
         //     return response()->json(['error' => 'Unauthorized'], 401);
         // }
 
-        // $mailingGroups = $this->getUserMailingGroups($user->email);
-        // $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
+        $mailingGroups = $this->getUserMailingGroups($user->email);
+        $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
+
+        
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, [], [])
+            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus),
+            'menus' => $menus
         ]);
     }
 
