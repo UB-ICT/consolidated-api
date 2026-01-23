@@ -216,6 +216,7 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Deans@ub.edu.bz',
                 'api_public_safety_Admin@ub.edu.bz',
                 'api_public_safety_Security@ub.edu.bz',
+                'api_public_safety_Officer@ub.edu.bz',
             ];
 
 
