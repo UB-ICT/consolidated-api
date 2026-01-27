@@ -69,10 +69,10 @@ class GoogleAuthController extends Controller
             }
         }
 
-        // 2. Get Google user
+        // Get Google user
         $user = Socialite::driver('google')->stateless()->user();
 
-        // 1. Retrieve or Create User
+        // Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
 
         if (!$_user) {
@@ -100,29 +100,12 @@ class GoogleAuthController extends Controller
 
         Auth::login($_user);
 
-        // 6. Determine allowed abilities
+        // Determine allowed abilities
         $abilities = [];
-        // 7. Create ONE token with multiple abilities
+        // Create ONE token with multiple abilities
         $token = $_user->createToken('google-login', $abilities)->plainTextToken;
 
-        // 7.5. Instantiate courseEvaluation record for the user
         $this->instantiateCourseEvaluation($_user->email);
-
-        // // 8. Choose frontend redirect URL based on original system click
-        // if ($system === 'annual') {
-        //     $redirectUrl = config('app.frontend_url_annual_report');
-        // } else {
-        //     $redirectUrl = config('app.frontend_url_public_safety');
-        // }
-
-        // // 9. If user only belongs to 1 system but clicked the other → correct redirect
-        // if ($system === 'annual' && !$isAnnualReports) {
-        //     $redirectUrl = config('app.frontend_url_public_safety');
-        // }
-
-        // if ($system === 'public' && !$isPublicSafety) {
-        //     $redirectUrl = config('app.frontend_url_annual_report');
-        // }
 
         // 10. Build response redirect using caller domain
         return redirect($callerDomain . '?token=' . $token . '&system=' . $system);
@@ -366,6 +349,58 @@ class GoogleAuthController extends Controller
         }
     }
 
+    public function getTablesByMailingGroups(array $mailingGroups, string $system)
+    {
+        try {
+            $allTables = FirestoreService::getPublicSafetyTableItems('publicSafety_tables');
+
+            $userTables = [];
+            $skippedBySystem = 0;
+            $skippedByRoles = 0;
+            $tablesWithoutRoles = 0;
+
+            foreach ($allTables as $table) {
+                // Skip if table is not for the current system
+                if (isset($table['system']) && !empty($table['system']) && $table['system'] !== $system) {
+                    $skippedBySystem++;
+                    continue;
+                }
+
+                // Check if table has roles field and if any of user's mailing groups match
+                if (isset($table['roles']) && is_array($table['roles']) && !empty($table['roles'])) {
+                    $matched = false;
+                    foreach ($table['roles'] as $tableRole) {
+                        if (in_array($tableRole, $mailingGroups)) {
+                            $userTables[] = [
+                                'id' => $table['id'] ?? null,
+                                'name' => $table['name'] ?? '',
+                                'is_active' => $table['is_active'] ?? true
+                            ];
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    if (!$matched) {
+                        $skippedByRoles++;
+                    }
+                } else {
+                    // Table has no roles or empty roles array - include it as public table
+                    $userTables[] = [
+                        'id' => $table['id'] ?? null,
+                        'name' => $table['name'] ?? '',
+                        'is_active' => $table['is_active'] ?? true
+                    ];
+                    $tablesWithoutRoles++;
+                }
+            }
+
+            return $userTables;
+        } catch (Exception $e) {
+            Log::error('Error getting tables from Firebase: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Get user info from token.
      */
@@ -386,7 +421,7 @@ class GoogleAuthController extends Controller
         Log::info('Annual Report User Info accessed for ' . $user->email . ' with groups: ' . json_encode($mailingGroups));
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus, forms: []),
+            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus, forms: [], tables: []),
             'menus' => $menus
         ]);
     }
@@ -406,21 +441,20 @@ class GoogleAuthController extends Controller
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
         $forms = $this->getFormsByMailingGroups($mailingGroups, 'public-safety');
+        $tables = $this->getTablesByMailingGroups($mailingGroups, 'public-safety');
 
-        Log::info('mailingGroups:' . json_encode($mailingGroups));
-
-        Log::info('forms:' . json_encode($forms));
 
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, $mailingGroups, $menus, $forms),
-            // 'menus' => $menus,
-            'forms' => $forms
+            'user' => $this->formatUserResponse($user, $mailingGroups, $menus, $forms, $tables),
+            'menus' => $menus,
+            'forms' => $forms,
+            'tables' => $tables
         ]);
     }
 
 
-    private function formatUserResponse($user, $mailingGroups, $menus, $forms)
+    private function formatUserResponse($user, $mailingGroups, $menus, $forms, $tables)
     {
         return [
             'id' => $user->id,
@@ -433,6 +467,7 @@ class GoogleAuthController extends Controller
             'mailing_groups' => $mailingGroups,
             'menus' => $menus,
             'forms' => $forms,
+            'tables' => $tables
         ];
     }
 

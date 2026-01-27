@@ -264,4 +264,30 @@ class FirestoreService
     {
         return self::queryCollection($collectionName, 'is_active', '=', true);
     }
+
+    // ---------------------------------------- Public Safety Table Items -----------------------------------------
+    public static function getPublicSafetyTableItems(string $collectionName): array
+    {
+        return self::getCollection($collectionName);
+    }
+
+    public static function createPublicSafetyTableItem(string $collectionName, array $data)
+    {
+        return self::syncDocumentAndGetRef($collectionName, $data);
+    }
+
+    public static function updatePublicSafetyTableItem(string $collectionName, string $id, array $data)
+    {
+        return self::updateDocument($collectionName, $id, $data);
+    }
+
+    public static function deletePublicSafetyTableItem(string $collectionName, string $id)
+    {
+        return self::deleteDocument($collectionName, $id);
+    }
+
+    public static function getPublicSafetyActiveTableItems(string $collectionName)
+    {
+        return self::queryCollection($collectionName, 'is_active', '=', true);
+    }
 }
