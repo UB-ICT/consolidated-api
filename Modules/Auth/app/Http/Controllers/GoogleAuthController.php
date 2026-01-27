@@ -214,9 +214,9 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
                 'api_annual_report_Deans@ub.edu.bz',
-                'api_public_safety_Admin@ub.edu.bz',
-                'api_public_safety_Security@ub.edu.bz',
-                'api_public_safety_Officer@ub.edu.bz',
+                'api_public_safety_Admin@ub.edu.bz', //Chief Public Safety Officer, and Supervisor
+                'api_public_safety_Security@ub.edu.bz', //Shift Supervisors
+                'api_public_safety_Officer@ub.edu.bz',  //public Safety officers
             ];
 
 
@@ -309,6 +309,63 @@ class GoogleAuthController extends Controller
         }
     }
 
+    public function getFormsByMailingGroups(array $mailingGroups, string $system)
+    {
+        try {
+            $allForms = FirestoreService::getPublicSafetyFormItems('publicSafety_forms');
+
+            Log::info('All Forms fetched: ' . json_encode($allForms));
+
+            $userForms = [];
+            $skippedBySystem = 0;
+            $skippedByRoles = 0;
+            $formsWithoutRoles = 0;
+
+            foreach ($allForms as $form) {
+                // Skip if form is not for the current system
+                // Only skip if system is explicitly set and doesn't match
+                // Forms without a system field are considered global and included
+                if (isset($form['system']) && !empty($form['system']) && $form['system'] !== $system) {
+                    $skippedBySystem++;
+                    continue;
+                }
+
+                // Check if form has roles field and if any of user's mailing groups match
+                // If form has no roles field, consider it public and include it
+                if (isset($form['roles']) && is_array($form['roles']) && !empty($form['roles'])) {
+                    $matched = false;
+                    foreach ($form['roles'] as $formRole) {
+                        if (in_array($formRole, $mailingGroups)) {
+                            $userForms[] = [
+                                'id' => $form['id'] ?? null,
+                                'name' => $form['name'] ?? '',
+                                'is_active' => $form['is_active'] ?? true
+                            ];
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    if (!$matched) {
+                        $skippedByRoles++;
+                    }
+                } else {
+                    // Form has no roles or empty roles array - include it as public form
+                    $userForms[] = [
+                        'id' => $form['id'] ?? null,
+                        'name' => $form['name'] ?? '',
+                        'is_active' => $form['is_active'] ?? true
+                    ];
+                    $formsWithoutRoles++;
+                }
+            }
+
+            return $userForms;
+        } catch (Exception $e) {
+            Log::error('Error getting forms from Firebase: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Get user info from token.
      */
@@ -323,25 +380,13 @@ class GoogleAuthController extends Controller
         // Check if token was created for annual reports system
         $token = $user->currentAccessToken();
 
-        // if (!$token || !in_array('access-annual-reports', $token->abilities ?? [])) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // if (!str_contains($token->name, 'annual-reports')) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // if (!$this->isUserInAnnualReportsGroup($user->email)) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
         Log::info('Annual Report User Info accessed for ' . $user->email . ' with groups: ' . json_encode($mailingGroups));
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus),
+            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus, forms: []),
             'menus' => $menus
         ]);
     }
@@ -358,25 +403,24 @@ class GoogleAuthController extends Controller
         // Check Sanctum token abilities instead of token name
         $token = $user->currentAccessToken();
 
-        // if (!$token || !in_array('access-public-safety', $token->abilities ?? [])) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // // Check group membership
-        // if (!$this->isUserInPublicSafetyGroup($user->email)) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
+        $forms = $this->getFormsByMailingGroups($mailingGroups, 'public-safety');
+
+        Log::info('mailingGroups:' . json_encode($mailingGroups));
+
+        Log::info('forms:' . json_encode($forms));
+
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
+            'user' => $this->formatUserResponse($user, $mailingGroups, $menus, $forms),
+            // 'menus' => $menus,
+            'forms' => $forms
         ]);
     }
 
 
-    private function formatUserResponse($user, $mailingGroups, $menus)
+    private function formatUserResponse($user, $mailingGroups, $menus, $forms)
     {
         return [
             'id' => $user->id,
@@ -387,8 +431,8 @@ class GoogleAuthController extends Controller
             'user_status_id' => $user->user_status_id,
             'profile_picture' => $user->profile_picture,
             'mailing_groups' => $mailingGroups,
-            'menus' => $menus
-
+            'menus' => $menus,
+            'forms' => $forms,
         ];
     }
 
