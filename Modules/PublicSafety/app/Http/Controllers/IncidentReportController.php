@@ -148,7 +148,7 @@ class IncidentReportController extends Controller
             ];
         }
         // Return response with HTTP status code 201 (Created)
-        return response($response, 200);
+        return response()->json($incidentReport, 200);
     }
 
     //update
