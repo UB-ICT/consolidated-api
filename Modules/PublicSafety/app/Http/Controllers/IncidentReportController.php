@@ -20,6 +20,7 @@ class IncidentReportController extends Controller
     {
         try {
             $defaultReport = [
+                'title' => '',
                 'action' => '',
                 'caseNumber' => $this->generateCaseNumber(),
                 'description' => '',
@@ -71,6 +72,7 @@ class IncidentReportController extends Controller
         try {
             // Validate the incoming request
             $request->validate([
+                'title' => 'required|string',
                 'action' => 'required|string',
                 'campus' => 'required|string',
                 'description' => 'required|string',
@@ -156,6 +158,7 @@ class IncidentReportController extends Controller
     {
         try {
             $data = $request->only([
+                'title',
                 'action',
                 'campus',
                 'description',
@@ -262,12 +265,37 @@ class IncidentReportController extends Controller
     }
 
     /**
-     * Generate a unique case number
+     * Generate a sequential case number (Firestore-safe)
+     * Format: INC-YYYYMMDD-0001
      */
-    private function generateCaseNumber()
+    private function generateCaseNumber(): string
     {
-        return 'CASE-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+        $date = date('Ymd');
+        $prefix = "INC-$date-";
+
+        // Get all incident reports for today
+        $reports = FirestoreService::getCollection($this->collectionName);
+
+        $lastNumber = 0;
+
+        if (is_array($reports)) {
+            foreach ($reports as $report) {
+                if (
+                    isset($report['caseNumber']) &&
+                    str_starts_with($report['caseNumber'], $prefix)
+                ) {
+                    // Extract numeric part
+                    $number = (int) substr($report['caseNumber'], -4);
+                    $lastNumber = max($lastNumber, $number);
+                }
+            }
+        }
+
+        $nextNumber = $lastNumber + 1;
+
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
+
 
 
 

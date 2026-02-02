@@ -20,6 +20,7 @@ class LostAndFoundTrackingController extends Controller
         try {
             $defaultReport = [
                 'facilityName' => '',
+                'incidentReportStatus' => '',
                 'time' => '',
                 'todaysDate' => now()->toDateString(),
                 'serialNumber' => '',
@@ -75,6 +76,7 @@ class LostAndFoundTrackingController extends Controller
         try {
             $request->validate([
                 'facilityName' => 'required|string',
+                'incidentReportStatus' => 'required|string',
                 'time' => 'nullable|string',
                 'todaysDate' => 'required|string',
                 'serialNumber' => 'nullable|string',
@@ -160,6 +162,7 @@ class LostAndFoundTrackingController extends Controller
             $data = $request->only(
                 [
                     'facilityName',
+                    'incidentReportStatus',
                     'time',
                     'todaysDate',
                     'serialNumber',
@@ -229,7 +232,6 @@ class LostAndFoundTrackingController extends Controller
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
             $response = [
                 'success' => false,
@@ -320,11 +322,9 @@ class LostAndFoundTrackingController extends Controller
                 'data' => null,
                 'message' => 'No unsubmitted Lost and Found Tracking found',
             ], 404);
-
         } catch (\Exception $e) {
             Log::error('Error in LostAndFoundTrackingController@getUnsubmittedLostAndFoundTracking: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
-
 }
