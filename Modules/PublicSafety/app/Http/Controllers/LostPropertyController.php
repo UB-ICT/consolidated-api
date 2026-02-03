@@ -42,6 +42,7 @@ class LostPropertyController extends Controller
                 'ownerID' => '',
                 'ownerEmail' => '',
                 'remarks' => '',
+                'incidentReportStatus' => '',
                 'signatureDPS' => [],
                 'returnedToOwnerSignature' => [],
 
@@ -103,6 +104,7 @@ class LostPropertyController extends Controller
                 'remarks' => 'nullable|string',
                 'signatureDPS' => 'nullable|array',
                 'returnedToOwnerSignature' => 'nullable|array',
+                'incidentReportStatus' => 'nullable|string',
 
                 'uploadedBy' => $request->user()->name,
                 'formSubmitted' => 'required|boolean',
@@ -198,6 +200,7 @@ class LostPropertyController extends Controller
                 'remarks',
                 'signatureDPS',
                 'returnedToOwnerSignature',
+                'incidentReportStatus',
 
                 'uploadedBy',
                 'formSubmitted',
@@ -249,7 +252,6 @@ class LostPropertyController extends Controller
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
             $response = [
                 'success' => false,
@@ -341,11 +343,9 @@ class LostPropertyController extends Controller
                 'data' => null,
                 'message' => 'No unsubmitted Lost Property found',
             ], 404);
-
         } catch (\Exception $e) {
             Log::error('Error in LostPropertyController@getUnsubmittedLostProperty: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
-
 }
