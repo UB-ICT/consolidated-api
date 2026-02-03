@@ -24,6 +24,7 @@ class ImpoundedReportTrackingFormController extends Controller
                 'phoneNumber' => '',
                 'address' => '',
                 'todayDate' => now()->toDateString(),
+                'incidentReportStatus' => '',
 
                 //bicycle information form
                 'brand' => '',
@@ -79,7 +80,6 @@ class ImpoundedReportTrackingFormController extends Controller
 
             ];
             Log::info('Initializing Impounded Report Tracking Form: ', $defaultReport);
-
         } catch (\Exception $e) {
             Log::error('Error in ImpoundedReportTrackingFormController@initialize: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
@@ -114,6 +114,8 @@ class ImpoundedReportTrackingFormController extends Controller
                 'phoneNumber' => 'required|string',
                 'address' => 'required|string',
                 'todayDate' => 'required|date',
+                'incidentReportStatus' => 'required|string',
+
 
                 //bicycle information form
                 'brand' => 'nullable|string',
@@ -230,6 +232,7 @@ class ImpoundedReportTrackingFormController extends Controller
             'phoneNumber',
             'address',
             'todayDate',
+            'incidentReportStatus',
 
             //bicycle information form
             'brand',
@@ -331,7 +334,6 @@ class ImpoundedReportTrackingFormController extends Controller
                     'data' => null
                 ];
             }
-
         } catch (\Exception $e) {
             $response = [
                 'success' => false,
@@ -423,14 +425,9 @@ class ImpoundedReportTrackingFormController extends Controller
                 'data' => null,
                 'message' => 'No unsubmitted impounded report found',
             ], 404);
-
         } catch (\Exception $e) {
             Log::error('Error in ImpoundedReportTrackingController@getUnsubmittedImpoundedReport: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
-
-
 }
-
-
