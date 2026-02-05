@@ -37,14 +37,16 @@ class BombController extends Controller
                 'sex' => '',
                 'race' => '',
                 'age' => '',
-                'callersVoice' => '',
-                'backgroundSounds' => '',
-                'threatLanguage' => '',
-                'accent' => '',
+                'callersVoice' => [],
+                'backgroundSounds' => [],
+                'threatLanguage' => [],
+                'accent' => [],
                 'additionalInformation' => '',
                 'officeNumberReceiveCalls' => '',
                 'personReceiveCalls' => '',
+                'accentRegion' => '',
                 'formSubmitted' => false,
+                'uploadedBy' => $request->user()->name ?? '',
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
@@ -100,14 +102,16 @@ class BombController extends Controller
                 'sex' => 'required|string',
                 'race' => 'required|string',
                 'age' => 'required|string',
-                'callersVoice' => 'required|string',
-                'backgroundSounds' => 'required|string',
-                'threatLanguage' => 'required|string',
-                'accent' => 'required|string',
+                'callersVoice' => 'required|array',
+                'backgroundSounds' => 'required|array',
+                'threatLanguage' => 'required|array',
+                'accent' => 'required|array',
                 'additionalInformation' => 'required|string',
                 'officeNumberReceiveCalls' => 'required|string',
                 'personReceiveCalls' => 'required|string',
+                'accentRegion' => 'required|string',
                 'formSubmitted' => 'required|boolean',
+                'uploadedBy' => 'required|string',
             ]);
 
             // Prepare the data to save
@@ -201,10 +205,12 @@ class BombController extends Controller
                 'backgroundSounds',
                 'threatLanguage',
                 'accent',
+                'accentRegion',
                 'additionalInformation',
                 'officeNumberReceiveCalls',
                 'personReceiveCalls',   // personReceiveCalls
                 'formSubmitted',
+                'uploadedBy',
             ]);
             $data['updated_at'] = now()->toDateTimeString(); // Always track update time
 
@@ -344,7 +350,7 @@ class BombController extends Controller
 
             // Load the view and pass the incident report data
             $pdf = Pdf::loadView('publicsafety::bombreport', [
-                '$bombReport' => $bombReport,
+                'bombReport' => $bombReport,
                 'user' => $user,
                 'request' => $request
             ]);

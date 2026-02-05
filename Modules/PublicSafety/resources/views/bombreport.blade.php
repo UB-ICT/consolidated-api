@@ -137,112 +137,152 @@
             <div class="section-content">
                 <div class="info-row">
                     <span class="info-label">Date: </span>
-                    <span class="info-value">{{ $bombReport['date'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['date'] ?? 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Time Received: </span>
-                    <span class="info-value">{{ $bombReport['timeReceived'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['timeReceived'] ?? 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Time Ended: </span>
-                    <span class="info-value">{{ $bombReport['timeEnded'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['timeEnded'] ?? 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Exact Wording: </span>
-                    <span class="info-value">{{ $bombReport['exactWording'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['exactWording'] ?? 'N/A' }}</span>
                 </div>
             </div>
         </div>
 
+        <!-- QUESTIONS ASKED -->
         <div class="section">
             <h2>Questions Asked</h2>
             <div class="section-content">
+
                 <div class="info-row">
                     <span class="info-label">Bomb Location: </span>
-                    <span class="info-value">{{ $bombReport['bombLocation'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['bombLocation'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">When Will It Go Off: </span>
-                    <span class="info-value">{{ $bombReport['whenWillItGoOff'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['whenWillItGoOff'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">What Do They Look Like: </span>
-                    <span class="info-value">{{ $bombReport['whatDoesItLooksLike'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['WhatDoesItLooksLike'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">What Kind Of Bomb: </span>
-                    <span class="info-value">{{ $bombReport['whatKindOfBomb'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['whatKindOfBomb'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">What Will Make It Explode: </span>
-                    <span class="info-value">{{ $bombReport['whatWillMakeItExplode'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['whatWillMakeItExplode'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Did You Place The Bomb: </span>
-                    <span class="info-value">{{ $bombReport['didYouPlaceTheBomb'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['didYouPlaceTheBomb'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Why: </span>
-                    <span class="info-value">{{ $bombReport['why'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['why'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Name: </span>
-                    <span class="info-value">{{ $bombReport['name'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['name'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Pay Phone: </span>
-                    <span class="info-value">{{ $bombReport['payPhone'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['payPhone'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Location: </span>
-                    <span class="info-value">{{ $bombReport['location'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['location'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Phone Number: </span>
-                    <span class="info-value">{{ $bombReport['phoneNumber'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['phoneNumber'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Sex: </span>
-                    <span class="info-value">{{ $bombReport['sex'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['sex'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Race: </span>
-                    <span class="info-value">{{ $bombReport['race'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['race'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Age: </span>
-                    <span class="info-value">{{ $bombReport['age'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['age'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
-                    <span class="info-label">Callers Voice: </span>
-                    <span class="info-value">{{ $bombReport['callersVoice'] ?? 'N/A'}}</span>
+                    <span class="info-label">Caller's Voice: </span>
+                    <span class="info-value">
+                        {{ !empty($bombReport['callersVoice']) ? implode(', ', $bombReport['callersVoice']) : 'N/A' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Background Sounds: </span>
-                    <span class="info-value">{{ $bombReport['backgroundSounds'] ?? 'N/A'}}</span>
+                    <span class="info-value">
+                        {{ !empty($bombReport['backgroundSounds']) ? implode(', ', $bombReport['backgroundSounds']) : 'N/A' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Threat Language: </span>
-                    <span class="info-value">{{ $bombReport['threatLanguage'] ?? 'N/A'}}</span>
+                    <span class="info-value">
+                        {{ !empty($bombReport['threatLanguage']) ? implode(', ', $bombReport['threatLanguage']) : 'N/A' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Accent: </span>
-                    <span class="info-value">{{ $bombReport['accent'] ?? 'N/A'}}</span>
+                    <span class="info-value">
+                        {{ !empty($bombReport['accent']) ? implode(', ', $bombReport['accent']) : 'N/A' }}
+                    </span>
                 </div>
+
+                @if(!empty($bombReport['accentRegion']))
+                <div class="info-row">
+                    <span class="info-label">Accent Region: </span>
+                    <span class="info-value">{{ $bombReport['accentRegion'] }}</span>
+                </div>
+                @endif
+
                 <div class="info-row">
                     <span class="info-label">Additional Information: </span>
-                    <span class="info-value">{{ $bombReport['additionalInformation'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['additionalInformation'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Office Number Receive Calls: </span>
-                    <span class="info-value">{{ $bombReport['officeNumberReceiveCalls'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['officeNumberReceiveCalls'] ?? 'N/A' }}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Person Receive Calls: </span>
-                    <span class="info-value">{{ $bombReport['personReceiveCalls'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $bombReport['personReceiveCalls'] ?? 'N/A' }}</span>
                 </div>
+
             </div>
         </div>
+
+    </div>
 </body>
 
 </html>
