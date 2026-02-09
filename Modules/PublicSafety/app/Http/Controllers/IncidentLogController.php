@@ -28,7 +28,7 @@ class IncidentLogController extends Controller
                 'personsInvolved' => '',
                 'actionTaken' => '',
                 'reportedBy' => '',
-                'offierSignature' => '',
+                'officerSignature' => '',
                 'uploadedBy' => $request->user()->name ?? '',
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
@@ -78,7 +78,7 @@ class IncidentLogController extends Controller
                 'actionTaken' => 'required|string',
                 'reportedBy' => 'required|string',
                 'uploadedBy' => 'required|string',
-                'offierSignature' => 'required|string',
+                'officerSignature' => 'required|string',
                 'formSubmitted' => 'required|boolean',
             ]);
 
@@ -159,7 +159,7 @@ class IncidentLogController extends Controller
                 'personsInvolved',
                 'actionTaken',
                 'reportedBy',
-                'offierSignature',
+                'officerSignature',
                 'uploadedBy',
                 'formSubmitted'
             ]);
