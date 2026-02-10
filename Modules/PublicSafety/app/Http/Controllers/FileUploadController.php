@@ -79,7 +79,9 @@ class FileUploadController extends Controller
             $signatureData = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
             $signatureData = str_replace(' ', '+', $signatureData);
 
-            if (!base64_decode($signatureData, true)) {
+            $decodedSignature = base64_decode($signatureData, true);
+
+            if ($decodedSignature === false) {
                 throw new \Exception("Invalid signature format");
             }
 
@@ -92,7 +94,7 @@ class FileUploadController extends Controller
             $fileName = Str::uuid() . '.png';
             $filePath = "{$directory}/{$fileName}";
 
-            file_put_contents($filePath, base64_decode($signatureData));
+            file_put_contents($filePath, $decodedSignature);
 
             return response()->json([
                 'success' => true,
@@ -103,8 +105,11 @@ class FileUploadController extends Controller
                     'displayURL' => 'app/private/uploads/signatures/' . $fileName
                 ]
             ]);
-        } catch (\Exception $e) {
-            Log::error("Signature upload error: {$e->getMessage()}");
+        } catch (\Throwable $e) {
+            Log::error("Signature upload error", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,

@@ -18,6 +18,7 @@ use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
 use Modules\PublicSafety\Http\Controllers\ConversationController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\BombController;
+use Modules\PublicSafety\Http\Controllers\IncidentLogController;
 
 
 
@@ -152,6 +153,15 @@ Route::group([
     Route::get('/generateBombReportPdf/{reportID}', [BombController::class, 'generateBombReportPdf']);
     Route::get('/unsubmittedBombReports', [BombController::class, 'getUnsubmittedBombReports']);
 
+    Route::post('/initialize/incidentLog', [IncidentLogController::class, 'initialize']);
+    Route::get('/incidentLog', [IncidentLogController::class, 'index']);
+    Route::post('/incidentLog', [IncidentLogController::class, 'store']);
+    Route::get('/incidentLog/{incidentLogID}', [IncidentLogController::class, 'show']);
+    Route::put('/incidentLog/{incidentLogID}', [IncidentLogController::class, 'update']);
+    Route::delete('/incidentLog/{incidentLogID}', [IncidentLogController::class, 'destroy']);
+    Route::get('/incidentLogTotal', [IncidentLogController::class, 'getTotalIncidentLog']);
+    Route::get('/generateIncidentLogPdf/{reportID}', [IncidentLogController::class, 'generateIncidentLogPdf']);
+    Route::get('/unsubmittedIncidentLog', [IncidentLogController::class, 'getUnsubmittedIncidentLog']);
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
