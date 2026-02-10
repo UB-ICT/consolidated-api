@@ -61,9 +61,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Generate application key
-        run: php artisan key:generate --env=testing
-
       - name: Set correct permissions
         run: |
           chmod -R 775 storage bootstrap/cache
@@ -91,6 +88,7 @@ jobs:
       - name: Run tests
         env:
           APP_ENV: testing
+          APP_KEY: base64:QasicHAwkgvkXvJOzfXZ2zx8/rofti/rfM8IQV5Fpwg=
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
