@@ -36,10 +36,11 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: Checkout code
+      # 1️⃣ Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Cache composer dependencies (makes builds MUCH faster)
+      # 2️⃣ Cache Composer dependencies (FAST builds)
       - name: Cache Composer dependencies
         uses: actions/cache@v3
         with:
@@ -48,6 +49,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
+      # 3️⃣ Setup PHP
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
@@ -55,16 +57,23 @@ jobs:
           extensions: mbstring, pdo_pgsql, redis, bcmath, xml, curl, grpc
           coverage: none
 
-      - name: Copy .env.testing
-        run: php -r "file_exists('.env.testing') || copy('.env.example', '.env.testing');"
-
+      # 4️⃣ Install dependencies
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Set correct permissions
-        run: |
-          chmod -R 775 storage bootstrap/cache
+      # 5️⃣ Create testing environment file
+      - name: Prepare .env.testing
+        run: cp .env.example .env.testing
 
+      # 6️⃣ Generate APP_KEY for testing
+      - name: Generate application key
+        run: php artisan key:generate --env=testing
+
+      # 7️⃣ Set permissions
+      - name: Set directory permissions
+        run: chmod -R 775 storage bootstrap/cache
+
+      # 8️⃣ Wait for Postgres to be ready
       - name: Wait for Postgres
         run: |
           until pg_isready -h 127.0.0.1 -p 5432 -U postgres; do
@@ -72,7 +81,8 @@ jobs:
             sleep 2
           done
 
-      - name: Run migrations
+      # 9️⃣ Run migrations
+      - name: Run database migrations
         env:
           APP_ENV: testing
           DB_CONNECTION: pgsql
@@ -85,10 +95,10 @@ jobs:
           REDIS_PORT: 6379
         run: php artisan migrate --force --env=testing
 
+      # 🔟 Run tests
       - name: Run tests
         env:
           APP_ENV: testing
-          APP_KEY: base64:QasicHAwkgvkXvJOzfXZ2zx8/rofti/rfM8IQV5Fpwg=
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
@@ -97,4 +107,4 @@ jobs:
           DB_PASSWORD: password
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
-        run: php artisan test
+        run: php artisan test --env=testing
