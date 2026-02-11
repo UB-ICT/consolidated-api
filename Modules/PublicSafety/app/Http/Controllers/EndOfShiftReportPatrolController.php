@@ -200,16 +200,22 @@ class EndOfShiftReportPatrolController extends Controller
     public function getTotalEndOfShiftReportPatrol(Request $request)
     {
         try {
-            //Get all all end of shift reports from firestore
+            // 1️⃣ Get all patrol end-of-shift reports
             $patrolReports = FirestoreService::getCollection($this->collectionName);
 
-            // Count the number of documents
-            $total = is_array($patrolReports) ? count($patrolReports) : 0;
+            // 2️⃣ Filter only submitted forms
+            $submittedReports = is_array($patrolReports)
+                ? array_filter($patrolReports, fn($item) => isset($item['formSubmitted']) && $item['formSubmitted'] === true)
+                : [];
 
+            // 3️⃣ Count them
+            $total = count($submittedReports);
+
+            // 4️⃣ Respond
             $response = [
                 'success' => true,
-                'message' => 'Total end of shift report retrieved successfully',
-                'data' => ['total' => $total]
+                'message' => 'Total submitted End of Shift Patrol Reports retrieved successfully',
+                'data' => ['total' => $total],
             ];
         } catch (\Exception $e) {
             $response = [
@@ -218,8 +224,10 @@ class EndOfShiftReportPatrolController extends Controller
                 'data' => null,
             ];
         }
-        return response($response, 200);
+
+        return response()->json($response, 200);
     }
+
 
     public function generateEndOfShiftReportPatrolPdf(Request $request, string $reportID)
     {

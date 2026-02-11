@@ -88,6 +88,8 @@ Route::group([
     Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
+    Route::get('/activeIncidentReports', [IncidentReportController::class, 'getActiveIncidentReports']);
+    Route::get('/resolvedIncidentReports', [IncidentReportController::class, 'getResolvedIncidentReports']);
 
     //end of shift report (patrol officer)
     Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
@@ -121,6 +123,8 @@ Route::group([
     Route::get('/lostAndFoundTrackingTotal', [LostAndFoundTrackingController::class, 'getTotalLoandFoundTracking']);
     Route::get('/generateLostAndFoundPdf/{reportID}', [LostAndFoundTrackingController::class, 'generateLostAndFoundPdf']);
     Route::get('/unsubmittedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getUnsubmittedLostAndFoundTracking']);
+    Route::get('/activeLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getActiveLostAndFoundTracking']);
+    Route::get('/resolvedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getResolvedLostAndFoundTracking']);
 
     Route::post('/initialize/lostProperty', [LostPropertyController::class, 'initialize']);
     Route::get('/lostProperty', [LostPropertyController::class, 'index']);
@@ -131,6 +135,8 @@ Route::group([
     Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLostProperty']);
     Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
     Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
+    Route::get('/activeLostProperty', [LostPropertyController::class, 'getActiveLostProperty']);
+    Route::get('/resolvedLostProperty', [LostPropertyController::class, 'getResolvedLostProperty']);
 
     Route::post('/initialize/impoundedReport', [ImpoundedReportTrackingFormController::class, 'initialize']);
     Route::get('/impoundedReport', [ImpoundedReportTrackingFormController::class, 'index']);
@@ -141,6 +147,8 @@ Route::group([
     Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReport']);
     Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
     Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
+    Route::get('/activeImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getActiveImpoundedReport']);
+    Route::get('/resolvedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getResolvedImpoundedReport']);
 
     //bomb threat
     Route::post('/initialize/bombThreats', [BombController::class, 'initialize']);

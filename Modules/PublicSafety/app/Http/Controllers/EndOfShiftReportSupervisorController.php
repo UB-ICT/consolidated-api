@@ -203,16 +203,22 @@ class EndOfShiftReportSupervisorController extends Controller
     public function getTotalEndOfShiftReportSupervisor(Request $request)
     {
         try {
-            //Get all all end of shift reports from firestore
-            $supervisorReport = FirestoreService::getCollection($this->collectionName);
+            // 1️⃣ Get all supervisor end-of-shift reports
+            $supervisorReports = FirestoreService::getCollection($this->collectionName);
 
-            // Count the number of documents
-            $total = is_array($supervisorReport) ? count($supervisorReport) : 0;
+            // 2️⃣ Filter only submitted reports
+            $submittedReports = is_array($supervisorReports)
+                ? array_filter($supervisorReports, fn($item) => isset($item['formSubmitted']) && $item['formSubmitted'] === true)
+                : [];
 
+            // 3️⃣ Count submitted reports
+            $total = count($submittedReports);
+
+            // 4️⃣ Respond
             $response = [
                 'success' => true,
-                'message' => 'Total end of shift report retrieved successfully',
-                'data' => ['total' => $total]
+                'message' => 'Total submitted End of Shift Supervisor Reports retrieved successfully',
+                'data' => ['total' => $total],
             ];
         } catch (\Exception $e) {
             $response = [
@@ -221,8 +227,10 @@ class EndOfShiftReportSupervisorController extends Controller
                 'data' => null,
             ];
         }
-        return response($response, 200);
+
+        return response()->json($response, 200);
     }
+
 
     public function generateEndOfShiftReportSupervisorPdf(Request $request, string $reportID)
     {

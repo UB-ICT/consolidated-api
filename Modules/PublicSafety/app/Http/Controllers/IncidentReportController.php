@@ -299,26 +299,39 @@ class IncidentReportController extends Controller
     public function getTotalIncidentReport()
     {
         try {
-            // Get all incident reports from Firestore
+            // 1️⃣ Get all incident reports from Firestore
             $incidentReports = FirestoreService::getCollection($this->collectionName);
 
-            // Count the number of documents
-            $total = is_array($incidentReports) ? count($incidentReports) : 0;
+            $total = 0;
+
+            if (is_array($incidentReports)) {
+                foreach ($incidentReports as $report) {
+                    // 2️⃣ Only count submitted reports
+                    if (isset($report['formSubmitted']) && $report['formSubmitted'] === true) {
+                        $total++;
+                    }
+                }
+            }
 
             $response = [
                 'success' => true,
-                'message' => 'Total incident reports retrieved successfully',
-                'data' => ['total' => $total]
+                'message' => 'Total submitted incident reports retrieved successfully',
+                'data' => [
+                    'total' => $total
+                ]
             ];
         } catch (\Exception $e) {
+
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
+
         return response($response, 200);
     }
+
 
     public function generateIncidentReportPdf(Request $request, string $reportID)
     {
@@ -387,5 +400,77 @@ class IncidentReportController extends Controller
                 'data' => null,
             ], 500);
         }
+    }
+
+    public function getActiveIncidentReports()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLogs = FirestoreService::getCollection($this->collectionName);
+
+            $activeCount = 0;
+
+            if (is_array($incidentLogs)) {
+                foreach ($incidentLogs as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getResolvedIncidentReports()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLogs = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($incidentLogs)) {
+                foreach ($incidentLogs as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
     }
 }

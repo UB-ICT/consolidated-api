@@ -345,26 +345,35 @@ class ImpoundedReportTrackingFormController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalImpoundedReport(Request $request)
+    public function getTotalImpoundedReport()
     {
         try {
+            // 1️⃣ Get all impounded reports
             $impoundedReport = FirestoreService::getCollection($this->collectionName);
 
-            $total = is_array($impoundedReport) ? count($impoundedReport) : 0;
-            $response = [
+            // 2️⃣ Filter only submitted forms
+            $submittedReports = is_array($impoundedReport)
+                ? array_filter($impoundedReport, fn($item) => isset($item['formSubmitted']) && $item['formSubmitted'] === true)
+                : [];
+
+            // 3️⃣ Count them
+            $total = count($submittedReports);
+
+            // 4️⃣ Respond
+            return response()->json([
                 'success' => true,
-                'data' => $total,
-                'message' => 'Total impounded report retrieved successfully',
-            ];
+                'message' => 'Total submitted Impounded Reports retrieved successfully',
+                'data' => ['total' => $total],
+            ]);
         } catch (\Exception $e) {
-            $response = [
+            return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
-            ];
+            ]);
         }
-        return response()->json($response);
     }
+
 
     public function generateImpoundedReportPdf(Request $request, string $impoundedReportID)
     {
@@ -429,5 +438,77 @@ class ImpoundedReportTrackingFormController extends Controller
             Log::error('Error in ImpoundedReportTrackingController@getUnsubmittedImpoundedReport: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
+    }
+
+    public function getActiveImpoundedReport()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $impoundedReport = FirestoreService::getCollection($this->collectionName);
+
+            $activeCount = 0;
+
+            if (is_array($impoundedReport)) {
+                foreach ($impoundedReport as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getResolvedImpoundedReport()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $impoundedReport = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($impoundedReport)) {
+                foreach ($impoundedReport as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
     }
 }

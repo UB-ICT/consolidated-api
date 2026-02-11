@@ -283,26 +283,37 @@ class IncidentLogController extends Controller
     public function getTotalIncidentLog()
     {
         try {
-            // Get all incident logs from Firestore
-            $incidentLog = FirestoreService::getCollection($this->collectionName);
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLogs = FirestoreService::getCollection($this->collectionName);
 
-            // Count the number of documents
-            $total = is_array($incidentLog) ? count($incidentLog) : 0;
+            // 2️⃣ Filter only submitted forms
+            $submittedLogs = is_array($incidentLogs)
+                ? array_filter($incidentLogs, fn($log) => isset($log['formSubmitted']) && $log['formSubmitted'] === true)
+                : [];
 
+            // 3️⃣ Count the number of submitted incident logs
+            $total = count($submittedLogs);
+
+            // 4️⃣ Prepare response
             $response = [
                 'success' => true,
-                'message' => 'Total incident log retrieved successfully',
-                'data' => ['total' => $total]
+                'message' => 'Total submitted incident logs retrieved successfully',
+                'data' => ['total' => $total],
             ];
         } catch (\Exception $e) {
+            // 5️⃣ Handle exceptions
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-        return response($response, 200);
+
+        // 6️⃣ Return JSON response
+        return response()->json($response, 200);
     }
+
+
 
     public function generateIncidentLogPdf(Request $request, string $reportID)
     {

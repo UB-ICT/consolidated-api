@@ -243,26 +243,39 @@ class LostAndFoundTrackingController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalLoandFoundTracking(Request $request)
-    {
-        try {
-            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+   public function getTotalLoandFoundTracking(Request $request)
+{
+    try {
+        // 1️⃣ Get all documents
+        $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
 
-            $total = is_array($lostAndFoundTracking) ? count($lostAndFoundTracking) : 0;
-            $response = [
-                'success' => true,
-                'data' => $total,
-                'message' => 'Total Lost and Found Tracking retrieved successfully',
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
+        $total = 0;
+
+        if (is_array($lostAndFoundTracking)) {
+            foreach ($lostAndFoundTracking as $item) {
+                // 2️⃣ Only count submitted forms
+                if (isset($item['formSubmitted']) && $item['formSubmitted'] === true) {
+                    $total++;
+                }
+            }
         }
-        return response()->json($response);
+
+        return response()->json([
+            'success' => true,
+            'data' => $total,
+            'message' => 'Total submitted Lost and Found Tracking retrieved successfully',
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'data' => null,
+        ]);
     }
+}
+
 
     public function generateLostAndFoundPdf(Request $request, string $lostAndFoundTrackingID)
     {
@@ -326,5 +339,78 @@ class LostAndFoundTrackingController extends Controller
             Log::error('Error in LostAndFoundTrackingController@getUnsubmittedLostAndFoundTracking: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
+    }
+
+
+    public function getActiveLostAndFoundTracking()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+
+            $activeCount = 0;
+
+            if (is_array($lostAndFoundTracking)) {
+                foreach ($lostAndFoundTracking as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getResolvedLostAndFoundTracking()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($lostAndFoundTracking)) {
+                foreach ($lostAndFoundTracking as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
     }
 }

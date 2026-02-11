@@ -266,24 +266,38 @@ class LostPropertyController extends Controller
     public function getTotalLostProperty()
     {
         try {
+            // 1️⃣ Get all documents
             $lostProperty = FirestoreService::getCollection($this->collectionName);
 
-            $total = is_array($lostProperty) ? count($lostProperty) : 0;
-            $response = [
-                'success' => true,
-                'message' => 'Total Lost Property retrieved successfully',
-                'data' => ['total' => $total],
+            $total = 0;
 
-            ];
+            if (is_array($lostProperty)) {
+                foreach ($lostProperty as $item) {
+
+                    // 2️⃣ Only count submitted forms
+                    if (isset($item['formSubmitted']) && $item['formSubmitted'] === true) {
+                        $total++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Total submitted Lost Property retrieved successfully',
+                'data' => [
+                    'total' => $total
+                ],
+            ]);
         } catch (\Exception $e) {
-            $response = [
+
+            return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
-            ];
+            ]);
         }
-        return response()->json($response);
     }
+
 
     public function generateLostPropertyPdf(Request $request, string $lostPropertyID)
     {
@@ -347,5 +361,77 @@ class LostPropertyController extends Controller
             Log::error('Error in LostPropertyController@getUnsubmittedLostProperty: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
+    }
+
+    public function getActiveLostProperty()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
+
+            $activeCount = 0;
+
+            if (is_array($lostProperty)) {
+                foreach ($lostProperty as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getResolvedLostProperty()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($lostProperty)) {
+                foreach ($lostProperty as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
     }
 }

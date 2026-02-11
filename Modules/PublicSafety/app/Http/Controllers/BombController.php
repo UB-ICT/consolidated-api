@@ -314,25 +314,29 @@ class BombController extends Controller
     public function getTotalBombReport()
     {
         try {
-            // Get all incident reports from Firestore
+            // 1️⃣ Get all bomb threat reports from Firestore
             $bombReport = FirestoreService::getCollection($this->collectionName);
 
-            // Count the number of documents
+            // 2️⃣ Count the number of documents safely
             $total = is_array($bombReport) ? count($bombReport) : 0;
 
+            // 3️⃣ Prepare response
             $response = [
                 'success' => true,
-                'message' => 'Total Bomb Threat retrieved successfully',
-                'data' => ['total' => $total]
+                'message' => 'Total Bomb Threats retrieved successfully',
+                'data' => ['total' => $total],
             ];
         } catch (\Exception $e) {
+            // 4️⃣ Handle exceptions
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
             ];
         }
-        return response($response, 200);
+
+        // 5️⃣ Return JSON response
+        return response()->json($response, 200);
     }
 
     public function generateBombReportPdf(Request $request, string $reportID)
