@@ -27,6 +27,8 @@ class IncidentReportController extends Controller
                 'incidentReportStatus' => '',
                 'incidentType' => '',
                 'buildingName' => '',
+                'latitude' => "",
+                'longitude' => "",
                 'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
                 'campus' => "",
                 'date' => "",
@@ -80,6 +82,8 @@ class IncidentReportController extends Controller
                 'incidentReportStatus' => 'required|string',
                 'incidentType' => 'required|string',
                 'buildingName' => 'required|string',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
                 'incidentFiles' => 'nullable|array',
                 'uploadedBy' => 'required|string',
                 'date' => 'required|string',
@@ -166,6 +170,8 @@ class IncidentReportController extends Controller
                 'incidentReportStatus',
                 'incidentType',
                 'buildingName',
+                'latitude',
+                'longitude',
                 'incidentFiles',
                 'uploadedBy',
                 'date',
@@ -472,5 +478,56 @@ class IncidentReportController extends Controller
         }
 
         return response($response, 200);
+    }
+
+    public function getPendingIncidentReports()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLogs = FirestoreService::getCollection($this->collectionName);
+
+            $pendingCount = 0;
+
+            if (is_array($incidentLogs)) {
+                foreach ($incidentLogs as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
+                        $pendingCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Pending incidents retrieved successfully',
+                'data' => ['totalPending' => $pendingCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getIncidentsByBuilding($buildingName)
+    {
+        $reports = FirestoreService::getCollectionWhere(
+            $this->collectionName,
+            'buildingName',
+            '=',
+            $buildingName
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reports
+        ]);
     }
 }

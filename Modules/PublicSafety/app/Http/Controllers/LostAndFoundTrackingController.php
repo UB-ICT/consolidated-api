@@ -243,38 +243,37 @@ class LostAndFoundTrackingController extends Controller
         return response($response, 200);
     }
 
-   public function getTotalLoandFoundTracking(Request $request)
-{
-    try {
-        // 1️⃣ Get all documents
-        $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+    public function getTotalLoandFoundTracking(Request $request)
+    {
+        try {
+            // 1️⃣ Get all documents
+            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
 
-        $total = 0;
+            $total = 0;
 
-        if (is_array($lostAndFoundTracking)) {
-            foreach ($lostAndFoundTracking as $item) {
-                // 2️⃣ Only count submitted forms
-                if (isset($item['formSubmitted']) && $item['formSubmitted'] === true) {
-                    $total++;
+            if (is_array($lostAndFoundTracking)) {
+                foreach ($lostAndFoundTracking as $item) {
+                    // 2️⃣ Only count submitted forms
+                    if (isset($item['formSubmitted']) && $item['formSubmitted'] === true) {
+                        $total++;
+                    }
                 }
             }
+
+            return response()->json([
+                'success' => true,
+                'data' => $total,
+                'message' => 'Total submitted Lost and Found Tracking retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ]);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => $total,
-            'message' => 'Total submitted Lost and Found Tracking retrieved successfully',
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-            'data' => null,
-        ]);
     }
-}
 
 
     public function generateLostAndFoundPdf(Request $request, string $lostAndFoundTrackingID)
@@ -402,6 +401,42 @@ class LostAndFoundTrackingController extends Controller
                 'success' => true,
                 'message' => 'Resolved incidents retrieved successfully',
                 'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getPendingLostAndFoundTracking()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLogs = FirestoreService::getCollection($this->collectionName);
+
+            $pendingCount = 0;
+
+            if (is_array($incidentLogs)) {
+                foreach ($incidentLogs as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
+                        $pendingCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Pending incidents retrieved successfully',
+                'data' => ['totalPending' => $pendingCount]
             ];
         } catch (\Exception $e) {
             $response = [

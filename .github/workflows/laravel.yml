@@ -2,7 +2,7 @@ name: Laravel CI (Postgres + Redis)
 
 on:
   push:
-    branches: ["main", "dev", "log"]
+    branches: ["main", "dev", "log", incidents]
   pull_request:
     branches: ["main", "dev", "log"]
 
