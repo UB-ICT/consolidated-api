@@ -18,6 +18,7 @@ class IncidentLogController extends Controller
     {
         try {
             $defaultReport = [
+                'incidentReportStatus' => '',
                 'caseNumber' => $this->generateCaseNumber(),
                 'date' => '',
                 'timeReported' => '',
@@ -67,6 +68,7 @@ class IncidentLogController extends Controller
         try {
             // Validate the incoming request
             $request->validate([
+                'incidentReportStatus' => 'required|string',
                 'caseNumber' => 'required|string',
                 'date' => 'required|string',
                 'timeReported' => 'required|string',
@@ -149,6 +151,7 @@ class IncidentLogController extends Controller
     {
         try {
             $data = $request->only([
+                'incidentReportStatus',
                 'caseNumber',
                 'date',
                 'timeReported',
@@ -329,7 +332,7 @@ class IncidentLogController extends Controller
             }
 
             // Load the view and pass the incident report data
-            $pdf = Pdf::loadView('publicsafety::incidentlog', [
+            $pdf = Pdf::loadView('publicsafety::incidentlogreport', [
                 'incidentLog' => $incidentLog,
                 'user' => $user,
                 'request' => $request
@@ -382,5 +385,113 @@ class IncidentLogController extends Controller
                 'data' => null,
             ], 500);
         }
+    }
+
+    public function getActiveIncidentLog()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLog = FirestoreService::getCollection($this->collectionName);
+
+            $activeCount = 0;
+
+            if (is_array($incidentLog)) {
+                foreach ($incidentLog as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getResolvedIncidentLog()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLog = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($incidentLog)) {
+                foreach ($incidentLog as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getPendingIncidentLog()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $incidentLog = FirestoreService::getCollection($this->collectionName);
+
+            $pendingCount = 0;
+
+            if (is_array($incidentLog)) {
+                foreach ($incidentLog as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
+                        $pendingCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Pending incidents retrieved successfully',
+                'data' => ['totalPending' => $pendingCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
     }
 }

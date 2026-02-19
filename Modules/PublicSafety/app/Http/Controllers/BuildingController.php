@@ -21,7 +21,6 @@ class BuildingController extends Controller
                 'message' => 'Buildings retrieved successfully',
                 'data' => [
                     'buildings' => $buildings,
-
                 ]
             ];
         } catch (\Exception $e) {
@@ -45,6 +44,8 @@ class BuildingController extends Controller
             $request->validate([
                 'name' => 'required|string',
                 'location' => 'required|string',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
             ]);
 
             // Add timestamps

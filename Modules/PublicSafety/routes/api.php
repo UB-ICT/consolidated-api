@@ -165,6 +165,10 @@ Route::group([
     Route::get('bombThreatsTotal', [BombController::class, 'getTotalBombReport']);
     Route::get('/generateBombReportPdf/{reportID}', [BombController::class, 'generateBombReportPdf']);
     Route::get('/unsubmittedBombReports', [BombController::class, 'getUnsubmittedBombReports']);
+    Route::get('/activeBombReports', [BombController::class, 'getActiveBombReports']);
+    Route::get('/resolvedBombReports', [BombController::class, 'getResolvedBombReports']);
+    Route::get('/pendingBombReports', [BombController::class, 'getPendingBombReports']);
+
 
     Route::post('/initialize/incidentLog', [IncidentLogController::class, 'initialize']);
     Route::get('/incidentLog', [IncidentLogController::class, 'index']);
@@ -175,6 +179,9 @@ Route::group([
     Route::get('/incidentLogTotal', [IncidentLogController::class, 'getTotalIncidentLog']);
     Route::get('/generateIncidentLogPdf/{reportID}', [IncidentLogController::class, 'generateIncidentLogPdf']);
     Route::get('/unsubmittedIncidentLog', [IncidentLogController::class, 'getUnsubmittedIncidentLog']);
+    Route::get('/activeIncidentLog', [IncidentLogController::class, 'getActiveIncidentLog']);
+    Route::get('/resolvedIncidentLog', [IncidentLogController::class, 'getResolvedIncidentLog']);
+    Route::get('/pendingIncidentLog', [IncidentLogController::class, 'getPendingIncidentLog']);
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
