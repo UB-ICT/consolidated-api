@@ -118,40 +118,51 @@ class BuildingController extends Controller
 
 
     //update
+    // Update building
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
-            // Add updated timestamp
-            $data['updated_at'] = now()->toDateTimeString();
+
+            // Validate FIRST
+            $validated = $request->validate([
+                'name' => 'required|string',
+                'location' => 'required|string',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
+            ]);
+
+            // Add timestamp
+            $validated['updated_at'] = now()->toDateTimeString();
+
+            // Update Firestore
             $success = FirestoreService::updateDocument(
                 $this->collectionName,
                 $id,
-                $data
+                $validated
             );
-            if ($success) {
-                $response = [
-                    'success' => true,
-                    'message' => 'Building data updated successfully',
-                    'data' => $data
-                ];
-            } else {
-                $response = [
+
+            if (!$success) {
+                return response()->json([
                     'success' => false,
                     'message' => 'Building not found',
                     'data' => null
-                ];
+                ], 404);
             }
-        } catch (\Exception $e) {
-            $response = [
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Building updated successfully',
+                'data' => $validated
+            ], 200);
+        } catch (\Throwable $e) {
+
+            return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null
-            ];
+            ], 500);
         }
-        return response($response, 200);
     }
-
     //delete
     public function destroy(string $id)
     {
