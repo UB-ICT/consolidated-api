@@ -8,7 +8,7 @@ on:
 
 jobs:
   laravel-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # or macOS-latest, windows-latest
 
     services:
       postgres:
