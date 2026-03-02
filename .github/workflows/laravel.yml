@@ -2,9 +2,9 @@ name: Laravel CI (Postgres + Redis)
 
 on:
   push:
-    branches: ["main", "dev", "log", incidents]
+    branches: ["main", "dev", "campusMap"]
   pull_request:
-    branches: ["main", "dev", "log"]
+    branches: ["main", "dev", "campusMap"]
 
 jobs:
   laravel-tests:

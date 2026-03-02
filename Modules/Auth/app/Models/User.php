@@ -40,7 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_picture',
         'google_id',
         'email_verified_at',
-        
+
     ];
     public $timestamps = false;
 
@@ -72,12 +72,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function role()
     {
         return $this->belongsTo(Role::class);
-    }
-
-    // Defined a relationship with UserCampus that a user is assign to only one campus.
-    public function userCampus()
-    {
-        return $this->hasOne(UserCampus::class, 'user_id');
     }
 
     public function userStatus()
