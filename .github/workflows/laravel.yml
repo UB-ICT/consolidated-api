@@ -1,10 +1,18 @@
 name: Laravel CI (Postgres + Redis)
 
+# Whenever you push code or open a pull request to certain branches, GitHub will:
+# Spin up a fresh Ubuntu machine
+# Start PostgreSQL and Redis
+# Install PHP 8.2 + Composer dependencies
+# Run Laravel migrations
+# Run your automated tests
+# If anything fails, the build turns ❌ red.
+
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["main", "dev", "log", "bomb", "campusMap"]
   pull_request:
-    branches: ["main", "dev"]
+    branches: ["main", "dev", "log", "bomb", "campusMap"]
 
 jobs:
   laravel-tests:
@@ -39,27 +47,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Cache Composer dependencies for faster builds
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      # Setup PHP and required extensions
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: mbstring, pdo_pgsql, redis
+          extensions: mbstring, pdo_pgsql, redis, bcmath, xml, curl, grpc
           coverage: none
 
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-
+      # Install Composer dependencies
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Generate app key
-        run: php artisan key:generate
-
+      # Set storage/cache permissions
       - name: Set permissions
-        run: chmod -R 777 storage bootstrap/cache
+        run: chmod -R 775 storage bootstrap/cache
 
+      # Wait for Postgres to be ready
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h 127.0.0.1 -p 5432 -U postgres; do
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+
+      # Run migrations using environment variables
       - name: Run migrations
         env:
+          APP_ENV: testing
+          APP_KEY: base64:QasicHAwkgvkXvJOzfXZ2zx8/rofti/rfM8IQV5Fpwg=
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
@@ -70,8 +95,11 @@ jobs:
           REDIS_PORT: 6379
         run: php artisan migrate --force
 
+      # Run tests
       - name: Run tests
         env:
+          APP_ENV: testing
+          APP_KEY: base64:QasicHAwkgvkXvJOzfXZ2zx8/rofti/rfM8IQV5Fpwg=
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432

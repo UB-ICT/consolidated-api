@@ -69,10 +69,10 @@ class GoogleAuthController extends Controller
             }
         }
 
-        // 2. Get Google user
+        // Get Google user
         $user = Socialite::driver('google')->stateless()->user();
 
-        // 1. Retrieve or Create User
+        // Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
 
         if (!$_user) {
@@ -100,29 +100,12 @@ class GoogleAuthController extends Controller
 
         Auth::login($_user);
 
-        // 6. Determine allowed abilities
+        // Determine allowed abilities
         $abilities = [];
-        // 7. Create ONE token with multiple abilities
+        // Create ONE token with multiple abilities
         $token = $_user->createToken('google-login', $abilities)->plainTextToken;
 
-        // 7.5. Instantiate courseEvaluation record for the user
         $this->instantiateCourseEvaluation($_user->email);
-
-        // // 8. Choose frontend redirect URL based on original system click
-        // if ($system === 'annual') {
-        //     $redirectUrl = config('app.frontend_url_annual_report');
-        // } else {
-        //     $redirectUrl = config('app.frontend_url_public_safety');
-        // }
-
-        // // 9. If user only belongs to 1 system but clicked the other → correct redirect
-        // if ($system === 'annual' && !$isAnnualReports) {
-        //     $redirectUrl = config('app.frontend_url_public_safety');
-        // }
-
-        // if ($system === 'public' && !$isPublicSafety) {
-        //     $redirectUrl = config('app.frontend_url_annual_report');
-        // }
 
         // 10. Build response redirect using caller domain
         return redirect($callerDomain . '?token=' . $token . '&system=' . $system);
@@ -214,9 +197,9 @@ class GoogleAuthController extends Controller
                 'api_annual_report_Directors@ub.edu.bz',
                 'api_annual_report_Admin@ub.edu.bz',
                 'api_annual_report_Deans@ub.edu.bz',
-                'api_public_safety_Admin@ub.edu.bz',
-                'api_public_safety_Security@ub.edu.bz',
-                'api_public_safety_Officer@ub.edu.bz',
+                'api_public_safety_Admin@ub.edu.bz', //Chief Public Safety Officer, and Supervisor
+                'api_public_safety_Security@ub.edu.bz', //Shift Supervisors
+                'api_public_safety_Officer@ub.edu.bz',  //public Safety officers
             ];
 
 
@@ -309,6 +292,115 @@ class GoogleAuthController extends Controller
         }
     }
 
+    public function getFormsByMailingGroups(array $mailingGroups, string $system)
+    {
+        try {
+            $allForms = FirestoreService::getPublicSafetyFormItems('publicSafety_forms');
+
+            Log::info('All Forms fetched: ' . json_encode($allForms));
+
+            $userForms = [];
+            $skippedBySystem = 0;
+            $skippedByRoles = 0;
+            $formsWithoutRoles = 0;
+
+            foreach ($allForms as $form) {
+                // Skip if form is not for the current system
+                // Only skip if system is explicitly set and doesn't match
+                // Forms without a system field are considered global and included
+                if (isset($form['system']) && !empty($form['system']) && $form['system'] !== $system) {
+                    $skippedBySystem++;
+                    continue;
+                }
+
+                // Check if form has roles field and if any of user's mailing groups match
+                // If form has no roles field, consider it public and include it
+                if (isset($form['roles']) && is_array($form['roles']) && !empty($form['roles'])) {
+                    $matched = false;
+                    foreach ($form['roles'] as $formRole) {
+                        if (in_array($formRole, $mailingGroups)) {
+                            $userForms[] = [
+                                'id' => $form['id'] ?? null,
+                                'name' => $form['name'] ?? '',
+                                'is_active' => $form['is_active'] ?? true
+                            ];
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    if (!$matched) {
+                        $skippedByRoles++;
+                    }
+                } else {
+                    // Form has no roles or empty roles array - include it as public form
+                    $userForms[] = [
+                        'id' => $form['id'] ?? null,
+                        'name' => $form['name'] ?? '',
+                        'is_active' => $form['is_active'] ?? true
+                    ];
+                    $formsWithoutRoles++;
+                }
+            }
+
+            return $userForms;
+        } catch (Exception $e) {
+            Log::error('Error getting forms from Firebase: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getTablesByMailingGroups(array $mailingGroups, string $system)
+    {
+        try {
+            $allTables = FirestoreService::getPublicSafetyTableItems('publicSafety_tables');
+
+            $userTables = [];
+            $skippedBySystem = 0;
+            $skippedByRoles = 0;
+            $tablesWithoutRoles = 0;
+
+            foreach ($allTables as $table) {
+                // Skip if table is not for the current system
+                if (isset($table['system']) && !empty($table['system']) && $table['system'] !== $system) {
+                    $skippedBySystem++;
+                    continue;
+                }
+
+                // Check if table has roles field and if any of user's mailing groups match
+                if (isset($table['roles']) && is_array($table['roles']) && !empty($table['roles'])) {
+                    $matched = false;
+                    foreach ($table['roles'] as $tableRole) {
+                        if (in_array($tableRole, $mailingGroups)) {
+                            $userTables[] = [
+                                'id' => $table['id'] ?? null,
+                                'name' => $table['name'] ?? '',
+                                'is_active' => $table['is_active'] ?? true
+                            ];
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    if (!$matched) {
+                        $skippedByRoles++;
+                    }
+                } else {
+                    // Table has no roles or empty roles array - include it as public table
+                    $userTables[] = [
+                        'id' => $table['id'] ?? null,
+                        'name' => $table['name'] ?? '',
+                        'is_active' => $table['is_active'] ?? true
+                    ];
+                    $tablesWithoutRoles++;
+                }
+            }
+
+            return $userTables;
+        } catch (Exception $e) {
+            Log::error('Error getting tables from Firebase: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Get user info from token.
      */
@@ -323,25 +415,13 @@ class GoogleAuthController extends Controller
         // Check if token was created for annual reports system
         $token = $user->currentAccessToken();
 
-        // if (!$token || !in_array('access-annual-reports', $token->abilities ?? [])) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // if (!str_contains($token->name, 'annual-reports')) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // if (!$this->isUserInAnnualReportsGroup($user->email)) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
         Log::info('Annual Report User Info accessed for ' . $user->email . ' with groups: ' . json_encode($mailingGroups));
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus),
+            'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus, forms: [], tables: []),
             'menus' => $menus
         ]);
     }
@@ -358,25 +438,23 @@ class GoogleAuthController extends Controller
         // Check Sanctum token abilities instead of token name
         $token = $user->currentAccessToken();
 
-        // if (!$token || !in_array('access-public-safety', $token->abilities ?? [])) {
-        //     return response()->json(['error' => 'Unauthorized for this system'], 401);
-        // }
-
-        // // Check group membership
-        // if (!$this->isUserInPublicSafetyGroup($user->email)) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
+        $forms = $this->getFormsByMailingGroups($mailingGroups, 'public-safety');
+        $tables = $this->getTablesByMailingGroups($mailingGroups, 'public-safety');
+
+
 
         return response()->json([
-            'user' => $this->formatUserResponse($user, $mailingGroups, $menus)
+            'user' => $this->formatUserResponse($user, $mailingGroups, $menus, $forms, $tables),
+            'menus' => $menus,
+            'forms' => $forms,
+            'tables' => $tables
         ]);
     }
 
 
-    private function formatUserResponse($user, $mailingGroups, $menus)
+    private function formatUserResponse($user, $mailingGroups, $menus, $forms, $tables)
     {
         return [
             'id' => $user->id,
@@ -387,8 +465,9 @@ class GoogleAuthController extends Controller
             'user_status_id' => $user->user_status_id,
             'profile_picture' => $user->profile_picture,
             'mailing_groups' => $mailingGroups,
-            'menus' => $menus
-
+            'menus' => $menus,
+            'forms' => $forms,
+            'tables' => $tables
         ];
     }
 

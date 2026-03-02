@@ -2,7 +2,6 @@
 
 namespace Modules\PublicSafety\Http\Controllers;
 
-
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
@@ -10,51 +9,63 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class IncidentReportController extends Controller
+class BombController extends Controller
 {
-
     protected const COLLECTION_PREFIX = 'publicSafety_';
-    protected string $collectionName = self::COLLECTION_PREFIX . 'incidentReports';
+    protected string $collectionName = self::COLLECTION_PREFIX . 'bombs';
 
     public function initialize(Request $request)
     {
         try {
-            $defaultReport = [
-                'title' => '',
-                'action' => '',
+            $defaultBomb = [
                 'caseNumber' => $this->generateCaseNumber(),
-                'description' => '',
-                'incidentReportStatus' => '',
-                'incidentType' => '',
-                'buildingName' => '',
-                'uploadedBy' => $request->user()->name ?? '', // Assuming you have authentication
-                'campus' => "",
-                'date' => "",
-                'time' => "",
-                'incidentFiles' => [],
-                'reportedBy' => "",
-                'contact' => "",
-                'witnesses' => "",
+                'date' => '',
+                'timeReceived' => '',
+                'timeEnded' => '',
+                'exactWording' => '',
+                'bombLocation' => '',
+                'whenWillItGoOff' => '',
+                'WhatDoesItLooksLike' => '',
+                'whatKindOfBomb' => '',
+                'whatWillMakeItExplode' => '',
+                'didYouPlaceTheBomb' => '',
+                'why' => '',
+                'name' => '',
+                'payPhone' => '',
+                'location' => '',
+                'phoneNumber' => '',
+                'sex' => '',
+                'race' => '',
+                'age' => '',
+                'callersVoice' => [],
+                'backgroundSounds' => [],
+                'threatLanguage' => [],
+                'accent' => [],
+                'additionalInformation' => '',
+                'officeNumberReceiveCalls' => '',
+                'personReceiveCalls' => '',
+                'accentRegion' => '',
                 'formSubmitted' => false,
+                'uploadedBy' => $request->user()->name ?? '',
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
 
-            Log::info('Initializing Incident Report: ', $defaultReport);
+            Log::info('Initializing Bomb: ', $defaultBomb);
         } catch (\Exception $e) {
         }
-        $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
-        return array_merge($defaultReport, ['id' => $documentRef->id()]);
+        $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultBomb);
+        return array_merge($defaultBomb, ['id' => $documentRef->id()]);
     }
 
     public function index(Request $request)
     {
         try {
-            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            $bombReport = FirestoreService::getCollection($this->collectionName);
             $response = [
                 'success' => true,
-                'message' => 'Incident Reports retrieved successfully',
-                'data' => $incidentReports
+                'message' => 'bomb threat retrieved successfully',
+                'data' => $bombReport
             ];
         } catch (\Exception $e) {
             $response = [
@@ -72,45 +83,58 @@ class IncidentReportController extends Controller
         try {
             // Validate the incoming request
             $request->validate([
-                'title' => 'required|string',
-                'action' => 'required|string',
-                'campus' => 'required|string',
-                'description' => 'required|string',
                 'caseNumber' => 'required|string',
-                'incidentReportStatus' => 'required|string',
-                'incidentType' => 'required|string',
-                'buildingName' => 'required|string',
-                'incidentFiles' => 'nullable|array',
-                'uploadedBy' => 'required|string',
                 'date' => 'required|string',
-                'time' => 'required|string',
-                'reportedBy' => 'nullable|string',
-                'contact' => 'nullable|string',
-                'witnesses' => 'nullable|string',
+                'timeReceived' => 'required|string',
+                'timeEnded' => 'required|string',
+                'exactWording' => 'required|string',
+                'bombLocation' => 'required|string',
+                'whenWillItGoOff' => 'required|string',
+                'WhatDoesItLooksLike' => 'required|string',
+                'whatKindOfBomb' => 'required|string',
+                'whatWillMakeItExplode' => 'required|string',
+                'didYouPlaceTheBomb' => 'required|string',
+                'why' => 'required|string',
+                'name' => 'required|string',
+                'payPhone' => 'required|string',
+                'location' => 'required|string',
+                'phoneNumber' => 'required|string',
+                'sex' => 'required|string',
+                'race' => 'required|string',
+                'age' => 'required|string',
+                'callersVoice' => 'required|array',
+                'backgroundSounds' => 'required|array',
+                'threatLanguage' => 'required|array',
+                'accent' => 'required|array',
+                'additionalInformation' => 'required|string',
+                'officeNumberReceiveCalls' => 'required|string',
+                'personReceiveCalls' => 'required|string',
+                'accentRegion' => 'required|string',
                 'formSubmitted' => 'required|boolean',
+                'uploadedBy' => 'required|string',
             ]);
 
             // Prepare the data to save
-            $incidentData = $request->all();
-            $incidentData['created_at'] = now()->toDateTimeString();
-            $incidentData['updated_at'] = now()->toDateTimeString();
+            $bombData = $request->all();
+            $bombData['created_at'] = now()->toDateTimeString();
+            $bombData['updated_at'] = now()->toDateTimeString();
 
             // Save the document in Firestore and get the reference
-            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $incidentData);
+            $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $bombData);
 
             // Add Firestore document ID to the incident data
-            $incidentData['id'] = $documentRef->id();
+            $bombData['id'] = $documentRef->id();
 
             // Update the document to include its ID field
             $documentRef->update([
-                ['path' => 'id', 'value' => $incidentData['id']]
+                ['path' => 'id', 'value' => $bombData['id']]
             ]);
 
-            // Return only the newly created incident report
+            // Return only the newly created Bomb Threat
             $response = [
                 'success' => true,
-                'message' => 'Incident Report Created Successfully',
-                'data' => $incidentData
+                'message' => 'Bomb Threat Report Created Successfully',
+                'data' => $bombData
             ];
         } catch (\Exception $e) {
             $response = [
@@ -123,22 +147,21 @@ class IncidentReportController extends Controller
         return response($response, 201);
     }
 
-
     //read
-    public function show(Request $request, string $incidentReportID)
+    public function show(Request $request, string $bombReportID)
     {
         try {
-            $incidentReport = FirestoreService::getDocument($this->collectionName, $incidentReportID);
-            if ($incidentReport) {
+            $bombReport = FirestoreService::getDocument($this->collectionName, $bombReportID);
+            if ($bombReport) {
                 $response = [
                     'success' => true,
-                    'message' => 'incident Report found',
-                    'data' => $incidentReport
+                    'message' => 'Bomb Threat found',
+                    'data' => $bombReport
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'Bomb Threat not found',
                     'data' => null,
                 ];
             }
@@ -150,7 +173,7 @@ class IncidentReportController extends Controller
             ];
         }
         // Return response with HTTP status code 201 (Created)
-        return response()->json($incidentReport, 200);
+        return response()->json($bombReport, 200);
     }
 
     //update
@@ -158,22 +181,36 @@ class IncidentReportController extends Controller
     {
         try {
             $data = $request->only([
-                'title',
-                'action',
-                'campus',
-                'description',
                 'caseNumber',
-                'incidentReportStatus',
-                'incidentType',
-                'buildingName',
-                'incidentFiles',
-                'uploadedBy',
                 'date',
-                'time',
-                'reportedBy',
-                'contact',
-                'witnesses',
+                'timeReceived',
+                'timeEnded',
+                'exactWording',
+                'bombLocation',
+                'whenWillItGoOff',
+                'WhatDoesItLooksLike',
+                'whatKindOfBomb',
+                'whatWillMakeItExplode',
+                'didYouPlaceTheBomb',
+                'why',
+                'name',
+                'payPhone',
+                'location',
+                'phoneNumber',
+                'sex',
+                'race',
+                'age',
+                'description',  // description
+                'callersVoice',
+                'backgroundSounds',
+                'threatLanguage',
+                'accent',
+                'accentRegion',
+                'additionalInformation',
+                'officeNumberReceiveCalls',
+                'personReceiveCalls',   // personReceiveCalls
                 'formSubmitted',
+                'uploadedBy',
             ]);
             $data['updated_at'] = now()->toDateTimeString(); // Always track update time
 
@@ -186,20 +223,20 @@ class IncidentReportController extends Controller
 
                 $response = [
                     'success' => true,
-                    'message' => 'Incident Report updated successfully',
+                    'message' => 'Bomb threat updated successfully',
                     'data' => $updatedReport
                 ];
 
-                Log::info('Updated Incident Report: ', $updatedReport);
+                Log::info('Updated Bomb threat: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'Bomb threat not found',
                     'data' => null
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Incident Report update error: ' . $e->getMessage());
+            Log::error('Bomb threat update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -221,12 +258,12 @@ class IncidentReportController extends Controller
             if ($success) {
                 $response = [
                     'success' => true,
-                    'message' => 'Incident Report data deleted successfully',
+                    'message' => 'bomb Threat data deleted successfully',
                 ];
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'bomb Threat not found',
                     'data' => null
                 ];
             }
@@ -243,35 +280,13 @@ class IncidentReportController extends Controller
 
 
     /**
-     * Verify all referenced documents exist
-     */
-    private function verifyReferencesExist(array $data)
-    {
-        $references = [
-            'incidentStatusId' => self::COLLECTION_PREFIX . 'incidentStatuses',
-            'campusId' => self::COLLECTION_PREFIX . 'campuses',
-            'buildingId' => self::COLLECTION_PREFIX . 'buildings',
-            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
-        ];
-
-        foreach ($references as $field => $collection) {
-            if (!empty($data[$field])) {
-                $exists = FirestoreService::getDocument($collection, $data[$field]);
-                if (!$exists) {
-                    throw new \Exception("The specified {$field} does not exist");
-                }
-            }
-        }
-    }
-
-    /**
      * Generate a sequential case number (Firestore-safe)
      * Format: INC-YYYYMMDD-0001
      */
     private function generateCaseNumber(): string
     {
         $date = date('Ymd');
-        $prefix = "INC-$date-";
+        $prefix = "BOMB-$date-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);
@@ -296,18 +311,18 @@ class IncidentReportController extends Controller
         return sprintf('%s%04d', $prefix, $nextNumber);
     }
 
-    public function getTotalIncidentReport()
+    public function getTotalBombReport()
     {
         try {
             // Get all incident reports from Firestore
-            $incidentReports = FirestoreService::getCollection($this->collectionName);
+            $bombReport = FirestoreService::getCollection($this->collectionName);
 
             // Count the number of documents
-            $total = is_array($incidentReports) ? count($incidentReports) : 0;
+            $total = is_array($bombReport) ? count($bombReport) : 0;
 
             $response = [
                 'success' => true,
-                'message' => 'Total incident reports retrieved successfully',
+                'message' => 'Total Bomb Threat retrieved successfully',
                 'data' => ['total' => $total]
             ];
         } catch (\Exception $e) {
@@ -320,28 +335,28 @@ class IncidentReportController extends Controller
         return response($response, 200);
     }
 
-    public function generateIncidentReportPdf(Request $request, string $reportID)
+    public function generateBombReportPdf(Request $request, string $reportID)
     {
         try {
             $user = $request->user();
-            $incidentReport = FirestoreService::getDocument($this->collectionName, $reportID);
-            if (!$incidentReport) {
+            $bombReport = FirestoreService::getDocument($this->collectionName, $reportID);
+            if (!$bombReport) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Incident Report not found',
+                    'message' => 'Bomb Threat not found',
                     'data' => null,
                 ], 404);
             }
 
             // Load the view and pass the incident report data
-            $pdf = Pdf::loadView('publicsafety::incidentreport', [
-                'incidentReport' => $incidentReport,
+            $pdf = Pdf::loadView('publicsafety::bombreport', [
+                'bombReport' => $bombReport,
                 'user' => $user,
                 'request' => $request
             ]);
 
             // Return the generated PDF as a download
-            return $pdf->download('incident_report_' . $reportID . '.pdf');
+            return $pdf->download('bomb_report_' . $reportID . '.pdf');
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -351,7 +366,7 @@ class IncidentReportController extends Controller
         }
     }
 
-    public function getUnsubmittedIncidentReports(Request $request)
+    public function getUnsubmittedBombReports(Request $request)
     {
         try {
             $userName = $request->user()->name ?? '';
@@ -370,14 +385,14 @@ class IncidentReportController extends Controller
             if ($unsubmittedReport) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Unsubmitted incident report found',
+                    'message' => 'Unsubmitted Bomb report found',
                     'data' => $unsubmittedReport,
                 ]);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'No unsubmitted incident report found',
+                'message' => 'No unsubmitted bomb report found',
                 'data' => null,
             ]);
         } catch (\Exception $e) {

@@ -19,8 +19,6 @@ class FirestoreService
     protected static function initializeFirestore()
     {
         if (is_null(self::$firestore)) {
-            Log::info('GOOGLE_CLOUD_PROJECT_ID: ' . json_encode(env('GOOGLE_CLOUD_PROJECT_ID')));
-            Log::info('FIREBASE_CREDENTIALS_PATH: ' . json_encode(env('FIREBASE_CREDENTIALS_PATH')));
 
             self::$firestore = new FirestoreClient([
                 'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
@@ -239,5 +237,57 @@ class FirestoreService
     public static function createIncidentStatus(array $data): DocumentReference
     {
         return self::syncDocumentAndGetRef('publicSafety_incidentStatuses', $data);
+    }
+
+    // ---------------------------------------- Public Safety Form Items -----------------------------------------
+    public static function getPublicSafetyFormItems(string $collectionName): array
+    {
+        return self::getCollection($collectionName);
+    }
+
+    public static function createPublicSafetyFormItem(string $collectionName, array $data)
+    {
+        return self::syncDocumentAndGetRef($collectionName, $data);
+    }
+
+    public static function updatePublicSafetyFormItem(string $collectionName, string $id, array $data)
+    {
+        return self::updateDocument($collectionName, $id, $data);
+    }
+
+    public static function deletePublicSafetyFormItem(string $collectionName, string $id)
+    {
+        return self::deleteDocument($collectionName, $id);
+    }
+
+    public static function getPublicSafetyActiveFormItems(string $collectionName)
+    {
+        return self::queryCollection($collectionName, 'is_active', '=', true);
+    }
+
+    // ---------------------------------------- Public Safety Table Items -----------------------------------------
+    public static function getPublicSafetyTableItems(string $collectionName): array
+    {
+        return self::getCollection($collectionName);
+    }
+
+    public static function createPublicSafetyTableItem(string $collectionName, array $data)
+    {
+        return self::syncDocumentAndGetRef($collectionName, $data);
+    }
+
+    public static function updatePublicSafetyTableItem(string $collectionName, string $id, array $data)
+    {
+        return self::updateDocument($collectionName, $id, $data);
+    }
+
+    public static function deletePublicSafetyTableItem(string $collectionName, string $id)
+    {
+        return self::deleteDocument($collectionName, $id);
+    }
+
+    public static function getPublicSafetyActiveTableItems(string $collectionName)
+    {
+        return self::queryCollection($collectionName, 'is_active', '=', true);
     }
 }
