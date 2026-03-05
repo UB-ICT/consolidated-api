@@ -1,0 +1,11 @@
+{
+    "name": "RequisitionSystem",
+    "alias": "requisitionsystem",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\RequisitionSystem\\Providers\\RequisitionSystemServiceProvider"
+    ],
+    "files": []
+}

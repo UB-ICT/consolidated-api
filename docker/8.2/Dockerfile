@@ -85,14 +85,20 @@ RUN apt-get update \
 # SQLSRV + PDO_SQLSRV PHP Extensions
 # --------------------------------------------------------------------
 RUN apt-get update \
-    && apt-get install -y unixodbc-dev gnupg2 \
-    && pecl install sqlsrv pdo_sqlsrv \
+    && apt-get install -y \
+        unixodbc-dev \
+        gnupg2 \
+        build-essential \
+        php8.2-dev \
+    && pecl install sqlsrv-5.11.0 pdo_sqlsrv-5.11.0 \
     && echo "extension=sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-sqlsrv.ini \
     && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-pdo_sqlsrv.ini \
     && if [ -d "/etc/php/8.2/fpm/conf.d" ]; then \
-    echo "extension=sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-sqlsrv.ini; \
-    echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-pdo_sqlsrv.ini; \
-    fi
+        echo "extension=sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-sqlsrv.ini; \
+        echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-pdo_sqlsrv.ini; \
+    fi \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------
 
