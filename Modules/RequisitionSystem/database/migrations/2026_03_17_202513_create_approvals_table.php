@@ -12,10 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cost_centers', function (Blueprint $table) {
+        Schema::create('approvals', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('type');
+            $table->foreignId('requisition_id')->constrained('requisitions');
+            $table->foreignId('user_id')->constrained('users');
+            $table->timestamp('signed_at')->useCurrent();
+            $table->string('comments')->nullable();
         });
     }
 
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cost_centers');
+        Schema::dropIfExists('approvals');
     }
 };

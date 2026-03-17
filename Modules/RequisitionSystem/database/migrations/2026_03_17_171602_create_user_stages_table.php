@@ -12,10 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cost_centers', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('type');
+        Schema::create('user_stages', function (Blueprint $table) {
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('stage_id')->constrained('stages');
         });
     }
 
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cost_centers');
+        Schema::dropIfExists('user_stages');
     }
 };

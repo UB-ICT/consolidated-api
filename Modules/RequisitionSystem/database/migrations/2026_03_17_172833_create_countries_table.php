@@ -5,17 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{
+{  
     protected $connection = 'porsql';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('cost_centers', function (Blueprint $table) {
+        Schema::create('countries', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('type');
         });
     }
 
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cost_centers');
+        Schema::dropIfExists('countries');
     }
 };
