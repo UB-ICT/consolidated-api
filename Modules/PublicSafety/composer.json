@@ -1,0 +1,28 @@
+{
+    "name": "nwidart/publicsafety",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\PublicSafety\\": "app/",
+            "Modules\\PublicSafety\\Database\\Factories\\": "database/factories/",
+            "Modules\\PublicSafety\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\PublicSafety\\Tests\\": "tests/"
+        }
+    }
+}

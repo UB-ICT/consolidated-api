@@ -1,0 +1,10 @@
+{
+    "Auth": true,
+    "Message": true,
+    "PublicSafety": true,
+    "UBForms": true,
+    "UBFormBuilder": true,
+    "Xenegrade": true,
+    "EmailBlast": true,
+    "RequisitionSystem": true
+}

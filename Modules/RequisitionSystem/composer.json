@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/requisitionsystem",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\RequisitionSystem\\": "app/",
+            "Modules\\RequisitionSystem\\Database\\Factories\\": "database/factories/",
+            "Modules\\RequisitionSystem\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\RequisitionSystem\\Tests\\": "tests/"
+        }
+    }
+}
