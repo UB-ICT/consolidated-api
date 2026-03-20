@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('approvals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('requisition_id')->constrained('requisitions');
-            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('user_id')->constrained('por_users');
             $table->timestamp('signed_at')->useCurrent();
             $table->string('comments')->nullable();
         });

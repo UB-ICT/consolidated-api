@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('file_name');
             $table->string('file_path');
             $table->timestamp('uploaded_at')->useCurrent();
-            $table->foreignId('uploaded_by')->constrained('users');
+            $table->foreignId('uploaded_by')->constrained('por_users');
             $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
             $table->foreignId('supplier_id')->constrained('suppliers');
         });
