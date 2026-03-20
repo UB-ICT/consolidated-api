@@ -11,6 +11,24 @@ class RequisitionSystemDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            CostCenterSeeder::class,
+            UserSeeder::class,
+            StatusSeeder::class,
+            PipelineSeeder::class,
+            StageSeeder::class,
+            UserStageSeeder::class,
+            CurrencySeeder::class,
+            ConversionRateSeeder::class,
+            SupplierSeeder::class,
+            BankSeeder::class,
+            SupplierBankSeeder::class,
+            CountrySeeder::class,
+            AddressSeeder::class,
+            RequisitionSeeder::class,
+            ItemSeeder::class,
+            AttachmentSeeder::class,
+            ApprovalSeeder::class,
+        ]);
     }
 }

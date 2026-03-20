@@ -3,6 +3,8 @@
 namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CostCenterSeeder extends Seeder
 {
@@ -11,9 +13,9 @@ class CostCenterSeeder extends Seeder
      */
     public function run(): void
     {
-        \Modules\RequisitionSystem\Models\CostCenter::create([
-            'name' => 'ICT Department',
-            'type' => 'Operational',
+         DB::table('cost_centers')->insert([
+            'name' => Str::random(10),
+            'type' => Str::random(10),
         ]);
     }
 }
