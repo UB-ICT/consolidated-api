@@ -30,7 +30,7 @@ class PublicSafetyAuthController extends Controller
         // This ensures it works across different environments (local, staging, production)
         $redirectUri = config('services.google_public_safety.redirect_uri');
         Log::info('Redirect URI11: ' . $redirectUri);
-        
+
         // If not set in config, construct absolute URL from request
         if (!$redirectUri) {
             $baseUrl = rtrim(config('app.url'), '/');
@@ -42,7 +42,7 @@ class PublicSafetyAuthController extends Controller
         }
 
         Log::info('Redirect URI: ' . $redirectUri);
-        
+
         return Socialite::driver('google')
             ->stateless()
             ->redirectUrl($redirectUri)
@@ -68,7 +68,7 @@ class PublicSafetyAuthController extends Controller
             // 1. Fetch authenticated user information from Google
             // Construct redirect URI dynamically to match what was sent in redirect()
             $redirectUri = config('services.google_public_safety.redirect_uri');
-            
+
             // If not set in config, construct absolute URL from request
             if (!$redirectUri) {
                 $baseUrl = rtrim(config('app.url'), '/');
@@ -78,7 +78,7 @@ class PublicSafetyAuthController extends Controller
                 }
                 $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
             }
-           
+
             Log::info('Redirect URI: ' . $redirectUri);
             $googleUser = Socialite::driver('google')
                 ->stateless()
@@ -107,6 +107,9 @@ class PublicSafetyAuthController extends Controller
                 return redirect(config('app.public_safety_frontend') . '?error=unauthorized');
             }
 
+            // Sync user to Firestore (create or update)
+            $this->syncPublicSafetyProfile($user->email, $user);
+
             // 5. Log in user
             Auth::login($user);
 
@@ -119,7 +122,6 @@ class PublicSafetyAuthController extends Controller
             // 8. Redirect with token
             $frontendUrl = rtrim(config('app.public_safety_frontend'), '/');
             return redirect("{$frontendUrl}?token={$token}");
-
         } catch (\Exception $e) {
             // Log safely, using null-coalescing operator
             Log::error('Public Safety OAuth callback error', [
@@ -227,7 +229,6 @@ class PublicSafetyAuthController extends Controller
 
             // User is not in ANY allowed Public Safety group
             return false;
-
         } catch (\Exception $e) {
             /**
              * If something goes wrong (API error, config issue),
@@ -272,4 +273,35 @@ class PublicSafetyAuthController extends Controller
         }
     }
 
+     /**
+     * Create or update a Firestore profile document for the user.
+     * This runs on every login to keep Firestore in sync.
+     */
+    private function syncPublicSafetyProfile(string $email, User $user)
+    {
+        try {
+            $firestore = FirestoreService::firestore();
+
+            // Use user's database ID as the Firestore document ID
+            $docRef = $firestore
+                ->collection('users')
+                ->document($user->id); // <-- fixed ID
+
+            // Merge data to update existing or create if it doesn't exist
+            $docRef->set([
+                'email' => $user->email,
+                'name' => $user->name,
+                'google_id' => $user->google_id,
+                'role' => 'user',
+                'last_login_at' => now(),
+                'system' => 'public-safety'
+            ], ['merge' => true]); // merge prevents overwriting existing fields
+
+            Log::info('Firestore user synced (create or update): ' . $email);
+        } catch (\Exception $e) {
+            Log::error('Failed to sync Firestore user: ' . $email, [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -19,6 +19,8 @@ use Modules\PublicSafety\Http\Controllers\ConversationController;
 use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\BombController;
 use Modules\PublicSafety\Http\Controllers\IncidentLogController;
+use Modules\PublicSafety\Http\Controllers\AnonymousController;
+use Modules\PublicSafety\Http\Controllers\EmergencyController;
 
 
 
@@ -85,13 +87,14 @@ Route::group([
     Route::get('incidentReports/{incidentReportID}', [IncidentReportController::class, 'show']);
     Route::put('incidentReports/{incidentReportID}', [IncidentReportController::class, 'update']);
     Route::delete('incidentReports/{incidentReportID}', [IncidentReportController::class, 'destroy']);
-    Route::get('incidentReportTotal', [IncidentReportController::class, 'getTotalIncidentReport']);
     Route::get('/generateIncidentReportPdf/{reportID}', [IncidentReportController::class, 'generateIncidentReportPdf']);
     Route::get('/unsubmittedIncidentReports', [IncidentReportController::class, 'getUnsubmittedIncidentReports']);
-    Route::get('/activeIncidentReports', [IncidentReportController::class, 'getActiveIncidentReports']);
-    Route::get('/resolvedIncidentReports', [IncidentReportController::class, 'getResolvedIncidentReports']);
-    Route::get('/pendingIncidentReports', [IncidentReportController::class, 'getPendingIncidentReports']);
     Route::get('/incidentsByBuilding/{buildingName}', [IncidentReportController::class, 'getIncidentsByBuilding']); // Get all incident reports by building name
+    Route::get('/recentIncidents', [IncidentReportController::class, 'getRecentIncidents']);
+    Route::get('/getTotalActiveIncident', [IncidentReportController::class, 'getTotalActiveIncidents']);
+    Route::get('/getTotalResolvedIncident', [IncidentReportController::class, 'getTotalResolvedIncidents']);
+    Route::get('/getTotalPendingIncident', [IncidentReportController::class, 'getTotalPendingIncidents']);
+    Route::get('/getTotalIncident', [IncidentReportController::class, 'getTotalIncidentCount']);
 
     //end of shift report (patrol officer)
     Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
@@ -170,6 +173,16 @@ Route::group([
     Route::get('/pendingBombReports', [BombController::class, 'getPendingBombReports']);
 
 
+    //Anonymous Reports
+    Route::post('/initialize/anonymousReports', [AnonymousController::class, 'initialize']);
+    Route::get('/anonymousReports', [AnonymousController::class, 'index']);
+    Route::post('/anonymousReports', [AnonymousController::class, 'store']);
+    Route::get('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'show']);
+    Route::put('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'update']);
+    Route::delete('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'destroy']);
+    Route::get('/generateAnonymousReportPdf/{reportID}', [AnonymousController::class, 'generateAnonymousReportPdf']);
+    Route::get('/unsubmittedAnonymousReports', [AnonymousController::class, 'getUnsubmittedAnonymousReports']);
+
     Route::post('/initialize/incidentLog', [IncidentLogController::class, 'initialize']);
     Route::get('/incidentLog', [IncidentLogController::class, 'index']);
     Route::post('/incidentLog', [IncidentLogController::class, 'store']);
@@ -244,6 +257,39 @@ Route::group([
         '/messages/{conversationId}/media',
         [MessageController::class, 'media']
     );
+});
+
+
+
+Route::prefix('v1/public')->group(function () {
+    //Anonymous Reports
+    Route::post('/initialize/anonymousReports', [AnonymousController::class, 'initialize']);
+    Route::get('/anonymousReports', [AnonymousController::class, 'index']);
+    Route::post('/anonymousReports', [AnonymousController::class, 'store']);
+    Route::get('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'show']);
+    Route::put('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'update']);
+    Route::delete('/anonymousReports/{anonymousReportID}', [AnonymousController::class, 'destroy']);
+    Route::get('/generateAnonymousReportPdf/{reportID}', [AnonymousController::class, 'generateAnonymousReportPdf']);
+    Route::get('/unsubmittedAnonymousReports', [AnonymousController::class, 'getUnsubmittedAnonymousReports']);
+
+    //buildings routes students
+    Route::get('/buildings', [BuildingController::class, 'index']);
+    Route::post('/buildings', [BuildingController::class, 'store']);
+    Route::get('/buildings/{buildingID}', [BuildingController::class, 'show']);
+    Route::put('/buildings/{buildingID}', [BuildingController::class, 'update']);
+    Route::delete('/buildings/{buildingID}', [BuildingController::class, 'destroy']);
+
+
+    //emergency
+    Route::post('/initialize/emergency', [EmergencyController::class, 'initialize']);
+    Route::get('/emergency', [EmergencyController::class, 'index']);
+    Route::post('/emergency', [EmergencyController::class, 'store']);
+    Route::get('/emergency/total', [EmergencyController::class, 'getTotalAlerts']);
+    Route::get('/emergency/{emergencyReportID}', [EmergencyController::class, 'show']);
+    Route::put('/emergency/{emergencyReportID}', [EmergencyController::class, 'update']);
+    Route::delete('/emergency/{emergencyReportID}', [EmergencyController::class, 'destroy']);
+    Route::get('/unread-count', [EmergencyController::class, 'unreadCount']);
+    Route::post('/{reportID}/mark-as-read', [EmergencyController::class, 'markAsRead']);
 });
 
 Route::get('/phpinfo', function () {
