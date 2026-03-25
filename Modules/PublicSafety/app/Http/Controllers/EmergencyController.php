@@ -31,7 +31,8 @@ class EmergencyController extends Controller
                 'emergencyReportStatus' => 'Active',
 
                 // ⏰ Time only (HH:MM:SS)
-                'timestamp' => Carbon::now()->format('H:i:s'),
+                // 'timestamp' => Carbon::now()->format('H:i:s'),
+                'timestamp' => Carbon::now()->toISOString(), // ✅ BEST
 
                 'formSubmitted' => false,
                 'isRead' => false,
