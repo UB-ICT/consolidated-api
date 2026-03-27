@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Modules\RequisitionSystem\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class RequisitionSystemController extends Controller

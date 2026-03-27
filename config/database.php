@@ -57,7 +57,7 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'purchase_order_requisition',
+            'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
 

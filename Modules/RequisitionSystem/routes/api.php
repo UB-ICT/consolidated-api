@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\RequisitionSystem\Http\Controllers\RequisitionSystemController;
+use Modules\RequisitionSystem\Http\Controllers\CostCenterController;
 
 /*
  *--------------------------------------------------------------------------
@@ -17,3 +18,9 @@ use Modules\RequisitionSystem\Http\Controllers\RequisitionSystemController;
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('requisitionsystem', RequisitionSystemController::class)->names('requisitionsystem');
 });
+
+// The "Read" route (GET)
+Route::get('/cost-centers', [CostCenterController::class, 'index']);
+
+// The "Create" route (POST)
+Route::post('/cost-centers', [CostCenterController::class, 'store']);

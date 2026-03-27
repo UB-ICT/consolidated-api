@@ -15,6 +15,8 @@ class CostCenter extends Model
      */
     protected $fillable = ['name', 'type'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): CostCenterFactory
     // {
     //     // return CostCenterFactory::new();
