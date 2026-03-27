@@ -137,7 +137,7 @@
             <div class="section-content">
                 <div class="info-row">
                     <span class="info-label">Anonymous Report ID: </span>
-                    <span class="info-value">{{ $anonymousReport['id'] ?? 'N/A'}}</span>
+                    <span class="info-value">{{ $anonymousReport['id'] ?? 'N/As'}}</span>
                 </div>
 
                 <div class="info-row">
