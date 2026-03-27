@@ -295,7 +295,7 @@ class BombController extends Controller
     private function generateCaseNumber(): string
     {
         $date = date('Ymd');
-        $prefix = "BOMB-$date-";
+        $prefix = "BOMB-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);

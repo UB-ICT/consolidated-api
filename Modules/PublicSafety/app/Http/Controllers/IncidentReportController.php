@@ -275,12 +275,12 @@ class IncidentReportController extends Controller
 
     /**
      * Generate a sequential case number (Firestore-safe)
-     * Format: INC-YYYYMMDD-0001
+     * Format: INC-0001
      */
     private function generateCaseNumber(): string
     {
         $date = date('Ymd');
-        $prefix = "INC-$date-";
+        $prefix = "INC-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);

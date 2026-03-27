@@ -19,6 +19,7 @@ class ImpoundedReportTrackingFormController extends Controller
     {
         try {
             $defaultReport = [
+                'caseNumber' => $this->generateCaseNumber(),
                 'name' => '',
                 'studentID' => '',
                 'phoneNumber' => '',
@@ -352,6 +353,33 @@ class ImpoundedReportTrackingFormController extends Controller
         }
         //Return response with HTTP status code 201 (Created)
         return response($response, 200);
+    }
+
+    private function generateCaseNumber(): string
+    {
+        $prefix = "IR-";
+
+        // Get all Impounded reports for today
+        $reports = FirestoreService::getCollection($this->collectionName);
+
+        $lastNumber = 0;
+
+        if (is_array($reports)) {
+            foreach ($reports as $report) {
+                if (
+                    isset($report['caseNumber']) &&
+                    str_starts_with($report['caseNumber'], $prefix)
+                ) {
+                    // Extract numeric part
+                    $number = (int) substr($report['caseNumber'], -4);
+                    $lastNumber = max($lastNumber, $number);
+                }
+            }
+        }
+
+        $nextNumber = $lastNumber + 1;
+
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
 
     public function getTotalImpoundedReport()

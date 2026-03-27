@@ -267,7 +267,7 @@ class IncidentLogController extends Controller
     private function generateCaseNumber(): string
     {
         $date = date('Ymd');
-        $prefix = "INCLOG-$date-";
+        $prefix = "INCLOG-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);

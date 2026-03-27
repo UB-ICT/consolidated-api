@@ -18,6 +18,7 @@ class LostPropertyController extends Controller
     {
         try {
             $defaultReport = [
+                'caseNumber' => $this->generateCaseNumber(),
                 'complainantName' => '',
                 'complainantAddress' => '',
                 'complainantDOB' => '',
@@ -373,6 +374,33 @@ class LostPropertyController extends Controller
             Log::error('Error in LostPropertyController@getUnsubmittedLostProperty: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
+    }
+
+    private function generateCaseNumber(): string
+    {
+        $prefix = "LP-";
+
+        // Get all Lost and found reports for today
+        $reports = FirestoreService::getCollection($this->collectionName);
+
+        $lastNumber = 0;
+
+        if (is_array($reports)) {
+            foreach ($reports as $report) {
+                if (
+                    isset($report['caseNumber']) &&
+                    str_starts_with($report['caseNumber'], $prefix)
+                ) {
+                    // Extract numeric part
+                    $number = (int) substr($report['caseNumber'], -4);
+                    $lastNumber = max($lastNumber, $number);
+                }
+            }
+        }
+
+        $nextNumber = $lastNumber + 1;
+
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
 
     public function getActiveLostProperty()
