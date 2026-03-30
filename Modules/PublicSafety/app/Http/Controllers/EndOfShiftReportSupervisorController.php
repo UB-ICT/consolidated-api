@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
