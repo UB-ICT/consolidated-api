@@ -33,7 +33,7 @@ class EndOfShiftReportPatrolController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $patrolReports = FirestoreService::getCollection($this->collectionName);
@@ -96,7 +96,7 @@ class EndOfShiftReportPatrolController extends Controller
     }
 
     //read
-    public function show(Request $request, string $patrolReportID)
+    public function show(string $patrolReportID)
     {
         try {
             $patrolReport = FirestoreService::getDocument($this->collectionName, $patrolReportID);
@@ -197,7 +197,7 @@ class EndOfShiftReportPatrolController extends Controller
     }
 
 
-    public function getTotalEndOfShiftReportPatrol(Request $request)
+    public function getTotalEndOfShiftReportPatrol()
     {
         try {
             // 1️⃣ Get all patrol end-of-shift reports

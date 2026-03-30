@@ -20,30 +20,7 @@ return new class extends Migration {
             $table->string('profile_picture')->nullable();
             $table->integer('menu_id')->nullable();
 
-            // Changed to unsignedBigInteger for consistency
-            $table->unsignedBigInteger('user_status_id')->nullable();
-            $table->unsignedBigInteger('role_id')->nullable();
-
-            // Changed from uuid to unsignedBigInteger
-            $table->unsignedBigInteger('campus_id')->nullable();
-
             $table->timestamps();
-
-            // Foreign key constraints
-            $table->foreign('campus_id')
-                ->references('id')
-                ->on('campuses')
-                ->onDelete('cascade');
-
-            $table->foreign('role_id')
-                ->references('id')
-                ->on('roles')
-                ->onDelete('cascade');
-
-            $table->foreign('user_status_id')
-                ->references('id')
-                ->on('user_statuses')
-                ->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

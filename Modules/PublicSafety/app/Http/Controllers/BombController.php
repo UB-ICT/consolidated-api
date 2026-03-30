@@ -4,9 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BombController extends Controller
@@ -51,15 +49,13 @@ class BombController extends Controller
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
-
-            Log::info('Initializing Bomb: ', $defaultBomb);
         } catch (\Exception $e) {
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultBomb);
         return array_merge($defaultBomb, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $bombReport = FirestoreService::getCollection($this->collectionName);
@@ -153,7 +149,7 @@ class BombController extends Controller
     }
 
     //read
-    public function show(Request $request, string $bombReportID)
+    public function show(string $bombReportID)
     {
         try {
             $bombReport = FirestoreService::getDocument($this->collectionName, $bombReportID);
@@ -178,7 +174,7 @@ class BombController extends Controller
             ];
         }
         // Return response with HTTP status code 201 (Created)
-        return response()->json($bombReport, 200);
+        return response()->json($response, 200);
     }
 
     //update
@@ -235,8 +231,6 @@ class BombController extends Controller
                     'message' => 'Bomb threat updated successfully',
                     'data' => $updatedReport
                 ];
-
-                Log::info('Updated Bomb threat: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
@@ -245,7 +239,6 @@ class BombController extends Controller
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Bomb threat update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -290,11 +283,10 @@ class BombController extends Controller
 
     /**
      * Generate a sequential case number (Firestore-safe)
-     * Format: INC-YYYYMMDD-0001
+     * Format: INC-0001
      */
     private function generateCaseNumber(): string
     {
-        $date = date('Ymd');
         $prefix = "BOMB-";
 
         // Get all incident reports for today

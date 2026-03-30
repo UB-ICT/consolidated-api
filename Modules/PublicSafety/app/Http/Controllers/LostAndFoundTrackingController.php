@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -58,7 +57,7 @@ class LostAndFoundTrackingController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
@@ -135,7 +134,7 @@ class LostAndFoundTrackingController extends Controller
         return response()->json($response);
     }
 
-    public function show(Request $request, string $lostAndFoundTrackingID)
+    public function show(string $lostAndFoundTrackingID)
     {
         try {
             $lostAndFoundTracking = FirestoreService::getDocument($this->collectionName, $lostAndFoundTrackingID);
@@ -253,7 +252,7 @@ class LostAndFoundTrackingController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalLoandFoundTracking(Request $request)
+    public function getTotalLoandFoundTracking()
     {
         try {
             // 1️⃣ Get all documents

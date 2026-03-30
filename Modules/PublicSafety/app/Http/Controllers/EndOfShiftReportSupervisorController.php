@@ -33,7 +33,7 @@ class EndOfShiftReportSupervisorController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $supervisorReports = FirestoreService::getCollection($this->collectionName);
@@ -96,7 +96,7 @@ class EndOfShiftReportSupervisorController extends Controller
     }
 
     //read
-    public function show(Request $request, string $supervisorReport)
+    public function show(string $supervisorReport)
     {
         try {
             $supervisorReport = FirestoreService::getDocument($this->collectionName, $supervisorReport);
@@ -200,7 +200,7 @@ class EndOfShiftReportSupervisorController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalEndOfShiftReportSupervisor(Request $request)
+    public function getTotalEndOfShiftReportSupervisor()
     {
         try {
             // 1️⃣ Get all supervisor end-of-shift reports

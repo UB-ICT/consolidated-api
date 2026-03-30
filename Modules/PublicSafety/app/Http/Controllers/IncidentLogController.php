@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -46,7 +45,7 @@ class IncidentLogController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $incidentLog = FirestoreService::getCollection($this->collectionName);
@@ -124,7 +123,7 @@ class IncidentLogController extends Controller
     }
 
     //read
-    public function show(Request $request, string $incidentLogID)
+    public function show(string $incidentLogID)
     {
         try {
             $incidentLog = FirestoreService::getDocument($this->collectionName, $incidentLogID);
@@ -242,31 +241,11 @@ class IncidentLogController extends Controller
     }
 
     /**
-     * Verify all referenced documents exist
-     */
-    private function verifyReferencesExist(array $data)
-    {
-        $references = [
-            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
-        ];
-
-        foreach ($references as $field => $collection) {
-            if (!empty($data[$field])) {
-                $exists = FirestoreService::getDocument($collection, $data[$field]);
-                if (!$exists) {
-                    throw new \Exception("The specified {$field} does not exist");
-                }
-            }
-        }
-    }
-
-    /**
      * Generate a sequential case number (Firestore-safe)
-     * Format: INCLOG-YYYYMMDD-0001
+     * Format: INCLOG-0001
      */
     private function generateCaseNumber(): string
     {
-        $date = date('Ymd');
         $prefix = "INCLOG-";
 
         // Get all incident reports for today
@@ -500,7 +479,6 @@ class IncidentLogController extends Controller
                 'data' => null,
             ];
         }
-
         return response($response, 200);
     }
 }

@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // The personal_access_tokens table stores the personal access tokens for the users.
+        // It is used to store the token ID, the user ID, the name, the token, the abilities, the last used time, the expires time, and the created and updated times.
+        // The token is the personal access token, and the abilities is the abilities that the token has.
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
             $table->nullableMorphs('tokenable');

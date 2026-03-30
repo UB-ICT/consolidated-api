@@ -10,7 +10,7 @@ use Modules\UBForms\Models\Staff;
 class GeneratePdf extends Controller
 {
     //
-    public function generatePdf(Request $request, string $reportID)
+    public function generatePdf(string $reportID)
     {
 
         // Fetch data from MongoDB based on report ID

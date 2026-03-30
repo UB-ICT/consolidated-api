@@ -15,7 +15,7 @@ class CampusController extends Controller
 
 
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $campus = FirestoreService::getCollection($this->collectionName);
@@ -63,7 +63,7 @@ class CampusController extends Controller
 
 
     //show/read
-    public function show(Request $request, string $campusID)
+    public function show(string $campusID)
     {
         try {
             $campus = FirestoreService::getDocument($this->collectionName, $campusID);

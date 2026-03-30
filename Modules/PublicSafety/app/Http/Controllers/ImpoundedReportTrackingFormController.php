@@ -92,7 +92,7 @@ class ImpoundedReportTrackingFormController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $impoundedReport = FirestoreService::getCollection($this->collectionName);
@@ -203,7 +203,7 @@ class ImpoundedReportTrackingFormController extends Controller
         return response()->json($response);
     }
 
-    public function show(Request $request, string $impoundedReportID)
+    public function show(string $impoundedReportID)
     {
         try {
             $impoundedReport = FirestoreService::getDocument($this->collectionName, $impoundedReportID);

@@ -4,9 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -15,7 +13,7 @@ class AnonymousController extends Controller
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'anonymousReports';
 
-    public function initialize(Request $request)
+    public function initialize()
     {
         try {
 
@@ -33,8 +31,6 @@ class AnonymousController extends Controller
                 'updated_at' => now()->toDateTimeString()
             ];
 
-            Log::info('Initializing Anonymous Report:', $defaultAnonymousReport);
-
             $documentRef = FirestoreService::syncDocumentAndGetRef(
                 $this->collectionName,
                 $defaultAnonymousReport
@@ -44,12 +40,11 @@ class AnonymousController extends Controller
                 'id' => $documentRef->id()
             ]);
         } catch (\Exception $e) {
-            Log::error('Anonymous report initialization failed: ' . $e->getMessage());
             return response()->json(['error' => 'Initialization failed'], 500);
         }
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $anonymousReport = FirestoreService::getCollection($this->collectionName);
@@ -113,7 +108,7 @@ class AnonymousController extends Controller
     }
 
     //read
-    public function show(Request $request, string $anonymousReportID)
+    public function show(string $anonymousReportID)
     {
         try {
             $anonymousReport = FirestoreService::getDocument($this->collectionName, $anonymousReportID);
@@ -138,7 +133,7 @@ class AnonymousController extends Controller
             ];
         }
         // Return response with HTTP status code 201 (Created)
-        return response()->json($anonymousReport, 200);
+        return response()->json($response, 200);
     }
 
     //update
@@ -164,8 +159,6 @@ class AnonymousController extends Controller
                     'message' => 'Anonymous report updated successfully',
                     'data' => $updatedReport
                 ];
-
-                Log::info('Updated Anonymous report: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
@@ -174,7 +167,6 @@ class AnonymousController extends Controller
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Anonymous report update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),

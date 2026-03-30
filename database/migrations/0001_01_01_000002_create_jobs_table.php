@@ -4,6 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+// It enables Laravel’s queue system using the database driver.
+// Instead of running tasks immediately (like sending emails, processing uploads), Laravel can:
+// store jobs in the database
+// process them in the background using a worker
+
+
 return new class extends Migration
 {
     /**
@@ -11,6 +17,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+
+        // The jobs table stores the jobs that have been queued by the Laravel queue system.
+        // It is used to store the job ID, the connection name, the queue name, the payload, and the number of attempts.
+        // The payload is the data that is passed to the job, and the attempts is the number of times the job has been attempted.
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->string('queue')->index();
@@ -21,6 +31,9 @@ return new class extends Migration
             $table->unsignedInteger('created_at');
         });
 
+        // The job_batches table stores the batches of jobs that have been queued by the Laravel queue system.
+        // It is used to store the batch ID, the name of the batch, the total number of jobs in the batch, the number of pending jobs, the number of failed jobs, and the failed job IDs.
+        // The failed job IDs is a JSON array of the job IDs that have failed.
         Schema::create('job_batches', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('name');
@@ -34,6 +47,9 @@ return new class extends Migration
             $table->integer('finished_at')->nullable();
         });
 
+        // The failed_jobs table stores the failed jobs that have been queued by the Laravel queue system.
+        // It is used to store the job ID, the connection name, the queue name, the payload, and the exception.
+        // The payload is the data that is passed to the job, and the exception is the exception that was thrown while processing the job.
         Schema::create('failed_jobs', function (Blueprint $table) {
             $table->id();
             $table->string('uuid')->unique();

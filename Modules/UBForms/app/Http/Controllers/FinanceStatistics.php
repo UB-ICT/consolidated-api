@@ -71,7 +71,7 @@ class FinanceStatistics extends Controller
     }
 
     //Read
-    public function getReport(Request $request, string $reportID)
+    public function getReport(string $reportID)
     {
         try {
             $report = FirestoreService::getDocument('FinanceStatistics', $reportID);

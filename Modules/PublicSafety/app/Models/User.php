@@ -59,9 +59,4 @@ class User extends Authenticatable implements LdapAuthenticatable
 
     ];
 
-    public function userStatus()
-    {
-        return $this->belongsTo(UserStatus::class, 'user_status_id');
-    }
-
 }

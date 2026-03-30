@@ -4,21 +4,18 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
-use function Symfony\Component\Clock\now;
 
 class EmergencyController extends Controller
 {
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'emergency';
 
-    public function initialize(Request $request)
+    public function initialize()
     {
         try {
             $id = 'emergency-' . Str::uuid();
@@ -63,7 +60,7 @@ class EmergencyController extends Controller
         }
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $emergencyReport = FirestoreService::getCollection($this->collectionName);
@@ -132,7 +129,7 @@ class EmergencyController extends Controller
     }
 
     //read
-    public function show(Request $request, string $emergencyReportID)
+    public function show(string $emergencyReportID)
     {
         try {
             $emergencyReport = FirestoreService::getDocument($this->collectionName, $emergencyReportID);

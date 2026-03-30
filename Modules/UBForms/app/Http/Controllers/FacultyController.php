@@ -84,7 +84,7 @@ class FacultyController extends Controller
     }
 
     //Read 
-    public function getReport(Request $request, string $reportID)
+    public function getReport(string $reportID)
     {
         try {
             $report = FirestoreService::getDocument('faculties', $reportID);
@@ -298,7 +298,6 @@ class FacultyController extends Controller
                 // Fallback: create combined PDF with embedded content
                 return $this->createCombinedPdfWithEmbeddedContent($mainPdfPath, $additionalPdfPaths);
             }
-
         } catch (\Exception $e) {
             Log::error('PDF merge error: ' . $e->getMessage());
             // Fallback: create combined PDF with embedded content
@@ -339,83 +338,11 @@ class FacultyController extends Controller
 
             Log::info('Created combined PDF with embedded content');
             return $newPdfContent;
-
         } catch (\Exception $e) {
             Log::error('Error creating combined PDF: ' . $e->getMessage());
             return file_get_contents($mainPdfPath);
         }
     }
-
-    /**
-     * Create a PDF with meeting PDFs embedded as attachments
-     */
-    private function createPdfWithAttachments($mainPdfContent, $additionalPdfPaths)
-    {
-        try {
-            // Create a new PDF that includes the meeting PDFs as embedded content
-            // We'll use DomPDF to create a combined document
-
-            // Prepare meeting PDF data for embedding
-            $meetingAttachments = [];
-            foreach ($additionalPdfPaths as $index => $pdfPath) {
-                if (file_exists($pdfPath)) {
-                    $pdfContent = file_get_contents($pdfPath);
-                    $fileName = basename($pdfPath);
-                    $meetingAttachments[] = [
-                        'name' => $fileName,
-                        'content' => base64_encode($pdfContent),
-                        'size' => filesize($pdfPath)
-                    ];
-                    Log::info('Prepared meeting PDF for embedding: ' . $fileName . ' (size: ' . filesize($pdfPath) . ' bytes)');
-                }
-            }
-
-            // Create a new PDF with embedded meeting data
-            $mergedContent = $this->createCombinedPdf($mainPdfContent, $meetingAttachments);
-
-            return $mergedContent;
-
-        } catch (\Exception $e) {
-            Log::error('Error creating PDF with attachments: ' . $e->getMessage());
-            return $mainPdfContent;
-        }
-    }
-
-    /**
-     * Create a combined PDF with embedded meeting data
-     */
-    private function createCombinedPdf($mainPdfContent, $meetingAttachments)
-    {
-        try {
-            if (empty($meetingAttachments)) {
-                Log::info('No meeting attachments to embed, returning main PDF');
-                return $mainPdfContent;
-            }
-
-            // Create a new PDF that includes the meeting PDFs as embedded content
-            // We'll use a different approach - create a new PDF with the meeting data embedded
-
-            // For now, let's try a simple approach using DomPDF to create a combined document
-            $html = $this->createHtmlWithEmbeddedPdfs($meetingAttachments);
-
-            // Generate new PDF with embedded content
-            $pdf = PDF::loadHTML($html);
-            $pdf->setPaper('A4', 'portrait');
-
-            $newPdfContent = $pdf->output();
-
-            // For now, return the main PDF content
-            // In a full implementation, you would properly merge the PDFs
-            Log::info('Created combined PDF with ' . count($meetingAttachments) . ' meeting attachments');
-            return $mainPdfContent;
-
-        } catch (\Exception $e) {
-            Log::error('Error creating combined PDF: ' . $e->getMessage());
-            return $mainPdfContent;
-        }
-    }
-
-
 
     private function convertDocToPdf($inputPath)
     {
@@ -511,26 +438,6 @@ class FacultyController extends Controller
         return $html;
     }
 
-    /**
-     * Clean up temporary directory
-     */
-   private function cleanupTempDirectory($tempDir)
-{
-    try {
-        if (file_exists($tempDir)) {
-            $files = glob($tempDir . '/*');
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
-            rmdir($tempDir);
-        }
-    } catch (\Exception $e) {
-        Log::warning('Could not clean up temp directory: ' . $e->getMessage());
-    }
-}
-    
 
     /**
      * Get meeting PDF file paths from the report data
@@ -676,5 +583,4 @@ class FacultyController extends Controller
             ], 500);
         }
     }
-
 }

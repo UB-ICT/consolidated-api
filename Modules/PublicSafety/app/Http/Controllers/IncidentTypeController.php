@@ -14,7 +14,7 @@ class IncidentTypeController extends Controller
 
 
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $incidentTypes = FirestoreService::getCollection($this->collectionName);
@@ -65,7 +65,7 @@ class IncidentTypeController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, string $IncidentTypeID)
+    public function show(string $IncidentTypeID)
     {
         try {
             $incidentTypes = FirestoreService::getDocument($this->collectionName, $IncidentTypeID);

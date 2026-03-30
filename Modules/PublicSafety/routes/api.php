@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\PublicSafety\Http\Controllers\PublicSafetyAuthController;
 use Modules\PublicSafety\Http\Controllers\UserController;
 use Modules\PublicSafety\Http\Controllers\CampusController;
 use Modules\PublicSafety\Http\Controllers\BuildingController;
@@ -22,10 +21,6 @@ use Modules\PublicSafety\Http\Controllers\IncidentLogController;
 use Modules\PublicSafety\Http\Controllers\AnonymousController;
 use Modules\PublicSafety\Http\Controllers\EmergencyController;
 
-
-
-
-
 /*
  *--------------------------------------------------------------------------
  * API Routes
@@ -37,14 +32,6 @@ use Modules\PublicSafety\Http\Controllers\EmergencyController;
  *
  */
 
-
-// This will be the only unprotected route because this is used for authentication
-Route::prefix('')->group(function () {
-
-    // Google OAuth
-    // Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
-    // Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
-});
 
 Route::group([
     'prefix' => 'v1/publicSafety',
@@ -95,6 +82,8 @@ Route::group([
     Route::get('/getTotalResolvedIncident', [IncidentReportController::class, 'getTotalResolvedIncidents']);
     Route::get('/getTotalPendingIncident', [IncidentReportController::class, 'getTotalPendingIncidents']);
     Route::get('/getTotalIncident', [IncidentReportController::class, 'getTotalIncidentCount']);
+    Route::post('/mark-as-read/{id}', [IncidentReportController::class, 'markAsRead']);
+    Route::get('/getUnreadIncidentReports', [IncidentReportController::class, 'getUnreadIncidentReports']);
 
     //end of shift report (patrol officer)
     Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
@@ -290,8 +279,4 @@ Route::prefix('v1/public')->group(function () {
     Route::delete('/emergency/{emergencyReportID}', [EmergencyController::class, 'destroy']);
     Route::get('/unread-count', [EmergencyController::class, 'unreadCount']);
     Route::post('/{reportID}/mark-as-read', [EmergencyController::class, 'markAsRead']);
-});
-
-Route::get('/phpinfo', function () {
-    phpinfo();
 });
