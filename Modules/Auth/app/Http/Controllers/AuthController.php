@@ -6,9 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller;
-// use LdapRecord\Connection;
 use LdapRecord\Container;
-use Modules\PublicSafety\Models\User;
 use Exception;
 
 class AuthController extends Controller
@@ -135,9 +133,6 @@ class AuthController extends Controller
 
             // Revoke all tokens (logout from all devices)
             $request->user()->tokens()->delete();
-
-            // Alternative: Revoke only the current token (logout from current device)
-            // $request->user()->currentAccessToken()->delete();
 
             $response = [
                 'success' => true,
