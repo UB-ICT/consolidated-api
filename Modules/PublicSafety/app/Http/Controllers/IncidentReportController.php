@@ -279,57 +279,6 @@ class IncidentReportController extends Controller
         return sprintf('%s%04d', $prefix, $nextNumber);
     }
 
-
-    public function markAsRead(string $id)
-    {
-        try {
-            $success = FirestoreService::updateDocument(
-                $this->collectionName,
-                $id,
-                [
-                    'isRead' => true,
-                    'updated_at' => now()->toDateTimeString()
-                ]
-            );
-
-            return response()->json([
-                'success' => $success,
-                'message' => $success ? 'Marked as read' : 'Report not found'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getUnreadIncidentReports()
-    {
-        try {
-            $reports = FirestoreService::getCollection($this->collectionName);
-
-            $unread = collect($reports)->filter(function ($report) {
-                return isset($report['formSubmitted']) &&
-                    $report['formSubmitted'] === true &&
-                    (!isset($report['isRead']) || $report['isRead'] === false);
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'totalUnread' => $unread->count()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
     public function getTotalIncidentReport()
     {
         try {
@@ -783,8 +732,10 @@ class IncidentReportController extends Controller
             foreach ($collections as $collection) {
                 $reports = FirestoreService::getCollection($collection);
 
+                // ✅ Only count where formSubmitted = true AND isRead = false
                 $count = collect($reports)
-                    ->where('isRead', true)
+                    ->where('isRead', false)
+                    ->where('formSubmitted', true)
                     ->count();
 
                 $results[$collection] = $count;

@@ -80,8 +80,7 @@ Route::group([
     Route::get('/getTotalResolvedIncident', [IncidentReportController::class, 'getTotalResolvedIncidents']);
     Route::get('/getTotalPendingIncident', [IncidentReportController::class, 'getTotalPendingIncidents']);
     Route::get('/getTotalIncident', [IncidentReportController::class, 'getTotalIncidentCount']);
-    Route::post('/mark-as-read/{id}', [IncidentReportController::class, 'markAsRead']);
-    Route::get('/getUnreadIncidentReports', [IncidentReportController::class, 'getUnreadIncidentReports']);
+    Route::get('/getIsReadCount', [IncidentReportController::class, 'getIsReadCount']);
 
     //end of shift report (patrol officer)
     Route::post('/initialize/endOfShiftReportPatrols', [EndOfShiftReportPatrolController::class, 'initialize']);
