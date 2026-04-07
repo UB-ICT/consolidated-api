@@ -23,6 +23,7 @@ class EndOfShiftReportSupervisorController extends Controller
                 'uploadedBy' => $request->user()->name ?? '', //Supervisor Officer
                 'campus' => '',
                 'report' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
             ];
         } catch (\Exception $e) {
@@ -64,6 +65,11 @@ class EndOfShiftReportSupervisorController extends Controller
                 'report' => 'required|string',
                 'formSubmitted' => 'required|boolean',
             ]);
+
+
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
 
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
 
@@ -136,6 +142,7 @@ class EndOfShiftReportSupervisorController extends Controller
                 'uploadedBy',
                 'report',
                 'endOfShiftReportSupervisorFiles',
+                'isRead',
                 'formSubmitted',
             ]);
 

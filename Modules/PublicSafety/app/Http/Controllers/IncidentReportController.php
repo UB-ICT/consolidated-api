@@ -42,6 +42,10 @@ class IncidentReportController extends Controller
                 'updated_at' => now()->toDateTimeString()
             ];
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
@@ -274,6 +278,7 @@ class IncidentReportController extends Controller
 
         return sprintf('%s%04d', $prefix, $nextNumber);
     }
+
 
     public function markAsRead(string $id)
     {
@@ -754,6 +759,45 @@ class IncidentReportController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
+            ], 500);
+        }
+    }
+
+    public function getIsReadCount()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_endOfShiftReportPatrols',
+                'publicSafety_endOfShiftReportSupervisor',
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_lostProperty',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+                'publicSafety_anonymousReports',
+            ];
+
+            $results = [];
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                $count = collect($reports)
+                    ->where('isRead', true)
+                    ->count();
+
+                $results[$collection] = $count;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $results
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
             ], 500);
         }
     }

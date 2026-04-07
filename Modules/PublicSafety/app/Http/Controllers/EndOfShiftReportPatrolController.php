@@ -24,6 +24,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'campus' => '',
                 'endOfShiftReportPatrolFiles' => [],
                 'report' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
             ];
         } catch (\Exception $e) {
@@ -65,6 +66,10 @@ class EndOfShiftReportPatrolController extends Controller
                 'report' => 'required|string',
                 'formSubmitted' => 'required|boolean',
             ]);
+
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
 
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
 
@@ -134,6 +139,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'uploadedBy',
                 'report',
                 'endOfShiftReportPatrolFiles',
+                'isRead',
                 'formSubmitted',
             ]);
             $success = FirestoreService::updateDocument(

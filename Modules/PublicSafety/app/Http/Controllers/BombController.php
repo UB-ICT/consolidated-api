@@ -44,6 +44,7 @@ class BombController extends Controller
                 'officeNumberReceiveCalls' => '',
                 'personReceiveCalls' => '',
                 'accentRegion' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
                 'uploadedBy' => $request->user()->name ?? '',
                 'created_at' => now()->toDateTimeString(),
@@ -111,12 +112,14 @@ class BombController extends Controller
                 'officeNumberReceiveCalls' => 'required|string',
                 'personReceiveCalls' => 'required|string',
                 'accentRegion' => 'required|string',
+
                 'formSubmitted' => 'required|boolean',
                 'uploadedBy' => 'required|string',
             ]);
 
             // Prepare the data to save
             $bombData = $request->all();
+            $bombData['isRead'] = false;
             $bombData['created_at'] = now()->toDateTimeString();
             $bombData['updated_at'] = now()->toDateTimeString();
 
@@ -214,6 +217,7 @@ class BombController extends Controller
                 'additionalInformation',
                 'officeNumberReceiveCalls',
                 'personReceiveCalls',   // personReceiveCalls
+                'isRead',
                 'formSubmitted',
                 'uploadedBy',
             ]);
@@ -407,113 +411,5 @@ class BombController extends Controller
                 'data' => null,
             ], 500);
         }
-    }
-
-    public function getActiveBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $activeCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
-                        $activeCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Active incidents retrieved successfully',
-                'data' => ['totalActive' => $activeCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getResolvedBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $resolvedCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
-                        $resolvedCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Resolved incidents retrieved successfully',
-                'data' => ['totalResolved' => $resolvedCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getPendingBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $pendingCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
-                        $pendingCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Pending incidents retrieved successfully',
-                'data' => ['totalPending' => $pendingCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
     }
 }

@@ -25,6 +25,7 @@ class AnonymousController extends Controller
                 'category' => '',
                 'location' => '',
                 'reports' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
                 'uploadedBy' => $id,
                 'created_at' => now()->toDateTimeString(),
@@ -76,6 +77,7 @@ class AnonymousController extends Controller
 
             // Prepare the data to save
             $anonymousData = $request->all();
+            $anonymousData['isRead'] = false;
             $anonymousData['created_at'] = now()->toDateTimeString();
             $anonymousData['updated_at'] = now()->toDateTimeString();
 
@@ -144,6 +146,7 @@ class AnonymousController extends Controller
                 'category',
                 'location',
                 'reports',
+                'isRead',
             ]);
             $data['updated_at'] = now()->toDateTimeString(); // Always track update time
 

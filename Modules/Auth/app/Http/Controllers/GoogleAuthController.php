@@ -46,7 +46,7 @@ class GoogleAuthController extends Controller
             ->redirect();
     }
 
-    public function callback(Request $request)
+    public function callback()
     {
         $stateParam = request()->get('state');
         $system = 'public'; // default

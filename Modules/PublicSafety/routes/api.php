@@ -14,8 +14,6 @@ use Modules\PublicSafety\Http\Controllers\EndOfShiftReportSupervisorController;
 use Modules\PublicSafety\Http\Controllers\LostAndFoundTrackingController;
 use Modules\PublicSafety\Http\Controllers\LostPropertyController;
 use Modules\PublicSafety\Http\Controllers\ImpoundedReportTrackingFormController;
-use Modules\PublicSafety\Http\Controllers\ConversationController;
-use Modules\PublicSafety\Http\Controllers\MessageController;
 use Modules\PublicSafety\Http\Controllers\BombController;
 use Modules\PublicSafety\Http\Controllers\IncidentLogController;
 use Modules\PublicSafety\Http\Controllers\AnonymousController;
@@ -117,9 +115,6 @@ Route::group([
     Route::get('/lostAndFoundTrackingTotal', [LostAndFoundTrackingController::class, 'getTotalLoandFoundTracking']);
     Route::get('/generateLostAndFoundPdf/{reportID}', [LostAndFoundTrackingController::class, 'generateLostAndFoundPdf']);
     Route::get('/unsubmittedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getUnsubmittedLostAndFoundTracking']);
-    Route::get('/activeLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getActiveLostAndFoundTracking']);
-    Route::get('/resolvedLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getResolvedLostAndFoundTracking']);
-    Route::get('/pendingLostAndFoundTracking', [LostAndFoundTrackingController::class, 'getPendingLostAndFoundTracking']);
 
     Route::post('/initialize/lostProperty', [LostPropertyController::class, 'initialize']);
     Route::get('/lostProperty', [LostPropertyController::class, 'index']);
@@ -130,9 +125,6 @@ Route::group([
     Route::get('/lostPropertyTotal', [LostPropertyController::class, 'getTotalLostProperty']);
     Route::get('/generateLostPropertyPdf/{reportID}', [LostPropertyController::class, 'generateLostPropertyPdf']);
     Route::get('/unsubmittedLostProperty', [LostPropertyController::class, 'getUnsubmittedlostProperty']);
-    Route::get('/activeLostProperty', [LostPropertyController::class, 'getActiveLostProperty']);
-    Route::get('/resolvedLostProperty', [LostPropertyController::class, 'getResolvedLostProperty']);
-    Route::get('/pendingLostProperty', [LostPropertyController::class, 'getPendingLostProperty']);
 
     Route::post('/initialize/impoundedReport', [ImpoundedReportTrackingFormController::class, 'initialize']);
     Route::get('/impoundedReport', [ImpoundedReportTrackingFormController::class, 'index']);
@@ -143,9 +135,7 @@ Route::group([
     Route::get('/impoundedReportTotal', [ImpoundedReportTrackingFormController::class, 'getTotalImpoundedReport']);
     Route::get('/generateImpoundedReportPdf/{reportID}', [ImpoundedReportTrackingFormController::class, 'generateImpoundedReportPdf']);
     Route::get('/unsubmittedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getUnsubmittedImpoundedReport']);
-    Route::get('/activeImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getActiveImpoundedReport']);
-    Route::get('/resolvedImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getResolvedImpoundedReport']);
-    Route::get('/pendingImpoundedReport', [ImpoundedReportTrackingFormController::class, 'getPendingImpoundedReport']);
+
 
     //bomb threat
     Route::post('/initialize/bombThreats', [BombController::class, 'initialize']);
@@ -157,10 +147,6 @@ Route::group([
     Route::get('bombThreatsTotal', [BombController::class, 'getTotalBombReport']);
     Route::get('/generateBombReportPdf/{reportID}', [BombController::class, 'generateBombReportPdf']);
     Route::get('/unsubmittedBombReports', [BombController::class, 'getUnsubmittedBombReports']);
-    Route::get('/activeBombReports', [BombController::class, 'getActiveBombReports']);
-    Route::get('/resolvedBombReports', [BombController::class, 'getResolvedBombReports']);
-    Route::get('/pendingBombReports', [BombController::class, 'getPendingBombReports']);
-
 
     //Anonymous Reports
     Route::post('/initialize/anonymousReports', [AnonymousController::class, 'initialize']);
@@ -181,9 +167,6 @@ Route::group([
     Route::get('/incidentLogTotal', [IncidentLogController::class, 'getTotalIncidentLog']);
     Route::get('/generateIncidentLogPdf/{reportID}', [IncidentLogController::class, 'generateIncidentLogPdf']);
     Route::get('/unsubmittedIncidentLog', [IncidentLogController::class, 'getUnsubmittedIncidentLog']);
-    Route::get('/activeIncidentLog', [IncidentLogController::class, 'getActiveIncidentLog']);
-    Route::get('/resolvedIncidentLog', [IncidentLogController::class, 'getResolvedIncidentLog']);
-    Route::get('/pendingIncidentLog', [IncidentLogController::class, 'getPendingIncidentLog']);
 
     Route::get('incidentStatus', [IncidentStatusController::class, 'index']);
     Route::post('incidentStatus', [IncidentStatusController::class, 'store']);
@@ -194,8 +177,6 @@ Route::group([
     Route::post('incidentTypes', [IncidentTypeController::class, 'store']);
     Route::put('incidentTypes/{id}', [IncidentTypeController::class, 'update']);
     Route::delete('incidentTypes/{id}', [IncidentTypeController::class, 'destroy']);
-
-
 
     //menus
     Route::get('/menu', [MenuController::class, 'index']);
@@ -209,46 +190,7 @@ Route::group([
         '/uploadSignatureCanvas/{reportID}',
         [FileUploadController::class, 'uploadSignatureCanvas']
     );
-
-    Route::get('/conversations', [ConversationController::class, 'index']);
-    Route::post('/conversations', [ConversationController::class, 'store']);
-    Route::get('/conversations/{id}', [ConversationController::class, 'show']);
-
-    // Marks isDeleted = true
-    // Does NOT delete messages
-    // Safe for emergency/public-safety audits
-    Route::delete('/conversations/{id}', [ConversationController::class, 'destroy']);
-
-    // Get messages for a conversation (chat window)
-    Route::get(
-        '/conversations/{conversationId}/messages',
-        [MessageController::class, 'index']
-    );
-
-    // Send a message
-    Route::post(
-        '/messages',
-        [MessageController::class, 'store']
-    );
-
-    Route::patch(
-        '/messages/{messageId}/read',
-        [MessageController::class, 'markAsRead']
-    );
-
-    Route::delete(
-        '/messages/{messageId}',
-        [MessageController::class, 'destroy']
-    );
-
-    // Get media, files, or links for a conversation
-    Route::get(
-        '/messages/{conversationId}/media',
-        [MessageController::class, 'media']
-    );
 });
-
-
 
 Route::prefix('v1/public')->group(function () {
     //Anonymous Reports
@@ -267,7 +209,6 @@ Route::prefix('v1/public')->group(function () {
     Route::get('/buildings/{buildingID}', [BuildingController::class, 'show']);
     Route::put('/buildings/{buildingID}', [BuildingController::class, 'update']);
     Route::delete('/buildings/{buildingID}', [BuildingController::class, 'destroy']);
-
 
     //emergency
     Route::post('/initialize/emergency', [EmergencyController::class, 'initialize']);
