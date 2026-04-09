@@ -15,6 +15,8 @@ class Country extends Model
      */
     protected $fillable = ['name'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): CountryFactory
     // {
     //     // return CountryFactory::new();

@@ -15,6 +15,8 @@ class Currency extends Model
      */
     protected $fillable = ['name', 'symbol'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): CurrencyFactory
     // {
     //     // return CurrencyFactory::new();

@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\SupplierBank;
 
@@ -13,7 +13,8 @@ class SupplierBankController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $supplierBanks = SupplierBank::all();
+        return response()->json($supplierBanks);
     }
 
     /**
@@ -29,7 +30,18 @@ class SupplierBankController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                SupplierBank::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $supplierBank = SupplierBank::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $supplierBank], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class SupplierBankController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return SupplierBank::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class SupplierBankController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $supplierBank = SupplierBank::findOrFail($id);
+        $supplierBank->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $supplierBank]);
     }
 
     /**
@@ -61,6 +75,8 @@ class SupplierBankController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $supplierBank = SupplierBank::findOrFail($id);
+        $supplierBank->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

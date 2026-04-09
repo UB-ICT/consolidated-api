@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Pipeline;
 
@@ -13,7 +13,8 @@ class PipelineController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $pipelines = Pipeline::all();
+        return response()->json($pipelines);
     }
 
     /**
@@ -29,7 +30,18 @@ class PipelineController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Pipeline::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $pipeline = Pipeline::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $pipeline], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class PipelineController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Pipeline::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class PipelineController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $pipeline = Pipeline::findOrFail($id);
+        $pipeline->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $pipeline]);
     }
 
     /**
@@ -61,6 +75,8 @@ class PipelineController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $pipeline = Pipeline::findOrFail($id);
+        $pipeline->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

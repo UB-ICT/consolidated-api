@@ -15,6 +15,8 @@ class Address extends Model
      */
     protected $fillable = ['supplier_id', 'street', 'city', 'district', 'postal_code', 'country_id'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): AddressFactory
     // {
     //     // return AddressFactory::new();

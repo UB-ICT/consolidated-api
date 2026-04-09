@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Supplier;
 
@@ -13,7 +13,8 @@ class SupplierController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $suppliers = Supplier::all();
+        return response()->json($suppliers);
     }
 
     /**
@@ -29,7 +30,18 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Supplier::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $supplier = Supplier::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $supplier], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class SupplierController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Supplier::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class SupplierController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $supplier = Supplier::findOrFail($id);
+        $supplier->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $supplier]);
     }
 
     /**
@@ -61,6 +75,8 @@ class SupplierController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $supplier = Supplier::findOrFail($id);
+        $supplier->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

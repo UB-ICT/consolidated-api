@@ -19,6 +19,8 @@ class Attachment extends Model
         'uploaded_at' => 'datetime:M d, Y',
     ];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): AttachmentFactory
     // {
     //     // return AttachmentFactory::new();

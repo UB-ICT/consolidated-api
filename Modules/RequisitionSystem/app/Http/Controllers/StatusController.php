@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Status;
 
@@ -13,7 +13,8 @@ class StatusController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $statuses = Status::all();
+        return response()->json($statuses);
     }
 
     /**
@@ -29,7 +30,18 @@ class StatusController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Status::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $status = Status::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $status], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class StatusController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Status::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class StatusController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $status = Status::findOrFail($id);
+        $status->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $status]);
     }
 
     /**
@@ -61,6 +75,8 @@ class StatusController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $status = Status::findOrFail($id);
+        $status->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

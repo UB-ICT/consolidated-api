@@ -15,6 +15,8 @@ class Supplier extends Model
      */
     protected $fillable = ['name', 'contact_person', 'phone_number', 'email', 'TIN'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): SupplierFactory
     // {
     //     // return SupplierFactory::new();

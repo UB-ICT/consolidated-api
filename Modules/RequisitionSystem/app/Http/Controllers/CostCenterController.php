@@ -31,14 +31,19 @@ class CostCenterController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|max:255',
+        $data = $request->validate([
+            '*.name' => 'required|string', // The * means "check every item in the array"
+            '*.type' => 'required|string',
         ]);
 
-        $costCenter = CostCenter::create($validated);
+        foreach ($request->all() as $item) {
+            CostCenter::create([
+                'name' => $item['name'],
+                'type' => $item['type'],
+            ]);
+        }
 
-        return response()->json($costCenter, 201);
+        return response()->json(['message' => 'All items created successfully!'], 201);
     }
 
     /**
@@ -46,7 +51,7 @@ class CostCenterController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return CostCenter::findOrFail($id); // Returns 1 item or 404 if missing
     }
 
     /**
@@ -62,7 +67,9 @@ class CostCenterController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $costCenter = CostCenter::findOrFail($id);
+        $costCenter->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $costCenter]);
     }
 
     /**
@@ -70,6 +77,8 @@ class CostCenterController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $costCenter = CostCenter::findOrFail($id);
+        $costCenter->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

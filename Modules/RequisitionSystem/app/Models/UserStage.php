@@ -15,6 +15,8 @@ class UserStage extends Model
      */
     protected $fillable = ['user_id', 'stage_id'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): UserStageFactory
     // {
     //     // return UserStageFactory::new();

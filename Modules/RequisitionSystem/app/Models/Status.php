@@ -15,6 +15,8 @@ class Status extends Model
      */
     protected $fillable = ['name'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): StatusFactory
     // {
     //     // return StatusFactory::new();

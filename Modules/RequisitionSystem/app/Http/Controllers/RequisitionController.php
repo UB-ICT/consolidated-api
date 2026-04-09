@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Requisition;
 
@@ -13,7 +13,8 @@ class RequisitionController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $requisitions = Requisition::all();
+        return response()->json($requisitions);
     }
 
     /**
@@ -29,7 +30,18 @@ class RequisitionController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Requisition::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $requisition = Requisition::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $requisition], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class RequisitionController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Requisition::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class RequisitionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $requisition = Requisition::findOrFail($id);
+        $requisition->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $requisition]);
     }
 
     /**
@@ -61,6 +75,8 @@ class RequisitionController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $requisition = Requisition::findOrFail($id);
+        $requisition->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

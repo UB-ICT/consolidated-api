@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\User;
 
@@ -13,7 +13,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $users = User::all();
+        return response()->json($users);
     }
 
     /**
@@ -29,7 +30,18 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                User::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $user = User::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $user], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return User::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $user = User::findOrFail($id);
+        $user->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $user]);
     }
 
     /**
@@ -61,6 +75,8 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $user = User::findOrFail($id);
+        $user->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

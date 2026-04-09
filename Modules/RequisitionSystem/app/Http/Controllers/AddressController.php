@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Address;
 
@@ -13,7 +13,8 @@ class AddressController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $addresses = Address::all();
+        return response()->json($addresses);
     }
 
     /**
@@ -29,7 +30,18 @@ class AddressController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Address::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $address = Address::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $address], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class AddressController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Address::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class AddressController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $address = Address::findOrFail($id);
+        $address->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $address]);
     }
 
     /**
@@ -61,6 +75,8 @@ class AddressController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $address = Address::findOrFail($id);
+        $address->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

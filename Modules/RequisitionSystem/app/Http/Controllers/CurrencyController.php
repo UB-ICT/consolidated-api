@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Currency;
 
@@ -13,7 +13,8 @@ class CurrencyController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $currencies = Currency::all();
+        return response()->json($currencies);
     }
 
     /**
@@ -29,7 +30,18 @@ class CurrencyController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Currency::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $currency = Currency::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $currency], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class CurrencyController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Currency::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class CurrencyController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $currency = Currency::findOrFail($id);
+        $currency->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $currency]);
     }
 
     /**
@@ -61,6 +75,8 @@ class CurrencyController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $currency = Currency::findOrFail($id);
+        $currency->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Bank;
 
@@ -13,7 +13,8 @@ class BankController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $banks = Bank::all();
+        return response()->json($banks);
     }
 
     /**
@@ -29,7 +30,18 @@ class BankController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Bank::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $bank = Bank::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $bank], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class BankController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Bank::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class BankController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $bank = Bank::findOrFail($id);
+        $bank->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $bank]);
     }
 
     /**
@@ -61,6 +75,8 @@ class BankController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $bank = Bank::findOrFail($id);
+        $bank->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

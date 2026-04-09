@@ -18,6 +18,8 @@ class Requisition extends Model
     protected $casts = [
         'date_prepared' => 'datetime:M d, Y',
     ];
+    
+    public $timestamps = false;
 
     // protected static function newFactory(): RequisitionFactory
     // {

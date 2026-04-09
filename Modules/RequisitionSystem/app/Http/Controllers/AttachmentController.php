@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Attachment;
 
@@ -13,7 +13,8 @@ class AttachmentController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $attachments = Attachment::all();
+        return response()->json($attachments);
     }
 
     /**
@@ -29,7 +30,18 @@ class AttachmentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Attachment::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $attachment = Attachment::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $attachment], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class AttachmentController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Attachment::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class AttachmentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $attachment = Attachment::findOrFail($id);
+        $attachment->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $attachment]);
     }
 
     /**
@@ -61,6 +75,8 @@ class AttachmentController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $attachment = Attachment::findOrFail($id);
+        $attachment->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

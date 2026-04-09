@@ -15,6 +15,8 @@ class SupplierBank extends Model
      */
     protected $fillable = ['supplier_id', 'bank_id', 'account_number', 'account_name', 'address'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): SupplierBankFactory
     // {
     //     // return SupplierBankFactory::new();

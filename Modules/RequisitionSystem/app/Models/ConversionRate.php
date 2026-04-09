@@ -15,6 +15,8 @@ class ConversionRate extends Model
      */
     protected $fillable = ['rate', 'currency_id'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): ConversionRateFactory
     // {
     //     // return ConversionRateFactory::new();

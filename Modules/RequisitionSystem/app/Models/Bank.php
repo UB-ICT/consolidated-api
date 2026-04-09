@@ -15,6 +15,8 @@ class Bank extends Model
      */
     protected $fillable = ['name'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): BankFactory
     // {
     //     // return BankFactory::new();

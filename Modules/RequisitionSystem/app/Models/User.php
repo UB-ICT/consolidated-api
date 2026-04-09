@@ -14,6 +14,8 @@ class User extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = ['name', 'email', 'type', 'cost_center_id'];
+    
+    public $timestamps = false;
 
     // protected static function newFactory(): UserFactory
     // {

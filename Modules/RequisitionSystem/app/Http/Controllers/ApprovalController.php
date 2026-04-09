@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Approval;
 
@@ -13,7 +13,8 @@ class ApprovalController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $approvals = Approval::all();
+        return response()->json($approvals);
     }
 
     /**
@@ -29,7 +30,18 @@ class ApprovalController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                Approval::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $approval = Approval::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $approval], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class ApprovalController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return Approval::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class ApprovalController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $approval = Approval::findOrFail($id);
+        $approval->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $approval]);
     }
 
     /**
@@ -61,6 +75,8 @@ class ApprovalController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $approval = Approval::findOrFail($id);
+        $approval->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

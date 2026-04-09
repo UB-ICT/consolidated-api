@@ -19,6 +19,8 @@ class Approval extends Model
         'signed_at' => 'datetime:M d, Y',
     ];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): ApprovalFactory
     // {
     //     // return ApprovalFactory::new();

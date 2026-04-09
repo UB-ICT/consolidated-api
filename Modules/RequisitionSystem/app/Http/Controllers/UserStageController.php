@@ -2,7 +2,7 @@
 
 namespace Modules\RequisitionSystem\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+//use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\UserStage;
 
@@ -13,7 +13,8 @@ class UserStageController extends Controller
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        $userStages = UserStage::all();
+        return response()->json($userStages);
     }
 
     /**
@@ -29,7 +30,18 @@ class UserStageController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        if (isset($payload[0]) && is_array($payload[0])) {
+            foreach ($payload as $item) {
+                UserStage::create($item);
+            }
+
+            return response()->json(['message' => 'All items created successfully!'], 201);
+        }
+
+        $userStage = UserStage::create($payload);
+        return response()->json(['message' => 'Item created successfully!', 'data' => $userStage], 201);
     }
 
     /**
@@ -37,7 +49,7 @@ class UserStageController extends Controller
      */
     public function show($id)
     {
-        return view('requisitionsystem::show');
+        return UserStage::findOrFail($id);
     }
 
     /**
@@ -53,7 +65,9 @@ class UserStageController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $userStage = UserStage::findOrFail($id);
+        $userStage->update($request->all());
+        return response()->json(['message' => 'Updated!', 'data' => $userStage]);
     }
 
     /**
@@ -61,6 +75,8 @@ class UserStageController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $userStage = UserStage::findOrFail($id);
+        $userStage->delete();
+        return response()->json(['message' => 'Item deleted successfully']);
     }
 }

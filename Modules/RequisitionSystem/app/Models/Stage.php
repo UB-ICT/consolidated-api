@@ -15,6 +15,8 @@ class Stage extends Model
      */
     protected $fillable = ['name', 'pipeline_id'];
 
+    public $timestamps = false;
+
     // protected static function newFactory(): StageFactory
     // {
     //     // return StageFactory::new();
