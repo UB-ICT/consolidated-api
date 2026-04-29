@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('email')->unique();
             $table->integer('TIN')->unique();
+            $table->string('approval_status')->default('pending');
         });
     }
 

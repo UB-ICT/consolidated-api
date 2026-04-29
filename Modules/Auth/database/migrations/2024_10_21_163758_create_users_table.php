@@ -19,6 +19,8 @@ return new class extends Migration {
             $table->string('password')->nullable();
             $table->string('profile_picture')->nullable();
             $table->integer('menu_id')->nullable();
+            $table->string('type');
+            $table->unsignedBigInteger('cost_center_id')->nullable();
 
             // Changed to unsignedBigInteger for consistency
             $table->unsignedBigInteger('user_status_id')->nullable();

@@ -13,7 +13,7 @@ class Supplier extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['name', 'contact_person', 'phone_number', 'email', 'TIN'];
+    protected $fillable = ['name', 'contact_person', 'phone_number', 'email', 'TIN', 'approval_status'];
 
     public $timestamps = false;
 
