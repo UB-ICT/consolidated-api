@@ -14,6 +14,7 @@ class CostCenterSeeder extends Seeder
     public function run(): void
     {
          DB::table('cost_centers')->insert([
+            'id' => (string) Str::uuid(),
             'name' => Str::random(10),
             'type' => Str::random(10),
         ]);

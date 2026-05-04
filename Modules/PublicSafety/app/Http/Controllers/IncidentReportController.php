@@ -5,9 +5,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class IncidentReportController extends Controller
@@ -38,19 +36,22 @@ class IncidentReportController extends Controller
                 'reportedBy' => "",
                 'contact' => "",
                 'witnesses' => "",
+                'isRead' => false,
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
-
-            Log::info('Initializing Incident Report: ', $defaultReport);
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultReport);
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $incidentReports = FirestoreService::getCollection($this->collectionName);
@@ -98,6 +99,7 @@ class IncidentReportController extends Controller
 
             // Prepare the data to save
             $incidentData = $request->all();
+            $incidentData['isRead'] = false;
             $incidentData['created_at'] = now()->toDateTimeString();
             $incidentData['updated_at'] = now()->toDateTimeString();
 
@@ -130,33 +132,31 @@ class IncidentReportController extends Controller
     }
 
 
-    //read
-    public function show(Request $request, string $incidentReportID)
+    public function show(string $incidentReportID)
     {
         try {
             $incidentReport = FirestoreService::getDocument($this->collectionName, $incidentReportID);
+
             if ($incidentReport) {
-                $response = [
+                return response()->json([
                     'success' => true,
-                    'message' => 'incident Report found',
+                    'message' => 'Incident Report found',
                     'data' => $incidentReport
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Incident Report not found',
-                    'data' => null,
-                ];
+                ], 200);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Incident Report not found',
+                'data' => null,
+            ], 404);
         } catch (\Exception $e) {
-            $response = [
+            return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data' => null,
-            ];
+            ], 500);
         }
-        // Return response with HTTP status code 201 (Created)
-        return response()->json($incidentReport, 200);
     }
 
     //update
@@ -182,6 +182,7 @@ class IncidentReportController extends Controller
                 'reportedBy',
                 'contact',
                 'witnesses',
+                'isRead',
                 'formSubmitted',
             ]);
             $data['updated_at'] = now()->toDateTimeString(); // Always track update time
@@ -198,8 +199,6 @@ class IncidentReportController extends Controller
                     'message' => 'Incident Report updated successfully',
                     'data' => $updatedReport
                 ];
-
-                Log::info('Updated Incident Report: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
@@ -208,7 +207,6 @@ class IncidentReportController extends Controller
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Incident Report update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -250,37 +248,13 @@ class IncidentReportController extends Controller
         return response($response, 200);
     }
 
-
-    /**
-     * Verify all referenced documents exist
-     */
-    private function verifyReferencesExist(array $data)
-    {
-        $references = [
-            'incidentStatusId' => self::COLLECTION_PREFIX . 'incidentStatuses',
-            'campusId' => self::COLLECTION_PREFIX . 'campuses',
-            'buildingId' => self::COLLECTION_PREFIX . 'buildings',
-            'incidentTypeId' => self::COLLECTION_PREFIX . 'incidentTypes'
-        ];
-
-        foreach ($references as $field => $collection) {
-            if (!empty($data[$field])) {
-                $exists = FirestoreService::getDocument($collection, $data[$field]);
-                if (!$exists) {
-                    throw new \Exception("The specified {$field} does not exist");
-                }
-            }
-        }
-    }
-
     /**
      * Generate a sequential case number (Firestore-safe)
-     * Format: INC-YYYYMMDD-0001
+     * Format: INC-0001
      */
     private function generateCaseNumber(): string
     {
-        $date = date('Ymd');
-        $prefix = "INC-$date-";
+        $prefix = "INC-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);
@@ -411,114 +385,6 @@ class IncidentReportController extends Controller
         }
     }
 
-    public function getActiveIncidentReports()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $incidentLogs = FirestoreService::getCollection($this->collectionName);
-
-            $activeCount = 0;
-
-            if (is_array($incidentLogs)) {
-                foreach ($incidentLogs as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
-                        $activeCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Active incidents retrieved successfully',
-                'data' => ['totalActive' => $activeCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getResolvedIncidentReports()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $incidentLogs = FirestoreService::getCollection($this->collectionName);
-
-            $resolvedCount = 0;
-
-            if (is_array($incidentLogs)) {
-                foreach ($incidentLogs as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
-                        $resolvedCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Resolved incidents retrieved successfully',
-                'data' => ['totalResolved' => $resolvedCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getPendingIncidentReports()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $incidentLogs = FirestoreService::getCollection($this->collectionName);
-
-            $pendingCount = 0;
-
-            if (is_array($incidentLogs)) {
-                foreach ($incidentLogs as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
-                        $pendingCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Pending incidents retrieved successfully',
-                'data' => ['totalPending' => $pendingCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
     public function getIncidentsByBuilding($buildingName)
     {
         $reports = FirestoreService::getCollectionWhere(
@@ -532,5 +398,358 @@ class IncidentReportController extends Controller
             'success' => true,
             'data' => $reports
         ]);
+    }
+
+    public function getRecentIncidents()
+    {
+        try {
+            $limit = 4;
+
+            // 1️⃣ Fetch Incident Reports
+            $incidentReports = FirestoreService::getCollection('publicSafety_incidentReports');
+
+            $incidentReports = collect($incidentReports)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Incident Report',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'title' => $item['title'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+            // 2️⃣ Fetch Incident Logs
+            $incidentLogs = FirestoreService::getCollection('publicSafety_incidentLog');
+
+            $incidentLogs = collect($incidentLogs)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Incident Log',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'location' => $item['location'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+            // lost and Found tracking
+            $lostAndFoundTracking = FirestoreService::getCollection('publicSafety_lostAndFoundTracking');
+
+            $lostAndFoundTracking = collect($lostAndFoundTracking)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Lost and Found Tracking',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'itemDescription' => $item['itemDescription'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+            // lost property tracking
+            $lostPropertyTracking = FirestoreService::getCollection('publicSafety_lostProperty');
+
+            $lostPropertyTracking = collect($lostPropertyTracking)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Lost Property',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'itemDescription' => $item['itemDescription'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+            // impounded reports
+            $impoundedReports = FirestoreService::getCollection('publicSafety_impoundedReportTrackingForms');
+
+            $impoundedReports = collect($impoundedReports)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Impounded Report',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'location' => $item['location'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+            // bomb threats
+            $bombThreats = FirestoreService::getCollection('publicSafety_bombs');
+
+            $bombThreats = collect($bombThreats)
+                ->filter(
+                    fn($item) =>
+                    isset($item['formSubmitted']) && $item['formSubmitted'] === true
+                )
+                ->map(function ($item) {
+                    return [
+                        'formName' => 'Bomb Threat',
+                        'incidentReportStatus' => $item['incidentReportStatus'] ?? '',
+                        'location' => $item['bombLocation'] ?? '',
+                        'created_at' => $item['created_at'] ?? null,
+                    ];
+                });
+
+
+            // 3️⃣ Merge, sort, and limit
+            $recentIncidents = $incidentReports
+                ->merge($incidentLogs)
+                ->merge($lostAndFoundTracking)
+                ->merge($lostPropertyTracking)
+                ->merge($impoundedReports)
+                ->merge($bombThreats)
+                ->sortByDesc('created_at')
+                ->take($limit)
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recent incidents retrieved successfully',
+                'data' => $recentIncidents
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
+    }
+
+    public function getTotalActiveIncidents()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_lostProperty',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+            ];
+
+            $activeCount = 0;
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                if (!is_array($reports)) {
+                    continue;
+                }
+
+                foreach ($reports as $report) {
+                    if (
+                        isset($report['formSubmitted']) && $report['formSubmitted'] === true &&
+                        isset($report['incidentReportStatus']) && $report['incidentReportStatus'] === 'Investigating'
+                    ) {
+                        $activeCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Active incidents retrieved successfully',
+                'data' => ['totalActive' => $activeCount]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+
+    public function getTotalResolvedIncidents()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_lostProperty',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+
+            ];
+
+            $resolvedCount = 0;
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                if (!is_array($reports)) {
+                    continue;
+                }
+
+                foreach ($reports as $report) {
+                    if (
+                        isset($report['formSubmitted']) && $report['formSubmitted'] === true &&
+                        isset($report['incidentReportStatus']) && $report['incidentReportStatus'] === 'Resolved'
+                    ) {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function getTotalPendingIncidents()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_lostProperty',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+            ];
+
+            $pendingCount = 0;
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                if (!is_array($reports)) {
+                    continue;
+                }
+
+                foreach ($reports as $report) {
+                    if (
+                        isset($report['formSubmitted']) && $report['formSubmitted'] === true &&
+                        isset($report['incidentReportStatus']) && $report['incidentReportStatus'] === 'Pending'
+                    ) {
+                        $pendingCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pending incidents retrieved successfully',
+                'data' => ['totalPending' => $pendingCount]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function getTotalIncidentCount()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_lostProperty',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+            ];
+
+            $totalCount = 0;
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                if (!is_array($reports)) {
+                    continue;
+                }
+
+                foreach ($reports as $report) {
+                    if (isset($report['formSubmitted']) && $report['formSubmitted'] === true) {
+                        $totalCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Total incidents retrieved successfully',
+                'data' => ['totalIncidents' => $totalCount]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function getIsReadCount()
+    {
+        try {
+            $collections = [
+                $this->collectionName,
+                'publicSafety_endOfShiftReportPatrols',
+                'publicSafety_endOfShiftReportSupervisor',
+                'publicSafety_lostAndFoundTracking',
+                'publicSafety_lostProperty',
+                'publicSafety_impoundedReportTrackingForms',
+                'publicSafety_bombs',
+                'publicSafety_incidentLog',
+                'publicSafety_anonymousReports',
+            ];
+
+            $results = [];
+
+            foreach ($collections as $collection) {
+                $reports = FirestoreService::getCollection($collection);
+
+                // ✅ Only count where formSubmitted = true AND isRead = false
+                $count = collect($reports)
+                    ->where('isRead', false)
+                    ->where('formSubmitted', true)
+                    ->count();
+
+                $results[$collection] = $count;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $results
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -13,16 +13,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('requisitions', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->integer('number');
-            $table->foreignId('cost_center_id')->constrained('cost_centers');
-            $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignUuId('cost_center_id')->constrained('cost_centers');
+            $table->foreignUuId('supplier_id')->constrained('suppliers');
             $table->timestamp('date_prepared')->useCurrent();
-            $table->foreignId('status_id')->constrained('statuses');
-            $table->foreignId('currency_id')->constrained('currencies');
-            $table->foreignId('conversion_rate')->constrained('conversion_rates');
+            $table->foreignUuId('status_id')->constrained('statuses');
+            $table->foreignUuId('currency_id')->constrained('currencies');
+            $table->foreignUuId('conversion_rate')->constrained('conversion_rates');
             $table->decimal('total', 15, 2);
-            $table->foreignId('stage_id')->constrained('stages');
+            $table->foreignUuId('stage_id')->constrained('stages');
         });
     }
 

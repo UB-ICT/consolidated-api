@@ -90,6 +90,8 @@ class PublicSafetyAuthController extends Controller
                 ['email' => $googleUser->email],
                 [
                     'name' => $googleUser->name,
+                    'type' => 'public_safety',
+                    'domain' => 'ub.edu.bz',
                     'google_id' => $googleUser->id,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),

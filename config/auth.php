@@ -70,7 +70,7 @@ return [
             'rules' => [],
             'scopes' => [],
             'database' => [
-                'model' => Modules\PublicSafety\Models\User::class,
+                'model' => Modules\Auth\Models\User::class,
                 'sync_passwords' => false,
                 'sync_attributes' => [
                     'name' => 'cn',

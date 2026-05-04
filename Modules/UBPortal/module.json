@@ -1,0 +1,11 @@
+{
+    "name": "UBPortal",
+    "alias": "ubportal",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\UBPortal\\Providers\\UBPortalServiceProvider"
+    ],
+    "files": []
+}

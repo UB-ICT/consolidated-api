@@ -13,9 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('conversion_rates', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->decimal('rate', 10, 2);
-            $table->foreignId('currency_id')->constrained('currencies');
+            $table->foreignUuId('currency_id')->constrained('currencies');
         });
     }
 

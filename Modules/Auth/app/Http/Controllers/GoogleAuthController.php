@@ -46,7 +46,7 @@ class GoogleAuthController extends Controller
             ->redirect();
     }
 
-    public function callback(Request $request)
+    public function callback()
     {
         $stateParam = request()->get('state');
         $system = 'public'; // default
@@ -80,6 +80,7 @@ class GoogleAuthController extends Controller
                 ['email' => $user->email],
                 [
                     'name' => $user->name,
+                    'type' => $system,
                     'google_id' => $user->id,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
@@ -108,67 +109,7 @@ class GoogleAuthController extends Controller
         $this->instantiateCourseEvaluation($_user->email);
 
         // 10. Build response redirect using caller domain
-        return redirect($callerDomain . '?token=' . $token . '&system=' . $system);
-    }
-
-
-    /**
-     * Check if user is in the api_annual_reports Google group
-     */
-    private function isUserInAnnualReportsGroup($email)
-    {
-        try {
-            // Initialize Google Client with service account credentials
-            $client = new GoogleClient();
-            $client->setAuthConfig(storage_path('app/google-service-account.json'));
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $groupEmail = 'api_annual_reports@ub.edu.bz';
-            $client->setSubject($email);
-
-            // Create Directory service
-            $service = new GoogleDirectory($client);
-            // Check if user is a member of the api_annual_reports group
-
-            try {
-                $service->members->get($groupEmail, $email);
-                return true;
-            } catch (Exception $e) {
-                Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
-                return false;
-            }
-        } catch (Exception $e) {
-            Log::error('Error initializing Google API client: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    private function isUserInPublicSafetyGroup($email)
-    {
-        try {
-            // Initialize Google Client with service account credentials
-            $client = new GoogleClient();
-            $client->setAuthConfig(storage_path('app/google-service-account.json'));
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $groupEmail = 'api_public_safety@ub.edu.bz';
-            $client->setSubject($email);
-
-            // Create Directory service
-            $service = new GoogleDirectory($client);
-            // Check if user is a member of the api_annual_reports group
-
-            try {
-                $service->members->get($groupEmail, $email);
-                return true;
-            } catch (Exception $e) {
-                Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
-                return false;
-            }
-        } catch (Exception $e) {
-            Log::error('Error initializing Google API client: ' . $e->getMessage());
-            return false;
-        }
+        return redirect($callerDomain . '?token=' . $token . '&access_token=' . $token . '&system=' . $system);
     }
 
     /**
@@ -177,9 +118,22 @@ class GoogleAuthController extends Controller
     private function getUserMailingGroups($email)
     {
         try {
+            $serviceAccountPath = storage_path('app/google-service-account.json');
+            if (!file_exists($serviceAccountPath)) {
+                $serviceAccountPath = storage_path('firebase-credentials.json');
+            }
+
+            if (!file_exists($serviceAccountPath)) {
+                Log::error('Google Directory service account file missing', [
+                    'checked_primary' => storage_path('app/google-service-account.json'),
+                    'checked_fallback' => storage_path('firebase-credentials.json'),
+                ]);
+                return [];
+            }
+
             // Initialize Google Client with service account credentials
             $client = new GoogleClient();
-            $client->setAuthConfig(storage_path('app/google-service-account.json'));
+            $client->setAuthConfig($serviceAccountPath);
             $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
             $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
             $client->setSubject('luis.herrera@ub.edu.bz');
@@ -436,7 +390,7 @@ class GoogleAuthController extends Controller
         }
 
         // Check Sanctum token abilities instead of token name
-        $token = $user->currentAccessToken();
+        // $token = $user->currentAccessToken();
 
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
@@ -486,6 +440,7 @@ class GoogleAuthController extends Controller
             $_user = User::create([
                 'name' => 'Test User',
                 'email' => $request->email,
+                'type' => 'mock',
                 'google_id' => Str::random(21),
                 'password' => bcrypt(Str::random(16)),
                 'email_verified_at' => now(),
