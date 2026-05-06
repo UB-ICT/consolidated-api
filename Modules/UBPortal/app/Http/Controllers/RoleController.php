@@ -5,6 +5,7 @@ namespace Modules\UBPortal\Http\Controllers;
 use Illuminate\Routing\Controller; // Base controller class for Laravel modules
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\UBPortal\Models\Permission;
 use Modules\UBPortal\Models\Role;
 
 /**
@@ -132,6 +133,55 @@ class RoleController extends Controller
 
         return response()->json([
             'message' => 'Role deleted successfully'
+        ]);
+    }
+
+    /**
+     * Attach permissions to a role without removing existing ones.
+     */
+    public function attachPermissions(Request $request, Role $role): JsonResponse
+    {
+        $data = $request->validate([
+            'permission_ids' => 'required|array|min:1',
+            'permission_ids.*' => 'required|uuid|exists:permissions,id',
+        ]);
+
+        $role->permissions()->syncWithoutDetaching($data['permission_ids']);
+
+        return response()->json([
+            'message' => 'Permissions attached successfully',
+            'role' => $role->load('permissions'),
+        ]);
+    }
+
+    /**
+     * Sync permissions for a role, replacing the current set.
+     */
+    public function syncPermissions(Request $request, Role $role): JsonResponse
+    {
+        $data = $request->validate([
+            'permission_ids' => 'required|array',
+            'permission_ids.*' => 'required|uuid|exists:permissions,id',
+        ]);
+
+        $role->permissions()->sync($data['permission_ids']);
+
+        return response()->json([
+            'message' => 'Permissions synced successfully',
+            'role' => $role->load('permissions'),
+        ]);
+    }
+
+    /**
+     * Detach a single permission from a role.
+     */
+    public function detachPermission(Role $role, Permission $permission): JsonResponse
+    {
+        $role->permissions()->detach($permission->id);
+
+        return response()->json([
+            'message' => 'Permission detached successfully',
+            'role' => $role->load('permissions'),
         ]);
     }
 }

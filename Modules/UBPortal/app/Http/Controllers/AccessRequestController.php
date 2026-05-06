@@ -100,14 +100,24 @@ class AccessRequestController extends Controller
      */
     public function update(Request $request, AccessRequest $accessRequest): JsonResponse
     {
+        $payload = $request->all();
+
+        // Fallback for clients that send raw JSON with incorrect headers.
+        if (empty($payload)) {
+            $decoded = json_decode($request->getContent(), true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+
         // Validate update payload
-        $data = $request->validate([
+        $data = validator($payload, [
             // Request status must be one of these values
             'status' => 'required|string|in:pending,approved,denied',
 
             // Optional notes from administrator/reviewer
             'admin_notes' => 'nullable|string',
-        ]);
+        ])->validate();
 
         // Update request record
         $accessRequest->update($data);
@@ -128,7 +138,7 @@ class AccessRequestController extends Controller
                 ]);
         }
 
-        return response()->json($accessRequest);
+        return response()->json($accessRequest->fresh());
     }
 
     /**

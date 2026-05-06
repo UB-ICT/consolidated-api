@@ -24,6 +24,22 @@ class Permission extends Model
     protected $fillable = ['category', 'action_name'];
 
     /**
+     * Automatically grant newly created permissions to Super Admin.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Permission $permission): void {
+            $superAdmin = Role::query()
+                ->where('role_name', 'Super Admin')
+                ->first();
+
+            if ($superAdmin) {
+                $superAdmin->permissions()->syncWithoutDetaching([$permission->id]);
+            }
+        });
+    }
+
+    /**
      * Roles that include this permission.
      *
      * Uses the role_permissions pivot table.

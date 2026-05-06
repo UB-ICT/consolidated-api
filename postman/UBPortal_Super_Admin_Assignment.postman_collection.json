@@ -1,0 +1,186 @@
+{
+    "info": {
+        "name": "UBPortal - Super Admin Assignment",
+        "description": "Run this collection to assign every existing UBPortal permission to the Super Admin role. It looks up the Super Admin role ID and all permission IDs dynamically, then syncs them in one request.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Find Super Admin Role",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const roles = pm.response.json();",
+                            "const superAdmin = Array.isArray(roles) ? roles.find(role => role.role_name === 'Super Admin') : null;",
+                            "",
+                            "pm.test('Super Admin role exists', function () {",
+                            "    pm.expect(superAdmin).to.be.an('object');",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set('super_admin_role_id', superAdmin.id);",
+                            "console.log('Super Admin role ID: ' + superAdmin.id);",
+                            "postman.setNextRequest('Get All Permission IDs');"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/roles",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "roles"
+                    ]
+                },
+                "description": "Fetch all roles and capture the Super Admin role ID."
+            },
+            "response": []
+        },
+        {
+            "name": "Get All Permission IDs",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const permissions = pm.response.json();",
+                            "const permissionIds = Array.isArray(permissions) ? permissions.map(permission => permission.id) : [];",
+                            "",
+                            "pm.test('Permissions exist', function () {",
+                            "    pm.expect(permissionIds.length).to.be.greaterThan(0);",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set('super_admin_permission_ids', JSON.stringify(permissionIds));",
+                            "console.log('Permission count: ' + permissionIds.length);",
+                            "postman.setNextRequest('Sync All Permissions to Super Admin');"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/permissions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "permissions"
+                    ]
+                },
+                "description": "Fetch all permissions and capture their IDs for the sync request."
+            },
+            "response": []
+        },
+        {
+            "name": "Sync All Permissions to Super Admin",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const roleId = pm.collectionVariables.get('super_admin_role_id');",
+                            "const permissionIds = pm.collectionVariables.get('super_admin_permission_ids');",
+                            "",
+                            "if (!roleId || !permissionIds) {",
+                            "    throw new Error('Missing Super Admin role ID or permission IDs. Run the collection from the beginning.');",
+                            "}"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Super Admin permissions synced successfully', function () {",
+                            "    pm.expect(pm.response.code).to.equal(200);",
+                            "});",
+                            "",
+                            "const response = pm.response.json();",
+                            "const syncedPermissions = response.role && Array.isArray(response.role.permissions) ? response.role.permissions.length : 0;",
+                            "console.log('Super Admin synced permissions: ' + syncedPermissions);",
+                            "postman.setNextRequest(null);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"permission_ids\": {{super_admin_permission_ids}}\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/roles/{{super_admin_role_id}}/permissions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "roles",
+                        "{{super_admin_role_id}}",
+                        "permissions"
+                    ]
+                },
+                "description": "Sync every existing permission to the Super Admin role."
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3031/api/v1/UBPortal",
+            "type": "string",
+            "description": "Base URL for UBPortal API. Override in your environment."
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string",
+            "description": "Bearer token from your login endpoint."
+        }
+    ]
+}

@@ -1,0 +1,182 @@
+{
+    "info": {
+        "name": "UBPortal - Permissions Setup",
+        "description": "Run the collection, not the single Send button. This request loops through the full UBPortal permission catalog and creates one permission per iteration. Requires environment variables: base_url and token.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Bulk Create All Permissions",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const permissions = [",
+                            "    { category: 'User Management', action_name: 'view_users' },",
+                            "    { category: 'User Management', action_name: 'create_users' },",
+                            "    { category: 'User Management', action_name: 'update_users' },",
+                            "    { category: 'User Management', action_name: 'deactivate_users' },",
+                            "    { category: 'User Management', action_name: 'assign_user_roles' },",
+                            "    { category: 'User Management', action_name: 'assign_user_groups' },",
+                            "    { category: 'Application Management', action_name: 'view_applications' },",
+                            "    { category: 'Application Management', action_name: 'create_applications' },",
+                            "    { category: 'Application Management', action_name: 'update_applications' },",
+                            "    { category: 'Application Management', action_name: 'delete_applications' },",
+                            "    { category: 'Application Management', action_name: 'assign_roles_to_applications' },",
+                            "    { category: 'Role Management', action_name: 'view_roles' },",
+                            "    { category: 'Role Management', action_name: 'create_roles' },",
+                            "    { category: 'Role Management', action_name: 'update_roles' },",
+                            "    { category: 'Role Management', action_name: 'delete_roles' },",
+                            "    { category: 'Role Management', action_name: 'assign_permissions_to_roles' },",
+                            "    { category: 'Permission Management', action_name: 'view_permissions' },",
+                            "    { category: 'Permission Management', action_name: 'create_permissions' },",
+                            "    { category: 'Permission Management', action_name: 'update_permissions' },",
+                            "    { category: 'Permission Management', action_name: 'delete_permissions' },",
+                            "    { category: 'Group Management', action_name: 'view_groups' },",
+                            "    { category: 'Group Management', action_name: 'create_groups' },",
+                            "    { category: 'Group Management', action_name: 'update_groups' },",
+                            "    { category: 'Group Management', action_name: 'delete_groups' },",
+                            "    { category: 'Group Management', action_name: 'assign_roles_to_groups' },",
+                            "    { category: 'Group Management', action_name: 'manage_group_members' },",
+                            "    { category: 'Menu Management', action_name: 'view_menu_items' },",
+                            "    { category: 'Menu Management', action_name: 'create_menu_items' },",
+                            "    { category: 'Menu Management', action_name: 'update_menu_items' },",
+                            "    { category: 'Menu Management', action_name: 'delete_menu_items' },",
+                            "    { category: 'Access Requests', action_name: 'view_access_requests' },",
+                            "    { category: 'Access Requests', action_name: 'create_access_requests' },",
+                            "    { category: 'Access Requests', action_name: 'approve_access_requests' },",
+                            "    { category: 'Access Requests', action_name: 'deny_access_requests' },",
+                            "    { category: 'Access Requests', action_name: 'cancel_own_access_requests' },",
+                            "    { category: 'Audit and Security', action_name: 'view_audit_logs' },",
+                            "    { category: 'Audit and Security', action_name: 'export_audit_logs' },",
+                            "    { category: 'Audit and Security', action_name: 'view_security_events' },",
+                            "];",
+                            "",
+                            "pm.collectionVariables.set('ubportal_permissions', JSON.stringify(permissions));",
+                            "",
+                            "let index = parseInt(pm.collectionVariables.get('ubportal_permission_index') || '0', 10);",
+                            "let created = parseInt(pm.collectionVariables.get('ubportal_permissions_created') || '0', 10);",
+                            "let skipped = parseInt(pm.collectionVariables.get('ubportal_permissions_skipped') || '0', 10);",
+                            "let failed = parseInt(pm.collectionVariables.get('ubportal_permissions_failed') || '0', 10);",
+                            "",
+                            "if (!pm.collectionVariables.get('ubportal_bulk_seed_started')) {",
+                            "    index = 0;",
+                            "    created = 0;",
+                            "    skipped = 0;",
+                            "    failed = 0;",
+                            "    pm.collectionVariables.set('ubportal_bulk_seed_started', 'true');",
+                            "    pm.collectionVariables.set('ubportal_permissions_created', '0');",
+                            "    pm.collectionVariables.set('ubportal_permissions_skipped', '0');",
+                            "    pm.collectionVariables.set('ubportal_permissions_failed', '0');",
+                            "}",
+                            "",
+                            "if (index >= permissions.length) {",
+                            "    pm.execution.skipRequest();",
+                            "} else {",
+                            "    pm.collectionVariables.set('ubportal_permission_index', String(index));",
+                            "    pm.variables.set('current_category', permissions[index].category);",
+                            "    pm.variables.set('current_action_name', permissions[index].action_name);",
+                            "    console.log('[RUN] ' + permissions[index].action_name + ' (' + (index + 1) + '/' + permissions.length + ')');",
+                            "}"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const permissions = JSON.parse(pm.collectionVariables.get('ubportal_permissions') || '[]');",
+                            "let index = parseInt(pm.collectionVariables.get('ubportal_permission_index') || '0', 10);",
+                            "let created = parseInt(pm.collectionVariables.get('ubportal_permissions_created') || '0', 10);",
+                            "let skipped = parseInt(pm.collectionVariables.get('ubportal_permissions_skipped') || '0', 10);",
+                            "let failed = parseInt(pm.collectionVariables.get('ubportal_permissions_failed') || '0', 10);",
+                            "const currentAction = pm.variables.get('current_action_name');",
+                            "",
+                            "if (pm.response.code === 201) {",
+                            "    created += 1;",
+                            "    console.log('[OK]   ' + currentAction);",
+                            "} else if (pm.response.code === 422) {",
+                            "    skipped += 1;",
+                            "    console.log('[SKIP] ' + currentAction + ' (already exists)');",
+                            "} else {",
+                            "    failed += 1;",
+                            "    console.log('[FAIL] ' + currentAction + ' - HTTP ' + pm.response.code);",
+                            "}",
+                            "",
+                            "pm.collectionVariables.set('ubportal_permissions_created', String(created));",
+                            "pm.collectionVariables.set('ubportal_permissions_skipped', String(skipped));",
+                            "pm.collectionVariables.set('ubportal_permissions_failed', String(failed));",
+                            "",
+                            "index += 1;",
+                            "",
+                            "if (index < permissions.length) {",
+                            "    pm.collectionVariables.set('ubportal_permission_index', String(index));",
+                            "    postman.setNextRequest(pm.info.requestName);",
+                            "} else {",
+                            "    console.log('--- Bulk Create All Permissions Complete ---');",
+                            "    console.log('Created: ' + created);",
+                            "    console.log('Skipped: ' + skipped);",
+                            "    console.log('Failed: ' + failed);",
+                            "    pm.collectionVariables.unset('ubportal_bulk_seed_started');",
+                            "    pm.collectionVariables.unset('ubportal_permission_index');",
+                            "    postman.setNextRequest(null);",
+                            "    pm.test('Bulk permission seeding finished', function () {",
+                            "        pm.expect(failed).to.equal(0);",
+                            "    });",
+                            "}"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"category\": \"{{current_category}}\",\n    \"action_name\": \"{{current_action_name}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/permissions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "permissions"
+                    ]
+                },
+                "description": "Run this from the collection runner. It will iterate through the full permission catalog and create each permission one at a time. If a permission already exists, it is counted as skipped."
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3031/api/v1/UBPortal",
+            "type": "string",
+            "description": "Base URL for UBPortal API. Override in your environment."
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string",
+            "description": "Bearer token from your login endpoint."
+        }
+    ]
+}
