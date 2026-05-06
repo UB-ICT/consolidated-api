@@ -13,11 +13,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('por_users', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('type');
-            $table->foreignId('cost_center_id')->constrained('cost_centers');
+            $table->foreignUuid('cost_center_id')->constrained('cost_centers');
         });
     }
 

@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('stages', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->foreignId('pipeline_id')->constrained('pipelines');
+            $table->foreignUuid('pipeline_id')->constrained('pipelines');
         });
     }
     /**
