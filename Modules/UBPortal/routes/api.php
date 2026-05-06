@@ -8,8 +8,6 @@ use Modules\UBPortal\Http\Controllers\GroupController;
 use Modules\UBPortal\Http\Controllers\MenuItemController;
 use Modules\UBPortal\Http\Controllers\PermissionController;
 use Modules\UBPortal\Http\Controllers\RoleController;
-use Modules\UBPortal\Http\Controllers\UBPortalController;
-
 /*
  *--------------------------------------------------------------------------
  * API Routes
@@ -21,8 +19,7 @@ use Modules\UBPortal\Http\Controllers\UBPortalController;
  *
 */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('ubportal', UBPortalController::class)->names('ubportal');
+Route::middleware(['auth:sanctum'])->prefix('v1/UBPortal')->group(function () {
     Route::apiResource('applications', ApplicationController::class);
     Route::apiResource('groups', GroupController::class);
     Route::apiResource('roles', RoleController::class);

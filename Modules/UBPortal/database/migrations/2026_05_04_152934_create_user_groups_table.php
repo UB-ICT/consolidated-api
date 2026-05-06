@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Pivot table mapping users to groups.
         Schema::create('user_groups', function (Blueprint $table) {
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('group_id')->constrained('groups')->onDelete('cascade');
+            // Prevent duplicate user-group assignments.
             $table->primary(['user_id', 'group_id']);
         });
     }
@@ -23,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the user-group pivot table.
         Schema::dropIfExists('user_groups');
     }
 };

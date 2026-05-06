@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Pivot table mapping groups to roles.
         Schema::create('group_roles', function (Blueprint $table) {
             $table->foreignUuid('group_id')->constrained('groups')->onDelete('cascade');
             $table->foreignUuid('role_id')->constrained('roles')->onDelete('cascade');
+            // Prevent duplicate group-role assignments.
             $table->primary(['group_id', 'role_id']);
         });
     }
@@ -23,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the group-role pivot table.
         Schema::dropIfExists('group_roles');
     }
 };

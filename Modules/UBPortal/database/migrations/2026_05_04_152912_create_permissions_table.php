@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Stores granular permission actions grouped by category.
         Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('category'); // e.g., 'User Management', 'Finance'
-            $table->string('action_name'); // e.g., 'edit_grades'
+            // Human-friendly grouping such as "User Management".
+            $table->string('category');
+            // Machine-friendly key such as "edit_grades".
+            $table->string('action_name');
             $table->timestamps();
         });
     }
@@ -24,6 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the permissions table.
         Schema::dropIfExists('permissions');
     }
 };

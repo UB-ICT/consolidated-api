@@ -7,21 +7,36 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\UBPortal\Models\AuditLog;
 
+/**
+ * Handles read and create operations for audit logs.
+ *
+ * Audit entries are treated as immutable records to preserve
+ * system activity history for troubleshooting and compliance.
+ */
 class AuditLogController extends Controller
 {
+    /**
+     * Display paginated audit logs.
+     *
+     * Related actor, target, and application records are eager-loaded
+     * to avoid additional queries in API consumers.
+     */
     public function index(): JsonResponse
     {
-        // Use pagination because audit logs can grow into the thousands quickly
+        // Paginate for performance as audit data can grow very quickly.
         $auditLogs = AuditLog::with(['actor', 'target', 'application'])
-            ->latest() // Shortcut for orderBy('created_at', 'desc')
+            // Latest entries first.
+            ->latest()
             ->paginate(50);
 
         return response()->json($auditLogs);
     }
 
     /**
-     * Usually, store() is called internally by the system, 
-     * but having an API endpoint is fine for external app logging.
+     * Store a newly created audit log entry.
+     *
+     * This endpoint supports internal and external producers
+     * that need to record audited actions.
      */
     public function store(Request $request): JsonResponse
     {
@@ -33,17 +48,23 @@ class AuditLogController extends Controller
             'severity'  => 'required|string|in:low,medium,high,critical',
         ]);
 
+        // Persist the immutable audit event.
         $auditLog = AuditLog::create($data);
 
         return response()->json($auditLog, 201);
     }
 
+    /**
+     * Display a specific audit log with related entities.
+     */
     public function show(AuditLog $auditLog): JsonResponse
     {
         return response()->json($auditLog->load(['actor', 'target', 'application']));
     }
 
-    /* NOTE: We purposely exclude update() and destroy() to maintain 
-       the integrity of the audit trail. Data should be immutable.
-    */
+    /**
+     * Update and delete operations are intentionally omitted.
+     *
+     * Audit logs are immutable to protect trail integrity.
+     */
 }

@@ -7,6 +7,7 @@ use Modules\Auth\Database\Seeders\AuthDatabaseSeeder;
 use Modules\RequisitionSystem\Database\Seeders\RequisitionSystemDatabaseSeeder;
 use Modules\UBForms\Database\Seeders\UBFormsDatabaseSeeder;
 use Modules\Xenegrade\Database\Seeders\XenegradeDatabaseSeeder;
+use Modules\UBPortal\Database\Seeders\UBPortalDatabaseSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,7 +20,7 @@ class DatabaseSeeder extends Seeder
             AuthDatabaseSeeder::class,
             RequisitionSystemDatabaseSeeder::class,
             UBFormsDatabaseSeeder::class,
-            'Modules\\UBPortal\\Database\\Seeders\\UBPortalDatabaseSeeder',
+            UBPortalDatabaseSeeder::class,
             XenegradeDatabaseSeeder::class,
         ]);
     }

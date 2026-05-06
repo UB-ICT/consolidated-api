@@ -7,20 +7,38 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\UBPortal\Models\MenuItem;
 
+/**
+ * Handles CRUD operations for portal menu items.
+ *
+ * Menu items can be nested through parent/child relationships
+ * to build hierarchical navigation structures.
+ */
 class MenuItemController extends Controller
 {
+    /**
+     * Display top-level menu items with nested children.
+     *
+     * Root items are loaded first, and each item includes
+     * its role and child menu items.
+     */
     public function index(): JsonResponse
     {
-        // Only get top-level items so the recursive 'children' relationship 
-        // builds the tree correctly without duplicates in the root list.
+        // Load only root items to avoid duplicating child nodes in the top-level list.
         $menuItems = MenuItem::whereNull('parent_id')
-            ->with(['role', 'children']) // 'children' will recursively load sub-menus
+            // Include assigned role and recursively loaded descendants.
+            ->with(['role', 'children'])
             ->orderBy('sort_order')
             ->get();
 
         return response()->json($menuItems);
     }
 
+    /**
+     * Store a newly created menu item.
+     *
+     * Supports optional nesting, role assignment,
+     * and custom sort ordering.
+     */
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -32,16 +50,26 @@ class MenuItemController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
+        // Persist the menu item record.
         $menuItem = MenuItem::create($data);
 
         return response()->json($menuItem, 201);
     }
 
+    /**
+     * Display a specific menu item with related data.
+     */
     public function show(MenuItem $menuItem): JsonResponse
     {
+        // Include role and nested children for detail views/edit screens.
         return response()->json($menuItem->load(['role', 'children']));
     }
 
+    /**
+     * Update an existing menu item.
+     *
+     * Uses partial validation so clients can send only changed fields.
+     */
     public function update(Request $request, MenuItem $menuItem): JsonResponse
     {
         $data = $request->validate([
@@ -53,15 +81,21 @@ class MenuItemController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
+        // Apply validated updates.
         $menuItem->update($data);
 
         return response()->json($menuItem);
     }
 
+    /**
+     * Delete a menu item.
+     *
+     * Child items are removed automatically when cascade delete
+     * is configured on the parent relation.
+     */
     public function destroy(MenuItem $menuItem): JsonResponse
     {
-        // Note: Because of our migration's onDelete('cascade'), 
-        // deleting a parent will automatically delete its children.
+        // Delete the selected menu item.
         $menuItem->delete();
 
         return response()->json(['message' => 'Menu item deleted successfully']);

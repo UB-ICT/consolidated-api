@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Pivot table mapping users to directly assigned roles.
         Schema::create('user_roles', function (Blueprint $table) {
-            $table->uuid('id')->primary(); // Your schema had an ID here, so we keep it
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('role_id')->constrained('roles')->onDelete('cascade');
+            // Prevent duplicate user-role assignments.
+            $table->primary(['user_id', 'role_id']);
         });
     }
 
@@ -23,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the user-role mapping table.
         Schema::dropIfExists('user_roles');
     }
 };

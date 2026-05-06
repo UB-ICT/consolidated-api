@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Tracks user requests for role-based application access.
         Schema::create('access_requests', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('requester_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('app_id')->constrained('applications')->onDelete('cascade');
             $table->foreignUuid('requested_role_id')->constrained('roles')->onDelete('cascade');
 
-            $table->string('status')->default('pending'); // pending, approved, denied
+            // Workflow status such as pending, approved, or denied.
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
     }
@@ -27,6 +29,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the access requests table.
         Schema::dropIfExists('access_requests');
     }
 };

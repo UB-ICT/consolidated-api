@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Stores applications that roles and requests can target.
         Schema::create('applications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('app_name')->unique();
@@ -24,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the applications table.
         Schema::dropIfExists('applications');
     }
 };

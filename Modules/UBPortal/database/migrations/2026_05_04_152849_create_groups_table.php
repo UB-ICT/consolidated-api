@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Stores reusable user group definitions.
         Schema::create('groups', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('group_name')->unique();
@@ -24,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the groups table.
         Schema::dropIfExists('groups');
     }
 };

@@ -438,7 +438,7 @@ class GoogleAuthController extends Controller
 
         if (!$_user) {
             $_user = User::create([
-                'name' => 'Test User',
+                'name' => $request->name ?? 'Mock User',
                 'email' => $request->email,
                 'type' => 'mock',
                 'google_id' => Str::random(21),

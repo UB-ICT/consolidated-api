@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Stores role records used for access control.
         Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('role_name')->unique();
@@ -24,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the roles table.
         Schema::dropIfExists('roles');
     }
 };

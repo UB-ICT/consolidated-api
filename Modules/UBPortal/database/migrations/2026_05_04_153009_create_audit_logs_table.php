@@ -11,23 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Stores immutable audit events for access and security actions.
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            // The "Who"
+            // User who performed the action.
             $table->foreignUuid('actor_id')->nullable()->constrained('users')->onDelete('set null');
 
-            // The "Target" (Who was affected)
+            // User or subject impacted by the action.
             $table->foreignUuid('target_id')->nullable()->constrained('users')->onDelete('set null');
 
-            // The "Where"
+            // Application context where the action occurred.
             $table->foreignUuid('app_id')->nullable()->constrained('applications')->onDelete('set null');
 
-            $table->string('action'); // e.g., "Updated Role", "Deleted Application"
-            $table->string('severity'); // e.g., "low", "medium", "high", "critical"
+            // Action description, for example "Updated Role".
+            $table->string('action');
+            // Severity level such as low, medium, high, or critical.
+            $table->string('severity');
 
             $table->timestamp('created_at')->useCurrent();
-            // Usually audit logs don't need 'updated_at' because they are immutable
+            // updated_at is intentionally omitted to keep records immutable.
         });
     }
 
@@ -36,6 +39,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the audit logs table.
         Schema::dropIfExists('audit_logs');
     }
 };

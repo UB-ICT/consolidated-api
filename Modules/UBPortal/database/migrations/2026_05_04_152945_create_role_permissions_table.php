@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Pivot table mapping roles to permissions.
         Schema::create('role_permissions', function (Blueprint $table) {
             $table->foreignUuid('role_id')->constrained('roles')->onDelete('cascade');
             $table->foreignUuid('permission_id')->constrained('permissions')->onDelete('cascade');
+            // Prevent duplicate role-permission assignments.
             $table->primary(['role_id', 'permission_id']);
         });
     }
@@ -23,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drops the role-permission pivot table.
         Schema::dropIfExists('role_permissions');
     }
 };
