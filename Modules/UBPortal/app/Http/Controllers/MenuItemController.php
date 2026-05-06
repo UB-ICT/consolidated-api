@@ -72,19 +72,29 @@ class MenuItemController extends Controller
      */
     public function update(Request $request, MenuItem $menuItem): JsonResponse
     {
-        $data = $request->validate([
+        $payload = $request->all();
+
+        // Fallback for clients that send raw JSON with incorrect headers.
+        if (empty($payload)) {
+            $decoded = json_decode($request->getContent(), true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+
+        $data = validator($payload, [
             'label'      => 'sometimes|required|string|max:255',
             'path'       => 'sometimes|required|string|max:255',
             'icon'       => 'nullable|string|max:255',
             'role_id'    => 'nullable|uuid|exists:roles,id',
             'parent_id'  => 'nullable|uuid|exists:menu_items,id',
             'sort_order' => 'nullable|integer|min:0',
-        ]);
+        ])->validate();
 
         // Apply validated updates.
         $menuItem->update($data);
 
-        return response()->json($menuItem);
+        return response()->json($menuItem->fresh());
     }
 
     /**
