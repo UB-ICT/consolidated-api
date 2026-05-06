@@ -24,7 +24,7 @@ class Application extends Model
     protected $fillable = ['app_name', 'description'];
 
     /**
-     * Roles associated with this application.
+     * Roles associated with this application. fgh
      *
      * Uses the role_applications pivot table.
      */
