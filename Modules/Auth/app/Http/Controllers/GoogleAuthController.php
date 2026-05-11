@@ -13,6 +13,7 @@ use Google\Client as GoogleClient;
 use Google\Service\Directory as GoogleDirectory;
 use Exception;
 use App\Services\FirestoreService;
+use Modules\UBPortal\Models\MenuItem;
 
 class GoogleAuthController extends Controller
 {
@@ -71,6 +72,11 @@ class GoogleAuthController extends Controller
 
         // Get Google user
         $user = Socialite::driver('google')->stateless()->user();
+
+        // Restrict access to UB email addresses only
+        if (!str_ends_with($user->email, '@ub.edu.bz')) {
+            return redirect($callerDomain . '?error=unauthorized_domain');
+        }
 
         // Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
@@ -404,6 +410,96 @@ class GoogleAuthController extends Controller
             'menus' => $menus,
             'forms' => $forms,
             'tables' => $tables
+        ]);
+    }
+
+    /**
+     * Get UBPortal user info from token.
+     *
+     * Returns the authenticated user's profile along with their
+     * effective roles, permissions, and visible menu items.
+     * Roles and permissions are resolved from both direct assignments
+     * and group memberships.
+     */
+    public function getUbPortalUserInfo(Request $request)
+    {
+        $user = $request->user();
+
+        // Reject unauthenticated requests
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Eager-load roles (with permissions) and groups (with their roles and permissions)
+        // to avoid N+1 queries when resolving the effective access set
+        $user->load([
+            'roles.permissions',
+            'groups.roles.permissions',
+        ]);
+
+        // Roles assigned directly to the user
+        $directRoles = $user->roles;
+
+        // Roles inherited through the user's group memberships
+        $groupRoles = $user->groups->flatMap(function ($group) {
+            return $group->roles;
+        });
+
+        // Merge direct and group roles, removing duplicates by role ID
+        $effectiveRoles = $directRoles
+            ->concat($groupRoles)
+            ->unique('id')
+            ->values();
+
+        // Collect all permissions from effective roles, deduplicated by permission ID
+        $effectivePermissions = $effectiveRoles
+            ->flatMap(function ($role) {
+                return $role->permissions;
+            })
+            ->unique('id')
+            ->values();
+
+        // Extract role IDs to use for menu filtering
+        $roleIds = $effectiveRoles->pluck('id')->all();
+
+        // Fetch top-level menu items (no parent) that are either:
+        // - public (no role_id set), or
+        // - restricted to one of the user's effective roles
+        $menus = MenuItem::query()
+            ->whereNull('parent_id')
+            ->where(function ($query) use ($roleIds) {
+                $query->whereNull('role_id');
+
+                if (!empty($roleIds)) {
+                    $query->orWhereIn('role_id', $roleIds);
+                }
+            })
+            // Eagerly load children with the same role-based visibility logic
+            ->with([
+                'children' => function ($query) use ($roleIds) {
+                    $query->where(function ($childQuery) use ($roleIds) {
+                        $childQuery->whereNull('role_id');
+
+                        if (!empty($roleIds)) {
+                            $childQuery->orWhereIn('role_id', $roleIds);
+                        }
+                    })->orderBy('sort_order');
+                }
+            ])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'user' => [
+                'id'          => $user->id,
+                'name'        => $user->name,
+                'email'       => $user->email,
+                'type'        => $user->type,
+                'groups'      => $user->groups,
+                'roles'       => $effectiveRoles,
+                'permissions' => $effectivePermissions,
+            ],
+            'menus' => $menus,
         ]);
     }
 

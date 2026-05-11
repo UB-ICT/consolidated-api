@@ -20,3 +20,4 @@ Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('a
 Route::get('/v1/user', [GoogleAuthController::class, 'getAnnualReportUserInfo'])->middleware('auth:sanctum');
 Route::post('/v1/auth/mockGoogleLogin', [GoogleAuthController::class, 'mockGoogleLogin']);
 Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo'])->middleware('auth:sanctum');
+Route::get('/v1/ubportal/user', [GoogleAuthController::class, 'getUbPortalUserInfo'])->middleware('auth:sanctum');
