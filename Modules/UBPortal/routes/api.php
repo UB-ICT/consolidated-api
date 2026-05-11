@@ -23,9 +23,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1/UBPortal')->group(function () {
     Route::apiResource('applications', ApplicationController::class);
     Route::apiResource('groups', GroupController::class);
     Route::apiResource('roles', RoleController::class);
-    Route::post('roles/{role}/permissions', [RoleController::class, 'attachPermissions']);
-    Route::put('roles/{role}/permissions', [RoleController::class, 'syncPermissions']);
-    Route::delete('roles/{role}/permissions/{permission}', [RoleController::class, 'detachPermission']);
+    Route::post('roles/{role}/permissions', [RoleController::class, 'attachPermissions']);       // Attach one or more permissions to a role (additive, keeps existing)
+    Route::put('roles/{role}/syncPermissions', [RoleController::class, 'syncPermissions']);         // Replace all permissions on a role with the provided set
+    Route::delete('roles/{role}/permissions/{permission}', [RoleController::class, 'detachPermission']); // Remove a single permission from a role
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('menu-items', MenuItemController::class);
     Route::apiResource('access-requests', AccessRequestController::class);
