@@ -92,7 +92,7 @@ class AccessRequestController extends Controller
 
     /**
      * Update an existing access request.
-     * 
+     *
      * Typically used by administrators to:
      * - approve requests
      * - deny requests
