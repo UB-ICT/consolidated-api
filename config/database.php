@@ -61,12 +61,6 @@ return [
             'sslmode' => 'prefer',
         ],
 
-        'mongodb' => [
-            'driver' => 'mongodb',
-            'dsn' => env('MONGODB_URI'),
-            'database' => env('MONGODB_DATABASE', 'testmongodb'),
-        ],
-
         'firestore' => [
             'driver' => 'mongodb',
             'dsn' => env('MONGODB_URI'),
