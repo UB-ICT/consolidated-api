@@ -7,7 +7,7 @@ services:
             args:
                 WWWGROUP: "${WWWGROUP}"
         image: sail-8.2/app
-        container_name: api-web
+        container_name: consolidated-api-web
         extra_hosts:
             - "host.docker.internal:host-gateway"
         ports:
@@ -31,7 +31,7 @@ services:
             - redis
     pgsql:
         image: "postgres:15"
-        container_name: api-db
+        container_name: consolidated-api-db
         ports:
             # - "${DB_PORT:-5432}:5432"
             - "5432:5432"
@@ -39,9 +39,9 @@ services:
             # Must be non-empty for official postgres image. Defaults match typical Sail local .env.
             # If you still see "superuser password is not specified", set DB_PASSWORD in consolidated-api/.env
             # and run `docker compose` from this directory (or pass --env-file).
-            POSTGRES_DB: "${POSTGRES_DATABASE:-ub}"
-            POSTGRES_USER: "${POSTGRES_USERNAME:-postgres}"
-            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+            POSTGRES_DB: "${PGSQL_DATABASE:-ub}"
+            POSTGRES_USER: "${PGSQL_USERNAME:-postgres}"
+            POSTGRES_PASSWORD: "${PGSQL_PASSWORD:-password}"
         volumes:
             - "sail-pgsql:/var/lib/postgresql/data"
             - "./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql"
@@ -60,7 +60,7 @@ services:
             timeout: 5s
     redis:
         image: "redis:alpine"
-        container_name: api-cache
+        container_name: consolidated-api-cache
         ports:
             - "${FORWARD_REDIS_PORT:-6379}:6379"
         volumes:
