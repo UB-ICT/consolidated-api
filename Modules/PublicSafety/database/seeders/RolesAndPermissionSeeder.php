@@ -27,13 +27,13 @@ class RolesAndPermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
          // Create roles and assign permissions
-         $superAdmin = Role::create(['name' => 'Super Admin']);
+         $superAdmin = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
          $superAdmin->givePermissionTo(Permission::all());
  
-         $admin = Role::create(['name' => 'Admin']);
+         $admin = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
          $admin->givePermissionTo(['create users', 'edit users', 'view users']);
  
-         $staff = Role::create(['name' => 'Staff']);
+         $staff = Role::create(['name' => 'Staff', 'guard_name' => 'web']);
          $staff->givePermissionTo(['view users']);
 
     }
