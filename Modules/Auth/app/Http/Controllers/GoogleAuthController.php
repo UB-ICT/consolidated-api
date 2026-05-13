@@ -42,6 +42,7 @@ class GoogleAuthController extends Controller
             'domain' => $callerDomain
         ]);
 
+        Log::info('State: ' . $state);
         return Socialite::driver('google')
             ->with(['state' => base64_encode($state)])
             ->redirect();
@@ -112,7 +113,8 @@ class GoogleAuthController extends Controller
         // Create ONE token with multiple abilities
         $token = $_user->createToken('google-login', $abilities)->plainTextToken;
 
-        $this->instantiateCourseEvaluation($_user->email);
+        $this->instantiateCourseMonitoring($_user->email);
+        Log::info('Token created: ' . $token . ' for user: ' . $_user->email . ' and system: ' . $system);
 
         // 10. Build response redirect using caller domain
         return redirect($callerDomain . '?token=' . $token . '&access_token=' . $token . '&system=' . $system);
@@ -414,6 +416,7 @@ class GoogleAuthController extends Controller
     }
 
     /**
+<<<<<<< HEAD
      * Get UBPortal user info from token.
      *
      * Returns the authenticated user's profile along with their
@@ -426,10 +429,19 @@ class GoogleAuthController extends Controller
         $user = $request->user();
 
         // Reject unauthenticated requests
+=======
+     * Return authenticated user for a valid Sanctum token.
+     */
+    public function user(Request $request)
+    {
+        $user = $request->user();
+
+>>>>>>> dev
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+<<<<<<< HEAD
         // Eager-load roles (with permissions) and groups (with their roles and permissions)
         // to avoid N+1 queries when resolving the effective access set
         $user->load([
@@ -501,6 +513,9 @@ class GoogleAuthController extends Controller
             ],
             'menus' => $menus,
         ]);
+=======
+        return response()->json($user);
+>>>>>>> dev
     }
 
 
@@ -547,8 +562,8 @@ class GoogleAuthController extends Controller
         Auth::login($_user);
         $token = $_user->createToken('postman-login')->plainTextToken;
 
-        // Instantiate courseEvaluation record for the user
-        $this->instantiateCourseEvaluation($_user->email);
+        // Instantiate courseMonitoring record for the user
+        $this->instantiateCourseMonitoring($_user->email);
 
         return response()->json([
             'token' => $token,
@@ -557,14 +572,14 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * Instantiate courseEvaluation record for a user
+     * Instantiate courseMonitoring record for a user
      * Creates the document if it doesn't exist
      */
-    private function instantiateCourseEvaluation(string $email)
+    private function instantiateCourseMonitoring(string $email)
     {
         try {
             $firestore = FirestoreService::firestore();
-            $collectionName = 'courseEvaluation';
+            $collectionName = 'cmon_courseMonitoring';
             $docRef = $firestore->collection($collectionName)->document($email);
             $snapshot = $docRef->snapshot();
 

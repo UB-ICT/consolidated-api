@@ -90,7 +90,7 @@ class XenegradeController extends Controller
             }
 
             $spreadsheetId = env('GOOGLE_SHEET_ID'); // Add your sheet ID to .env
-            $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
+            $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
 
             if (!$spreadsheetId) {
                 Log::error('Google Sheet ID not configured for email role check', ['email' => $email]);
@@ -149,7 +149,7 @@ class XenegradeController extends Controller
             }
 
             $spreadsheetId = env('GOOGLE_SHEET_ID');
-            $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
+            $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
 
             if (!$spreadsheetId) {
                 Log::error('Google Sheet ID not configured for coordinator courses', ['email' => $email]);
@@ -185,8 +185,9 @@ class XenegradeController extends Controller
 
     /**
      * Get courses by program coordinator email
-     * Returns courseCode, courseId (alias for courseCode), courseSection, and courseName (as courseTitle)
-     * Only returns courses that don't have a CourseCoordinator assigned
+     * Returns courseCode, courseId (alias for courseCode), courseSection, and courseName (as courseTitle).
+     * Includes only rows with no CourseCoordinator, matching program coordinator email, and exactly one section
+     * for the same course code within the same academic year and semester (per the sheet).
      * 
      * @param Request $request
      * @param string $email
@@ -209,7 +210,7 @@ class XenegradeController extends Controller
             }
 
             $spreadsheetId = env('GOOGLE_SHEET_ID');
-            $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
+            $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
 
             if (!$spreadsheetId) {
                 Log::error('Google Sheet ID not configured for program coordinator courses', ['email' => $email]);

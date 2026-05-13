@@ -14,7 +14,7 @@ use Google\Cloud\Firestore\FirestoreClient;
 
 class CourseEvaluationController extends Controller
 {
-    protected $collectionName = 'courseEvaluation';
+    protected $collectionName = 'cmon_courseMonitoring';
 
     /**
      * Get course evaluation for a lecturer
@@ -83,6 +83,8 @@ class CourseEvaluationController extends Controller
             // Find course in array
             $courseIndex = $this->findCourseIndex($courses, $courseCode, $courseSection, $academicYear, $semester);
 
+            Log::info("courseIndex: " . $courseIndex);
+
             if ($courseIndex === -1) {
                 // Course doesn't exist, create it with default values from Google Sheet
                 $defaultCourse = $this->getDefaultCourseData($courseCode, $courseSection, $academicYear, $semester);
@@ -118,7 +120,7 @@ class CourseEvaluationController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'courseDetails' => 'sometimes|array',
-                'CourseEvaluation' => 'sometimes|array',
+                'courseEvaluation' => 'sometimes|array',
                 'assessmentOfLearningOutcomes' => 'sometimes|array',
                 'studentResults' => 'sometimes|array',
                 'resourcesAndFacilities' => 'sometimes|array',
@@ -319,7 +321,7 @@ class CourseEvaluationController extends Controller
     private function getDefaultCourseData(string $courseCode, string $courseSection, string $academicYear, string $semester): array
     {
         $spreadsheetId = env('GOOGLE_SHEET_ID');
-        $range = env('GOOGLE_SHEET_RANGE', 'Sheet2!A1:Z2000');
+        $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
 
         if (!$spreadsheetId) {
             return $this->getEmptyCourseStructure($courseCode, $courseSection, $academicYear, $semester);
@@ -353,9 +355,9 @@ class CourseEvaluationController extends Controller
         $numberOfStudentsStarting = $getValue($courseData, ['NumberOfStudentsStarting']);
         $numberOfStudentsCompleting = $getValue($courseData, ['NumberOfStudentsCompleting']);
         $distributionOfGrades = $getValue($courseData, ['DistributionOfGrades']);
-        // Get roles for the course
+        // Get roles for the course 
         // $roles = GoogleSheetService::checkEmailRoles($spreadsheetId, $range, $instructorEmail);
-
+        
         return [
             'courseCoordinator' => $getValue($courseData, ['CourseCoordinator']),
             'programCoordinator' => $getValue($courseData, ['ProgramCoordinator']),
@@ -377,7 +379,7 @@ class CourseEvaluationController extends Controller
                 'academicYear' => $academicYear,
                 'semester' => $semester,
             ],
-            'CourseEvaluation' => [
+            'courseEvaluation' => [
                 'coverageOfPlannedProgram' => '',
                 'consequencesForNonCoverageOfTopics' => '',
                 'effectivenessOfPlannedTeachingStrategiesForIntededLearningOutcomes' => '',
@@ -386,7 +388,7 @@ class CourseEvaluationController extends Controller
             'assessmentOfLearningOutcomes' => [
                 'tableOfSpecifications' => '',
             ],
-            'StudentResults' => [
+            'studentResults' => [
                 'numberofStudentsStarting' => $numberOfStudentsStarting,
                 'numberofStudentsCompleting' => $numberOfStudentsCompleting,
                 'distributionOfGrades' => $distributionOfGrades,
@@ -397,21 +399,21 @@ class CourseEvaluationController extends Controller
                 'verificationFromPlannedAssessmentProcesses' => '',
                 'verificationOfStandardAchievement' => '',
             ],
-            'ResourcesAndFacilities' => [
+            'resourcesAndFacilities' => [
                 'useOfRequiredTextsAndOtherResources' => '',
                 'difficultiesInAccessingResourcesOrFacilities' => '',
                 'consequencesOfDifficulties' => '',
             ],
-            'AdministrativeIssues' => [
+            'administrativeIssues' => [
                 'organizationalOrAdministrativeDifficulties' => '',
                 'effectOfDifficultiesOnStudentLearning' => '',
             ],
-            'PlanningForImprovement' => [
+            'planningForImprovement' => [
                 'actionPlanForNextTimeTheCourseIsTaught' => '',
                 'recommentationsForCourseCoordinatorOrChair' => '',
                 'RecommendationsForProfessionalDevelopmentForTheInstructor' => '',
             ],
-            'Appendix' => [
+            'appendix' => [
                 'documents' => []
             ],
         ];
@@ -446,7 +448,7 @@ class CourseEvaluationController extends Controller
                 'semester' => $semester,
                 'dateOfReport' => null,
             ],
-            'CourseEvaluation' => [
+            'courseEvaluation' => [
                 'coverageOfPlannedProgram' => '',
                 'consequencesForNonCoverageOfTopics' => '',
                 'effectivenessOfPlannedTeachingStrategiesForIntededLearningOutcomes' => '',
@@ -455,7 +457,7 @@ class CourseEvaluationController extends Controller
             'assessmentOfLearningOutcomes' => [
                 'tableOfSpecifications' => '',
             ],
-            'StudentResults' => [
+            'studentResults' => [
                 'numberofStudentsStarting' => 0,
                 'numberofStudentsCompleting' => 0,
                 'distributionOfGrades' => '',
@@ -466,16 +468,16 @@ class CourseEvaluationController extends Controller
                 'verificationFromPlannedAssessmentProcesses' => '',
                 'verificationOfStandardAchievement' => '',
             ],
-            'ResourcesAndFacilities' => [
+            'resourcesAndFacilities' => [
                 'useOfRequiredTextsAndOtherResources' => '',
                 'difficultiesInAccessingResourcesOrFacilities' => '',
                 'consequencesOfDifficulties' => '',
             ],
-            'AdministrativeIssues' => [
+            'administrativeIssues' => [
                 'organizationalOrAdministrativeDifficulties' => '',
                 'effectOfDifficultiesOnStudentLearning' => '',
             ],
-            'PlanningForImprovement' => [
+            'planningForImprovement' => [
                 'actionPlanForNextTimeTheCourseIsTaught' => '',
                 'recommentationsForCourseCoordinatorOrChair' => '',
                 'RecommendationsForProfessionalDevelopmentForTheInstructor' => '',
@@ -551,10 +553,10 @@ class CourseEvaluationController extends Controller
             $fileName = Str::random(40) . '.' . $extension;
             
             // Store file
-            $filePath = $file->storeAs('uploads/courseEvaluation', $fileName, 'private');
+            $filePath = $file->storeAs('uploads/courseMonitoring', $fileName, 'private');
             
             // Generate path for storage (relative to storage/app/private)
-            $storagePath = 'uploads/courseEvaluation/' . $fileName;
+            $storagePath = 'uploads/courseMonitoring/' . $fileName;
             
             // Get existing course
             $existingCourse = $courses[$courseIndex];
