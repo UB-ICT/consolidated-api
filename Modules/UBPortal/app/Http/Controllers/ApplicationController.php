@@ -15,6 +15,13 @@ use Modules\UBPortal\Models\Application;
  */
 class ApplicationController extends Controller
 {
+    public function applicationCount(): JsonResponse
+    {
+        return response()->json([
+            'total' => Application::count(),
+        ]);
+    }
+
     /**
      * Display all applications.
      *
