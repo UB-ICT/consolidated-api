@@ -150,33 +150,45 @@ class GoogleAuthController extends Controller
             // Create Directory service
             $service = new GoogleDirectory($client);
 
-            // Define relevant groups to check (you can expand this list)
-            $relevantGroups = [
-                'api_annual_report_Developers@ub.edu.bz',
-                'api_annual_report_HR@ub.edu.bz',
-                'api_annual_report_Finance@ub.edu.bz',
-                'api_annual_report_Records@ub.edu.bz',
-                'api_annual_report_Directors@ub.edu.bz',
-                'api_annual_report_Admin@ub.edu.bz',
-                'api_annual_report_Deans@ub.edu.bz',
-                'api_public_safety_Admin@ub.edu.bz', //Chief Public Safety Officer, and Supervisor
-                'api_public_safety_Security@ub.edu.bz', //Shift Supervisors
-                'api_public_safety_Officer@ub.edu.bz',  //public Safety officers
-            ];
+            $relevantGroups = array_flip([
+                'api_annual_report_developers@ub.edu.bz',
+                'api_annual_report_hr@ub.edu.bz',
+                'api_annual_report_finance@ub.edu.bz',
+                'api_annual_report_records@ub.edu.bz',
+                'api_annual_report_directors@ub.edu.bz',
+                'api_annual_report_admin@ub.edu.bz',
+                'api_annual_report_deans@ub.edu.bz',
+                'api_public_safety_admin@ub.edu.bz',
+                'api_public_safety_security@ub.edu.bz',
+                'api_public_safety_officer@ub.edu.bz',
+            ]);
 
-
+            // One API call per page to list user groups, then filter locally.
             $userGroups = [];
+            $pageToken = null;
 
-            // Check if user is a member of any relevant group
-            foreach ($relevantGroups as $groupEmail) {
-                try {
-                    $service->members->get($groupEmail, $email);
-                    $userGroups[] = $groupEmail;
-                } catch (Exception $e) {
-                    // User is not a member of this group, continue
-                    continue;
+            do {
+                $params = [
+                    'userKey' => $email,
+                    'maxResults' => 200,
+                ];
+
+                if ($pageToken) {
+                    $params['pageToken'] = $pageToken;
                 }
-            }
+
+                $result = $service->groups->listGroups($params);
+
+                foreach ($result->getGroups() ?? [] as $group) {
+                    $groupEmail = strtolower($group->getEmail());
+                    if (isset($relevantGroups[$groupEmail])) {
+                        $userGroups[] = $groupEmail;
+                    }
+                }
+
+                $pageToken = $result->getNextPageToken();
+            } while ($pageToken);
+
             return $userGroups;
         } catch (Exception $e) {
             Log::error('Error getting user mailing groups for ' . $email . ': ' . $e->getMessage());

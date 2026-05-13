@@ -115,8 +115,15 @@ class PublicSafetyAuthController extends Controller
             // 6. Create Sanctum token
             $token = $user->createToken('public-safety-token', ['access-public-safety'])->plainTextToken;
 
-            // 7. Initialize Firestore
-            $this->createPublicSafetyProfile($user->email);
+            // 7. Initialize Firestore (non-blocking — failure must not prevent login)
+            try {
+                $this->createPublicSafetyProfile($user->email);
+            } catch (\Exception $e) {
+                Log::warning('Firestore profile creation failed (non-fatal)', [
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // 8. Redirect with token
             $frontendUrl = rtrim(config('app.public_safety_frontend'), '/');
