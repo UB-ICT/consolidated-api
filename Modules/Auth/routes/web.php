@@ -35,4 +35,5 @@ Route::middleware(['web'])->group(function () {
 Route::prefix('api')->middleware('auth:sanctum')->group(function () {
     // Route::get('/user', [GoogleAuthController::class, 'getAnnualReportUserInfo']);
     // Route::get('/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo']);
+    Route::get('/user', [GoogleAuthController::class, 'user']);
 });
