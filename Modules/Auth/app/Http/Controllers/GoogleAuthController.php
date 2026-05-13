@@ -416,7 +416,6 @@ class GoogleAuthController extends Controller
     }
 
     /**
-<<<<<<< HEAD
      * Get UBPortal user info from token.
      *
      * Returns the authenticated user's profile along with their
@@ -429,19 +428,10 @@ class GoogleAuthController extends Controller
         $user = $request->user();
 
         // Reject unauthenticated requests
-=======
-     * Return authenticated user for a valid Sanctum token.
-     */
-    public function user(Request $request)
-    {
-        $user = $request->user();
-
->>>>>>> dev
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-<<<<<<< HEAD
         // Eager-load roles (with permissions) and groups (with their roles and permissions)
         // to avoid N+1 queries when resolving the effective access set
         $user->load([
@@ -513,9 +503,6 @@ class GoogleAuthController extends Controller
             ],
             'menus' => $menus,
         ]);
-=======
-        return response()->json($user);
->>>>>>> dev
     }
 
 
