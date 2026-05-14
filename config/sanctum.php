@@ -15,13 +15,22 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1, http://127.0.0.1:5173/,  http://127.0.0.1:5173/, http://localhost:5173/, http://127.0.0.1:8088',
-        'https://api.ub.edu.bz',
-        'http://localhost:5174',
-        Sanctum::currentApplicationUrlWithPort()
-    ))),
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', implode(',', array_unique(array_filter([
+        'localhost',
+        'localhost:3000',
+        'localhost:5173',
+        'localhost:5174',
+        'localhost:8088',
+        '127.0.0.1',
+        '127.0.0.1:8000',
+        '127.0.0.1:5173',
+        '127.0.0.1:5174',
+        '127.0.0.1:8088',
+        '::1',
+        'api.ub.edu.bz',
+        'forms.ub.edu.bz',
+        'ceval.ub.edu.bz',
+    ], static fn ($host) => is_string($host) && $host !== ''))) . Sanctum::currentApplicationUrlWithPort())),
 
     /*
     |--------------------------------------------------------------------------

@@ -34,7 +34,7 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'api-db'),
+            'host' => env('DB_HOST', 'consolidated-api-db'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('PGSQL_DATABASE', 'ub'),
             'username' => env('PGSQL_USERNAME', 'postgres'),

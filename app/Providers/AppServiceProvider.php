@@ -11,7 +11,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $ensure = base_path('scripts/ensure-storage-dirs.php');
+        if (is_file($ensure)) {
+            require $ensure;
+        }
     }
 
     /**

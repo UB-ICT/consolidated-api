@@ -28,10 +28,9 @@ class CourseEvaluationController extends Controller
             $snapshot = $docRef->snapshot();
 
             if (!$snapshot->exists()) {
-                // Create document with empty courses array
+                // Omit `courses` until first course; readers use courses ?? [].
                 $docRef->set([
                     'email' => $email,
-                    'courses' => []
                 ]);
                 return response()->json([
                     'success' => true,
@@ -72,7 +71,6 @@ class CourseEvaluationController extends Controller
             if (!$snapshot->exists()) {
                 $docRef->set([
                     'email' => $email,
-                    'courses' => []
                 ]);
                 $courses = [];
             } else {

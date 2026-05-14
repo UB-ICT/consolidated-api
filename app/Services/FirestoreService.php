@@ -1,13 +1,14 @@
 <?php
 
 // app/Services/FirestoreService.php
-//Purpose: Handles all direct interactions with Google Cloud Firestore
+// Purpose: Firebase database access via the Firestore API (google-cloud-firestore).
 
 namespace App\Services;
 
 use Google\Cloud\Firestore\FirestoreClient;
 use Google\Cloud\Firestore\DocumentReference;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class FirestoreService
 {
@@ -16,13 +17,94 @@ class FirestoreService
     private final function __construct() {}
 
 
+    /**
+     * @throws InvalidArgumentException when credentials JSON is missing or not a Google service account key
+     */
+    protected static function assertFirebaseDatabaseKeyFile(string $absolutePath): void
+    {
+        if (! is_readable($absolutePath)) {
+            throw new InvalidArgumentException(
+                "Firebase database credentials file is missing or not readable: {$absolutePath}. "
+                .'Set FIREBASE_DATABASE_CREDENTIALS_PATH to a *service account* JSON under storage/ (e.g. app/ubapps-firestore-service-account.json), '
+                .'or rely on GOOGLE_SERVICE_ACCOUNT_CREDENTIALS when the database is in the same GCP project. '
+                .'(Legacy: FIRESTORE_CREDENTIALS_PATH is still read.)'
+            );
+        }
+
+        $raw = file_get_contents($absolutePath);
+        if ($raw === false || trim($raw) === '') {
+            throw new InvalidArgumentException("Firebase database credentials file is empty: {$absolutePath}");
+        }
+
+        $json = json_decode($raw, true);
+        if (! is_array($json)) {
+            throw new InvalidArgumentException(
+                "Firebase database credentials file is not valid JSON: {$absolutePath}"
+            );
+        }
+
+        if (! array_key_exists('type', $json)) {
+            $hint = isset($json['web'])
+                ? ' This file looks like a Firebase *web* / OAuth client (top-level "web" key). The server needs a *service account* JSON from Firebase / IAM (top-level "type": "service_account").'
+                : '';
+
+            throw new InvalidArgumentException(
+                'Google credentials JSON is missing the required "type" field.'
+                .$hint
+                ." Check FIREBASE_DATABASE_CREDENTIALS_PATH or GOOGLE_SERVICE_ACCOUNT_CREDENTIALS (resolved to {$absolutePath})."
+            );
+        }
+
+        if (($json['type'] ?? '') !== 'service_account') {
+            throw new InvalidArgumentException(
+                'Firebase database access expects a service account key (type = service_account). Got type "'
+                .(string) ($json['type'] ?? '')
+                ."\" in {$absolutePath}"
+            );
+        }
+
+        $privateKey = $json['private_key'] ?? null;
+        if (! is_string($privateKey) || trim($privateKey) === '') {
+            throw new InvalidArgumentException(
+                "Service account JSON at {$absolutePath} has no usable private_key. Regenerate the key in Firebase / Google Cloud Console."
+            );
+        }
+        if (extension_loaded('openssl') && openssl_pkey_get_private($privateKey) === false) {
+            throw new InvalidArgumentException(
+                "private_key in {$absolutePath} is not valid PEM (corrupted file, bad line endings, or truncated). "
+                .'Regenerate a new JSON key and redeploy; do not paste the key through tools that strip newlines.'
+            );
+        }
+
+        $keyProject = isset($json['project_id']) ? (string) $json['project_id'] : '';
+        $envProject = config('firebase.database_project_id');
+        $envProject = is_string($envProject) ? trim($envProject) : '';
+        if ($keyProject !== '' && $envProject !== '' && $keyProject !== $envProject) {
+            throw new InvalidArgumentException(
+                "Firebase project (FIREBASE_PROJECT_ID / GOOGLE_CLOUD_PROJECT_ID = {$envProject}) does not match project_id in the key file ({$keyProject}). "
+                .'Mismatch causes PERMISSION_DENIED. Use a service account JSON from the same GCP project as your Firebase database.'
+            );
+        }
+    }
+
     protected static function initializeFirestore()
     {
         if (is_null(self::$firestore)) {
 
+            $keyPath = config('firebase.database_key_path');
+            self::assertFirebaseDatabaseKeyFile($keyPath);
+
+            $projectId = config('firebase.database_project_id');
+            if (! is_string($projectId) || trim($projectId) === '') {
+                throw new InvalidArgumentException(
+                    'Firebase project ID is not set. Set FIREBASE_PROJECT_ID or GOOGLE_CLOUD_PROJECT_ID in .env '
+                    .'(e.g. ubapps-450f8). Legacy: FIRESTORE_PROJECT_ID is still read.'
+                );
+            }
+
             self::$firestore = new FirestoreClient([
-                'projectId' => env('GOOGLE_CLOUD_PROJECT_ID'),
-                'keyFilePath' => storage_path(env('FIREBASE_CREDENTIALS_PATH'))
+                'projectId' => trim($projectId),
+                'keyFilePath' => $keyPath,
             ]);
         }
     }
@@ -51,7 +133,7 @@ class FirestoreService
 
             return $result;
         } catch (\Exception $e) {
-            Log::error('Error retrieving collection from Firestore', [
+            Log::error('Error retrieving collection from Firebase database', [
                 'collection' => $collectionName,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -80,7 +162,7 @@ class FirestoreService
 
             return $results;
         } catch (\Exception $e) {
-            Log::error("Firestore getCollectionWhere error: " . $e->getMessage());
+            Log::error('Firebase database getCollectionWhere error: '.$e->getMessage());
             return [];
         }
     }

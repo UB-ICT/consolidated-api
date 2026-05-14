@@ -18,7 +18,7 @@ class GoogleSheetService
     {
         if (is_null(self::$service)) {
             $client = new Client();
-            $client->setAuthConfig(storage_path(env('GOOGLE_SHEET_CREDENTIALS')));
+            $client->setAuthConfig(config('google.service_account_key_path'));
             $client->addScope(Sheets::SPREADSHEETS_READONLY);
             self::$service = new Sheets($client);
         }
@@ -87,14 +87,14 @@ class GoogleSheetService
     public static function checkEmailRoles(string $spreadsheetId, string $range, string $email): array
     {
         $isVP = false;
-        if ($email == 'senrique.munoz@ub.edu.bz' || $email == 'luis.herrera@ub.edu.bz') {
-            $isVP = false;
+        if ($email == 'senrique.munoz@ub.edu.bz' || $email == 'luis.herrera@ub.edu.bz' || $email == 'mteck@ub.edu.bz') {
+            $isVP = true;
         }
 
         $defaultResult = [
             'lecturer' => false,
             'courseCoordinator' => false,
-            'programCoordinator' => true,
+            'programCoordinator' => false,
             'chair' => false,
             'dean' => false,
             'VP' => $isVP,

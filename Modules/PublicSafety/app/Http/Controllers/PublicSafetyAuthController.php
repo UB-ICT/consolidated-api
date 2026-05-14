@@ -178,9 +178,7 @@ class PublicSafetyAuthController extends Controller
              * Initialize Google Client using service account
              */
             $client = new GoogleClient();
-            $client->setAuthConfig(
-                storage_path('app/google-service-account.json')
-            );
+            $client->setAuthConfig(config('google.service_account_key_path'));
 
             /**
              * Required scopes to read users & group membership
