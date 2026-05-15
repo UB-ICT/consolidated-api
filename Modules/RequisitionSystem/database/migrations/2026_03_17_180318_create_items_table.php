@@ -13,14 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('items', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('description');
             $table->integer('quantity');
             $table->integer('line_item_number');
             $table->decimal('unit_cost', 10, 2);
             $table->decimal('total', 10, 2);
             $table->string('comments')->nullable();
-            $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
+            $table->foreignUuId('requisition_id')->constrained('requisitions')->onDelete('cascade');
         });
     }
 

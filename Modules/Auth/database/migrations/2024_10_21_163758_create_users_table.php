@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id(); // Standard auto-incrementing primary key (no need for ->unique() as id() is already unique)
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('guid')->nullable();
@@ -19,31 +19,12 @@ return new class extends Migration {
             $table->string('password')->nullable();
             $table->string('profile_picture')->nullable();
             $table->integer('menu_id')->nullable();
-
-            // Changed to unsignedBigInteger for consistency
-            $table->unsignedBigInteger('user_status_id')->nullable();
-            $table->unsignedBigInteger('role_id')->nullable();
-
-            // Changed from uuid to unsignedBigInteger
-            $table->unsignedBigInteger('campus_id')->nullable();
-
+            $table->string('type');
+            $table->string('department')->nullable();
+            $table->string('status')->default('active');
+            $table->timestamp('last_active')->nullable();
+            $table->uuid('cost_center_id')->nullable();
             $table->timestamps();
-
-            // Foreign key constraints
-            $table->foreign('campus_id')
-                ->references('id')
-                ->on('campuses')
-                ->onDelete('cascade');
-
-            $table->foreign('role_id')
-                ->references('id')
-                ->on('roles')
-                ->onDelete('cascade');
-
-            $table->foreign('user_status_id')
-                ->references('id')
-                ->on('user_statuses')
-                ->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

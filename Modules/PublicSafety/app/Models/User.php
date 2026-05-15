@@ -22,7 +22,7 @@ class User extends Authenticatable implements LdapAuthenticatable
      *
      * @var array
      */
-    protected $connection = 'pgsql';
+    protected $connection = 'porsql';
     protected $keyType = 'string';
     public $incrementing = false;
     protected $fillable = [

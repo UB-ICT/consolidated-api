@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller;
 // use LdapRecord\Connection;
 use LdapRecord\Container;
-use Modules\PublicSafety\Models\User;
+use Modules\Auth\Models\User;
 use Exception;
 
 class AuthController extends Controller
@@ -72,25 +72,25 @@ class AuthController extends Controller
         try {
             // Get the default LDAP connection
             $connection = Container::getDefaultConnection();
-            
+
             // Search for user using sAMAccountName
             $filter = "(sAMAccountName=$username)";
             $baseDN = config('ldap.connections.default.base_dn');
-            
+
             $result = $connection->query()
                 ->setDn($baseDN)
                 ->rawFilter($filter)
                 ->get();
-            
+
             // Check if result is empty
             if (empty($result) || (is_array($result) && count($result) === 0)) {
                 return [];
             }
-            
+
             // Get the first user entry (handle both array and object)
             $user = is_array($result) ? $result[0] : $result->first();
             $groups = [];
-            
+
             // Get user's groups from memberOf attribute
             if ($user) {
                 // Handle array format (raw LDAP result)
@@ -112,7 +112,7 @@ class AuthController extends Controller
                     }
                 }
             }
-            
+
             return $groups;
 
         } catch (Exception $e) {

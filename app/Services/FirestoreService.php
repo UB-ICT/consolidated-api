@@ -13,7 +13,9 @@ class FirestoreService
 {
     protected static $firestore;
 
-    private final function __construct() {}
+    private final function __construct()
+    {
+    }
 
 
     protected static function initializeFirestore()
@@ -172,6 +174,41 @@ class FirestoreService
         }
 
         return null;
+    }
+
+    public static function countWhere(string $collection, string $field, string $operator, $value): int
+    {
+        self::initializeFirestore();
+
+        $query = self::$firestore->collection($collection)
+            ->where($field, $operator, $value);
+
+        $count = 0;
+
+        foreach ($query->documents() as $document) {
+            if ($document->exists()) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    public static function count(string $collection): int
+    {
+        self::initializeFirestore();
+
+        $documents = self::$firestore->collection($collection)->documents();
+
+        $count = 0;
+
+        foreach ($documents as $document) {
+            if ($document->exists()) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     //----------------------------------------------------------menu-----------------------------------------

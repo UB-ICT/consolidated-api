@@ -67,7 +67,7 @@ class FileUploadController extends Controller
         }
     }
 
-    public function uploadSignatureCanvas(Request $request, string $reportID)
+    public function uploadSignatureCanvas(Request $request)
     {
         try {
             if (!$request->filled('signature')) {
@@ -120,7 +120,7 @@ class FileUploadController extends Controller
 
 
 
-    public function downloadPublicSafetyFile(Request $request, string $fileType, string $fileName)
+    public function downloadPublicSafetyFile(string $fileType, string $fileName)
     {
         try {
             $filePath = storage_path('app/private/uploads/' . $fileType . '/' . $fileName);

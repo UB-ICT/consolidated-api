@@ -16,7 +16,7 @@ use LdapRecord\Laravel\Auth\HasLdapUser;
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    protected $connection = 'pgsql';
+    protected $connection = 'porsql';
     protected $collection = 'users'; // Specify the collection name if different from the default
 
     //use HasFactory, Notifiable;

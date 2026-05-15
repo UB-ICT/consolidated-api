@@ -386,7 +386,8 @@ class LostPropertyController extends Controller
             if (is_array($lostProperty)) {
                 foreach ($lostProperty as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
@@ -422,7 +423,8 @@ class LostPropertyController extends Controller
             if (is_array($lostProperty)) {
                 foreach ($lostProperty as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
@@ -458,7 +460,8 @@ class LostPropertyController extends Controller
             if (is_array($lostProperty)) {
                 foreach ($lostProperty as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {

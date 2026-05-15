@@ -4,9 +4,7 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BombController extends Controller
@@ -46,20 +44,19 @@ class BombController extends Controller
                 'officeNumberReceiveCalls' => '',
                 'personReceiveCalls' => '',
                 'accentRegion' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
                 'uploadedBy' => $request->user()->name ?? '',
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
             ];
-
-            Log::info('Initializing Bomb: ', $defaultBomb);
         } catch (\Exception $e) {
         }
         $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $defaultBomb);
         return array_merge($defaultBomb, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $bombReport = FirestoreService::getCollection($this->collectionName);
@@ -115,12 +112,14 @@ class BombController extends Controller
                 'officeNumberReceiveCalls' => 'required|string',
                 'personReceiveCalls' => 'required|string',
                 'accentRegion' => 'required|string',
+
                 'formSubmitted' => 'required|boolean',
                 'uploadedBy' => 'required|string',
             ]);
 
             // Prepare the data to save
             $bombData = $request->all();
+            $bombData['isRead'] = false;
             $bombData['created_at'] = now()->toDateTimeString();
             $bombData['updated_at'] = now()->toDateTimeString();
 
@@ -153,7 +152,7 @@ class BombController extends Controller
     }
 
     //read
-    public function show(Request $request, string $bombReportID)
+    public function show(string $bombReportID)
     {
         try {
             $bombReport = FirestoreService::getDocument($this->collectionName, $bombReportID);
@@ -178,7 +177,7 @@ class BombController extends Controller
             ];
         }
         // Return response with HTTP status code 201 (Created)
-        return response()->json($bombReport, 200);
+        return response()->json($response, 200);
     }
 
     //update
@@ -218,6 +217,7 @@ class BombController extends Controller
                 'additionalInformation',
                 'officeNumberReceiveCalls',
                 'personReceiveCalls',   // personReceiveCalls
+                'isRead',
                 'formSubmitted',
                 'uploadedBy',
             ]);
@@ -235,8 +235,6 @@ class BombController extends Controller
                     'message' => 'Bomb threat updated successfully',
                     'data' => $updatedReport
                 ];
-
-                Log::info('Updated Bomb threat: ', $updatedReport);
             } else {
                 $response = [
                     'success' => false,
@@ -245,7 +243,6 @@ class BombController extends Controller
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Bomb threat update error: ' . $e->getMessage());
             $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -290,12 +287,11 @@ class BombController extends Controller
 
     /**
      * Generate a sequential case number (Firestore-safe)
-     * Format: INC-YYYYMMDD-0001
+     * Format: INC-0001
      */
     private function generateCaseNumber(): string
     {
-        $date = date('Ymd');
-        $prefix = "BOMB-$date-";
+        $prefix = "BOMB-";
 
         // Get all incident reports for today
         $reports = FirestoreService::getCollection($this->collectionName);
@@ -415,113 +411,5 @@ class BombController extends Controller
                 'data' => null,
             ], 500);
         }
-    }
-
-    public function getActiveBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $activeCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
-                        $activeCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Active incidents retrieved successfully',
-                'data' => ['totalActive' => $activeCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getResolvedBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $resolvedCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
-                        $resolvedCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Resolved incidents retrieved successfully',
-                'data' => ['totalResolved' => $resolvedCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getPendingBombReports()
-    {
-        try {
-            // 1️⃣ Get all incident reports from Firestore
-            $bombReport = FirestoreService::getCollection($this->collectionName);
-
-            $pendingCount = 0;
-
-            if (is_array($bombReport)) {
-                foreach ($bombReport as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
-                        $pendingCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Pending incidents retrieved successfully',
-                'data' => ['totalPending' => $pendingCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
     }
 }
