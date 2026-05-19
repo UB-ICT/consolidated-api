@@ -340,7 +340,7 @@ class LecturerCourseController extends Controller
             CourseMonitoringFormAccessService::DOCUMENT_ID
         );
         $formAccess = CourseMonitoringFormAccessService::flagsFromDocument(is_array($settingsDoc) ? $settingsDoc : null);
-        $level = $this->resolveCourseMonitoringMenuLevel($roles, $formAccess);
+        $level = $this->resolveCourseMonitoringMenuLevel($roles);
         $menu = $this->buildCourseMonitoringMenuItems($level, $formAccess);
 
         return response()->json([
@@ -354,15 +354,10 @@ class LecturerCourseController extends Controller
 
     /**
      * Highest course-monitoring tier from spreadsheet roles (cumulative menu through this tier).
-     * VP has no dedicated tab; when {@see enableAnnualVpForm} is enabled they receive the same
-     * cumulative menu as dean (tiers 1–5). When disabled, VP is ignored for menu level.
+     * VP has no dedicated tab; they receive the same cumulative menu as dean (tiers 1–5).
      */
-    private function resolveCourseMonitoringMenuLevel(array $roles, array $formAccess = []): int
+    private function resolveCourseMonitoringMenuLevel(array $roles): int
     {
-        if (!empty($roles['VP']) && empty($formAccess['enableAnnualVpForm'])) {
-            $roles = array_merge($roles, ['VP' => false]);
-        }
-
         if (!empty($roles['VP'])) {
             return 5;
         }
