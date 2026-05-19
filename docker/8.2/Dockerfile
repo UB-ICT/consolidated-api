@@ -40,8 +40,8 @@ RUN apt-get update && apt-get upgrade -y \
     && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_VERSION.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
     && apt-get update \
     && apt-get install -y nodejs \
-    && npm install -g npm \
-    && npm install -g pnpm \
+    && corepack enable \
+    && corepack prepare pnpm@latest --activate \
     && npm install -g bun \
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /etc/apt/keyrings/yarn.gpg >/dev/null \
     && echo "deb [signed-by=/etc/apt/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
@@ -90,7 +90,7 @@ RUN apt-get update \
         gnupg2 \
         build-essential \
         php8.2-dev \
-    && pecl install sqlsrv-5.11.0 pdo_sqlsrv-5.11.0 \
+    && pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 \
     && echo "extension=sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-sqlsrv.ini \
     && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-pdo_sqlsrv.ini \
     && if [ -d "/etc/php/8.2/fpm/conf.d" ]; then \
