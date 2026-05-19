@@ -83,8 +83,9 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'encrypt' => env('DB_ENCRYPT', 'yes'),                 // yes/no
+            'encrypt' => env('DB_ENCRYPT', 'yes'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
+            // Uses App\Database\Connectors\SqlServerConnector (pdo_sqlsrv-safe PDO options).
         ],
     ],
 
