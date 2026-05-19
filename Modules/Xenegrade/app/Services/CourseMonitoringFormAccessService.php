@@ -33,10 +33,10 @@ class CourseMonitoringFormAccessService
             'enableProgramCoordinatorForm' => self::coerceBool($doc['enableProgramCoordinatorForm'] ?? null, true),
             'enableAnnualChairForm' => self::coerceBool($doc['enableAnnualChairForm'] ?? null, true),
             'enableAnnualDeanForm' => self::coerceBool($doc['enableAnnualDeanForm'] ?? null, true),
-            // Gates VP access to cumulative lower-tier forms (no VP tab). Off in this build until enabled in settings.
+            // Reserved for future VP-specific settings; menu access for VP uses cumulative tiers 1–5.
             'enableAnnualVpForm' => self::coerceBool(
                 $doc['enableAnnualVpForm'] ?? $doc['enableAnnualVPForm'] ?? null,
-                false
+                true
             ),
         ];
     }
