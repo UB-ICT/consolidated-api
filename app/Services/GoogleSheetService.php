@@ -714,6 +714,84 @@ class GoogleSheetService
     }
 
     /**
+     * Courses for an instructor from the monitoring sheet (role=lecturer).
+     * Shape matches SQL vinSections rows returned by LecturerCourseController.
+     *
+     * @return list<object{SectionID: string, CourseID: string, CourseCode: string, Session: string, StaffFName1: string, StaffLName1: string, CourseTitle: string}>
+     */
+    public static function getLecturerCoursesForInstructor(
+        string $spreadsheetId,
+        string $range,
+        string $semester,
+        string $instructorEmail,
+        ?string $staffFName = null,
+        ?string $staffLName = null
+    ): array {
+        $rows = self::getRowsAssocForSemester($spreadsheetId, $range, $semester);
+        $courses = [];
+        $seen = [];
+
+        foreach ($rows as $row) {
+            $inst = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
+            if (! self::emailsEqual($inst, $instructorEmail)) {
+                continue;
+            }
+
+            $courseCode = self::sheetCellGet($row, [
+                'CourseCode',
+                'courseCode',
+                'Course Code',
+            ]);
+            $courseSection = self::sheetCellGet($row, [
+                'CourseSection',
+                'courseSection',
+                'Course Section',
+                'SectionID',
+                'sectionId',
+                'Section Id',
+                'Section',
+                'section',
+            ]);
+            if ($courseCode === null || $courseSection === null || $courseCode === '' || $courseSection === '') {
+                continue;
+            }
+
+            $courseId = self::sheetCellGet($row, [
+                'CourseID',
+                'courseId',
+                'Course Id',
+            ]) ?? $courseCode;
+
+            $key = strtolower($courseCode) . '|' . strtolower($courseSection);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $courseTitle = self::sheetCellGet($row, [
+                'CourseName',
+                'courseName',
+                'Course Name',
+                'CourseTitle',
+                'courseTitle',
+                'Course Title',
+            ]) ?? '';
+
+            $courses[] = (object) [
+                'SectionID' => $courseSection,
+                'CourseID' => $courseId,
+                'CourseCode' => $courseCode,
+                'Session' => $semester,
+                'StaffFName1' => $staffFName ?? '',
+                'StaffLName1' => $staffLName ?? '',
+                'CourseTitle' => $courseTitle,
+            ];
+        }
+
+        return $courses;
+    }
+
+    /**
      * Course code + section pairs from the sheet that the viewer may see for the given person,
      * using the same row rules as {@see getLecturersByReportingRole}.
      *
@@ -772,7 +850,7 @@ class GoogleSheetService
             switch ($actingRole) {
                 case 'lecturer':
                     $inst = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
-                    if ($inst !== null && strtolower(trim($inst)) === $personNorm) {
+                    if (self::emailsEqual($inst, $personEmail)) {
                         $addKey($courseCode, $courseSection);
                     }
                     break;

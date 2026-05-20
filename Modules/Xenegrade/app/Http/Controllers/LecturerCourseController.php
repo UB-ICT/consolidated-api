@@ -33,6 +33,9 @@ class LecturerCourseController extends Controller
             ], 422);
         }
 
+        $roleParamEarly = strtolower(trim((string) $request->query('role', '')));
+        $lecturerRoleRequested = $roleParamEarly === 'lecturer';
+
         // 1. Find lecturer in staff table (SQL Server)
         $lecturer = DB::connection('sqlsrv')
             ->table('staff')
@@ -40,28 +43,41 @@ class LecturerCourseController extends Controller
             //#->where('staType', 'Instructor')
             ->first();
 
-        if (!$lecturer) {
+        if (! $lecturer && ! $lecturerRoleRequested) {
             return response()->json(['error' => 'Lecturer not found'], 405);
         }
 
-        // 2. Get courses from vinSections and COURSE tables (SQL Server)
-        $courses = DB::connection('sqlsrv')
-            ->table('vinSections as vs')
-            ->join('COURSE as c', 'vs.CourseID', '=', 'c.couCourseID')
-            ->where('vs.Session', $semester)
-            ->where('vs.StaffFName1', $lecturer->staFName)
-            ->where('vs.StaffLName1', $lecturer->staLName)
-            ->where('vs.CourseStatus', 'Offered')
-            ->select(
-                'vs.SectionID',
-                'vs.CourseID',
-                'vs.CourseCode',
-                'vs.Session',
-                'vs.StaffFName1',
-                'vs.StaffLName1',
-                'c.couTitle as CourseTitle'
-            )
-            ->get();
+        if (! $lecturer) {
+            $lecturer = (object) [
+                'staEmail' => $email,
+                'staFName' => '',
+                'staLName' => '',
+            ];
+        }
+
+        // 2. Get courses from vinSections and COURSE tables (SQL Server), when staff record exists
+        $sqlCourses = collect();
+        if ($lecturer->staFName !== '' || $lecturer->staLName !== '') {
+            $sqlCourses = DB::connection('sqlsrv')
+                ->table('vinSections as vs')
+                ->join('COURSE as c', 'vs.CourseID', '=', 'c.couCourseID')
+                ->where('vs.Session', $semester)
+                ->where('vs.StaffFName1', $lecturer->staFName)
+                ->where('vs.StaffLName1', $lecturer->staLName)
+                ->where('vs.CourseStatus', 'Offered')
+                ->select(
+                    'vs.SectionID',
+                    'vs.CourseID',
+                    'vs.CourseCode',
+                    'vs.Session',
+                    'vs.StaffFName1',
+                    'vs.StaffLName1',
+                    'c.couTitle as CourseTitle'
+                )
+                ->get();
+        }
+
+        $courses = $sqlCourses;
 
         $spreadsheetId = env('GOOGLE_SHEET_ID');
         $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
@@ -74,26 +90,33 @@ class LecturerCourseController extends Controller
 
             $personEmail = trim($email);
             $samePerson = strtolower($viewerEmail) === strtolower($personEmail);
+            $roleParam = strtolower(trim((string) $request->query('role', '')));
+            $roleMap = [
+                'lecturer' => 'lecturer',
+                'coursecoordinator' => 'courseCoordinator',
+                'programcoordinator' => 'programCoordinator',
+                'chair' => 'chair',
+                'dean' => 'dean',
+                'vp' => 'VP',
+            ];
+            $requestedRole = $roleMap[$roleParam] ?? null;
 
-            if ($samePerson) {
-                $actingRoles = ['lecturer'];
-            } else {
-                $roleParam = strtolower(trim((string) $request->query('role', '')));
-                $roleMap = [
-                    'coursecoordinator' => 'courseCoordinator',
-                    'programcoordinator' => 'programCoordinator',
-                    'chair' => 'chair',
-                    'dean' => 'dean',
-                    'vp' => 'VP',
-                ];
-                $requestedRole = $roleMap[$roleParam] ?? null;
-                if ($requestedRole === null) {
+            if ($requestedRole === 'lecturer') {
+                if (! $samePerson) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'When viewerEmail differs from the lecturer email, a valid role query is required (courseCoordinator, programCoordinator, chair, dean, or VP).',
+                        'message' => 'role=lecturer requires viewerEmail to match the lecturer email.',
                     ], 422);
                 }
-
+                $actingRoles = ['lecturer'];
+            } elseif ($samePerson) {
+                $actingRoles = ['lecturer'];
+            } elseif ($requestedRole === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'When viewerEmail differs from the lecturer email, a valid role query is required (lecturer, courseCoordinator, programCoordinator, chair, dean, or VP).',
+                ], 422);
+            } else {
                 $viewerSheetRoles = GoogleSheetService::checkEmailRoles($spreadsheetId, $range, $viewerEmail);
                 $roleClaims = [
                     'courseCoordinator' => 'courseCoordinator',
@@ -114,44 +137,88 @@ class LecturerCourseController extends Controller
                 $actingRoles = array_values(array_unique($actingRoles));
             }
 
-            $sheetKeys = [];
-            foreach ($actingRoles as $actingRole) {
-                $keysForRole = GoogleSheetService::getMonitoringCourseKeysForPerson(
+            $lecturerOnly = $actingRoles === ['lecturer'];
+
+            if ($lecturerOnly) {
+                // Sheet is source of truth for instructor assignments (SQL may be empty for VP / sheet-only rows).
+                $courses = collect(GoogleSheetService::getLecturerCoursesForInstructor(
                     $spreadsheetId,
                     $range,
                     $semester,
-                    $actingRole,
-                    $viewerEmail,
-                    $personEmail
-                );
-                foreach ($keysForRole as $pair) {
-                    $sheetKeys[] = $pair;
+                    $personEmail,
+                    $lecturer->staFName ?? null,
+                    $lecturer->staLName ?? null
+                ));
+
+                if ($sqlCourses->isNotEmpty()) {
+                    $sqlByKey = [];
+                    foreach ($sqlCourses as $sqlCourse) {
+                        $code = strtolower(trim((string) ($sqlCourse->CourseCode ?? '')));
+                        $courseId = strtolower(trim((string) ($sqlCourse->CourseID ?? '')));
+                        $sec = strtolower(trim((string) ($sqlCourse->SectionID ?? '')));
+                        if ($sec === '') {
+                            continue;
+                        }
+                        if ($code !== '') {
+                            $sqlByKey[$code . '|' . $sec] = $sqlCourse;
+                        }
+                        if ($courseId !== '') {
+                            $sqlByKey[$courseId . '|' . $sec] = $sqlCourse;
+                        }
+                    }
+
+                    $courses = $courses->map(function ($course) use ($sqlByKey) {
+                        $code = strtolower(trim((string) ($course->CourseCode ?? '')));
+                        $courseId = strtolower(trim((string) ($course->CourseID ?? '')));
+                        $sec = strtolower(trim((string) ($course->SectionID ?? '')));
+                        $sql = $sqlByKey[$code . '|' . $sec] ?? $sqlByKey[$courseId . '|' . $sec] ?? null;
+                        if ($sql && ! empty($sql->CourseTitle)) {
+                            $course->CourseTitle = $sql->CourseTitle;
+                        }
+
+                        return $course;
+                    })->values();
                 }
+            } else {
+                $sheetKeys = [];
+                foreach ($actingRoles as $actingRole) {
+                    $keysForRole = GoogleSheetService::getMonitoringCourseKeysForPerson(
+                        $spreadsheetId,
+                        $range,
+                        $semester,
+                        $actingRole,
+                        $viewerEmail,
+                        $personEmail
+                    );
+                    foreach ($keysForRole as $pair) {
+                        $sheetKeys[] = $pair;
+                    }
+                }
+
+                $allowed = [];
+                foreach ($sheetKeys as $pair) {
+                    $code = strtolower(trim((string) ($pair['courseCode'] ?? '')));
+                    $sec = strtolower(trim((string) ($pair['courseSection'] ?? '')));
+                    if ($code !== '' && $sec !== '') {
+                        $allowed[$code . '|' . $sec] = true;
+                    }
+                }
+
+                $courses = $sqlCourses->filter(function ($course) use ($allowed) {
+                    $code = strtolower(trim((string) ($course->CourseCode ?? '')));
+                    $courseId = strtolower(trim((string) ($course->CourseID ?? '')));
+                    $sec = strtolower(trim((string) ($course->SectionID ?? '')));
+
+                    if ($sec === '') {
+                        return false;
+                    }
+
+                    $matchesCode = $code !== '' && isset($allowed[$code . '|' . $sec]);
+                    $matchesId = $courseId !== '' && isset($allowed[$courseId . '|' . $sec]);
+
+                    return $matchesCode || $matchesId;
+                })->values();
             }
-
-            $allowed = [];
-            foreach ($sheetKeys as $pair) {
-                $code = strtolower(trim((string) ($pair['courseCode'] ?? '')));
-                $sec = strtolower(trim((string) ($pair['courseSection'] ?? '')));
-                if ($code !== '' && $sec !== '') {
-                    $allowed[$code . '|' . $sec] = true;
-                }
-            }
-
-            $courses = $courses->filter(function ($course) use ($allowed) {
-                $code = strtolower(trim((string) ($course->CourseCode ?? '')));
-                $courseId = strtolower(trim((string) ($course->CourseID ?? '')));
-                $sec = strtolower(trim((string) ($course->SectionID ?? '')));
-
-                if ($sec === '') {
-                    return false;
-                }
-
-                $matchesCode = $code !== '' && isset($allowed[$code . '|' . $sec]);
-                $matchesId = $courseId !== '' && isset($allowed[$courseId . '|' . $sec]);
-
-                return $matchesCode || $matchesId;
-            })->values();
         }
 
         return response()->json([
