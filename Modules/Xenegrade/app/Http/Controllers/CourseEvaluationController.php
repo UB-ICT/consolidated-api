@@ -17,6 +17,30 @@ class CourseEvaluationController extends Controller
     protected $collectionName = 'cmon_courseMonitoring';
 
     /**
+     * Normalize appendix document paths for comparison and disk lookup (private disk root).
+     */
+    private function normalizeDocumentPath(string $path): string
+    {
+        $path = urldecode($path);
+        $path = str_replace('\\', '/', $path);
+        $path = ltrim($path, '/');
+
+        if (str_starts_with($path, 'private/')) {
+            $path = substr($path, strlen('private/'));
+        }
+
+        return $path;
+    }
+
+    /**
+     * Resolve absolute path on the private disk for a stored relative path.
+     */
+    private function resolvePrivateDocumentAbsolutePath(string $relativePath): string
+    {
+        return storage_path('app/private/' . $this->normalizeDocumentPath($relativePath));
+    }
+
+    /**
      * Get course evaluation for a lecturer
      * Creates the document if it doesn't exist
      */
@@ -641,8 +665,10 @@ class CourseEvaluationController extends Controller
             $documents = $existingCourse['appendix']['documents'];
             $documentIndex = -1;
             
+            $normalizedRequestPath = $this->normalizeDocumentPath($documentPath);
+
             foreach ($documents as $index => $doc) {
-                if (($doc['path'] ?? '') === $documentPath) {
+                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalizedRequestPath) {
                     $documentIndex = $index;
                     break;
                 }
@@ -656,7 +682,7 @@ class CourseEvaluationController extends Controller
             }
 
             // Delete file from storage
-            $filePath = storage_path('app/private/' . $documentPath);
+            $filePath = $this->resolvePrivateDocumentAbsolutePath($normalizedRequestPath);
             if (file_exists($filePath)) {
                 unlink($filePath);
             }
@@ -730,10 +756,12 @@ class CourseEvaluationController extends Controller
             $documentExists = false;
             $documentName = '';
             
+            $normalizedRequestPath = $this->normalizeDocumentPath($documentPath);
+
             foreach ($documents as $doc) {
-                if (($doc['path'] ?? '') === $documentPath) {
+                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalizedRequestPath) {
                     $documentExists = true;
-                    $documentName = $doc['name'] ?? basename($documentPath);
+                    $documentName = $doc['name'] ?? basename($normalizedRequestPath);
                     break;
                 }
             }
@@ -745,31 +773,21 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Decode the document path (in case it's URL encoded)
-            $decodedPath = urldecode($documentPath);
-            
-            // Get file path
-            $filePath = storage_path('app/private/' . $decodedPath);
-            
-            if (!file_exists($filePath)) {
+            if (! Storage::disk('private')->exists($normalizedRequestPath)) {
+                $filePath = $this->resolvePrivateDocumentAbsolutePath($normalizedRequestPath);
                 Log::error('File not found', [
                     'expected_path' => $filePath,
                     'document_path' => $documentPath,
-                    'decoded_path' => $decodedPath
+                    'normalized_path' => $normalizedRequestPath,
                 ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'File not found on server',
-                    'debug' => [
-                        'document_path' => $documentPath,
-                        'decoded_path' => $decodedPath,
-                        'file_path' => $filePath
-                    ]
                 ], 404);
             }
 
-            // Return file download response
-            return response()->download($filePath, $documentName);
+            return Storage::disk('private')->download($normalizedRequestPath, $documentName);
         } catch (\Exception $e) {
             Log::error('Error downloading document: ' . $e->getMessage());
             return response()->json([
