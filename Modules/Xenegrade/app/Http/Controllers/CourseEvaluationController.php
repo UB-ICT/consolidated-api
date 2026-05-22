@@ -41,6 +41,64 @@ class CourseEvaluationController extends Controller
     }
 
     /**
+     * @param  list<array<string, mixed>>  $documents
+     * @return array<string, mixed>|null
+     */
+    private function findAppendixDocument(array $documents, string $requestPath): ?array
+    {
+        $normalized = $this->normalizeDocumentPath($requestPath);
+
+        foreach ($documents as $doc) {
+            if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalized) {
+                return $doc;
+            }
+        }
+
+        $basename = basename($normalized);
+        if ($basename !== '') {
+            foreach ($documents as $doc) {
+                if (basename($this->normalizeDocumentPath((string) ($doc['path'] ?? ''))) === $basename) {
+                    return $doc;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return string|null Relative path on the private disk
+     */
+    private function resolvePrivateDiskRelativePath(string $storedPath): ?string
+    {
+        $normalized = $this->normalizeDocumentPath($storedPath);
+
+        if (Storage::disk('private')->exists($normalized)) {
+            return $normalized;
+        }
+
+        $basename = basename($normalized);
+        if ($basename !== '') {
+            $fallback = 'uploads/courseMonitoring/' . $basename;
+            if (Storage::disk('private')->exists($fallback)) {
+                return $fallback;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Path from ?path= query (preferred) or legacy {documentPath} route segment.
+     */
+    private function documentPathFromRequest(Request $request, ?string $documentPath = null): string
+    {
+        $path = $request->query('path', $documentPath ?? '');
+
+        return is_string($path) ? trim($path) : '';
+    }
+
+    /**
      * Get course evaluation for a lecturer
      * Creates the document if it doesn't exist
      */
@@ -627,8 +685,16 @@ class CourseEvaluationController extends Controller
     /**
      * Delete a document from course evaluation
      */
-    public function deleteDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, string $documentPath)
+    public function deleteDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, ?string $documentPath = null)
     {
+        $documentPath = $this->documentPathFromRequest($request, $documentPath);
+        if ($documentPath === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document path is required (use ?path=)',
+            ], 422);
+        }
+
         try {
             $firestore = FirestoreService::firestore();
             $docRef = $firestore->collection($this->collectionName)->document($email);
@@ -665,12 +731,14 @@ class CourseEvaluationController extends Controller
             $documents = $existingCourse['appendix']['documents'];
             $documentIndex = -1;
             
-            $normalizedRequestPath = $this->normalizeDocumentPath($documentPath);
-
-            foreach ($documents as $index => $doc) {
-                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalizedRequestPath) {
-                    $documentIndex = $index;
-                    break;
+            $documentIndex = -1;
+            $matchedDoc = $this->findAppendixDocument($documents, $documentPath);
+            if ($matchedDoc !== null) {
+                foreach ($documents as $index => $doc) {
+                    if (($doc['path'] ?? '') === ($matchedDoc['path'] ?? '')) {
+                        $documentIndex = $index;
+                        break;
+                    }
                 }
             }
 
@@ -681,8 +749,10 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Delete file from storage
-            $filePath = $this->resolvePrivateDocumentAbsolutePath($normalizedRequestPath);
+            $diskRelative = $this->resolvePrivateDiskRelativePath((string) ($matchedDoc['path'] ?? $documentPath));
+            $filePath = $diskRelative !== null
+                ? $this->resolvePrivateDocumentAbsolutePath($diskRelative)
+                : $this->resolvePrivateDocumentAbsolutePath($documentPath);
             if (file_exists($filePath)) {
                 unlink($filePath);
             }
@@ -717,8 +787,16 @@ class CourseEvaluationController extends Controller
     /**
      * Download a document from course evaluation
      */
-    public function downloadDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, string $documentPath)
+    public function downloadDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, ?string $documentPath = null)
     {
+        $documentPath = $this->documentPathFromRequest($request, $documentPath);
+        if ($documentPath === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document path is required (use ?path=)',
+            ], 422);
+        }
+
         try {
             $firestore = FirestoreService::firestore();
             $docRef = $firestore->collection($this->collectionName)->document($email);
@@ -751,34 +829,24 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Verify document exists in the course
             $documents = $existingCourse['appendix']['documents'];
-            $documentExists = false;
-            $documentName = '';
-            
-            $normalizedRequestPath = $this->normalizeDocumentPath($documentPath);
+            $matchedDoc = $this->findAppendixDocument($documents, $documentPath);
 
-            foreach ($documents as $doc) {
-                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalizedRequestPath) {
-                    $documentExists = true;
-                    $documentName = $doc['name'] ?? basename($normalizedRequestPath);
-                    break;
-                }
-            }
-
-            if (!$documentExists) {
+            if ($matchedDoc === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Document not found'
+                    'message' => 'Document not found',
                 ], 404);
             }
 
-            if (! Storage::disk('private')->exists($normalizedRequestPath)) {
-                $filePath = $this->resolvePrivateDocumentAbsolutePath($normalizedRequestPath);
+            $storedPath = (string) ($matchedDoc['path'] ?? $documentPath);
+            $diskRelative = $this->resolvePrivateDiskRelativePath($storedPath);
+
+            if ($diskRelative === null) {
                 Log::error('File not found', [
-                    'expected_path' => $filePath,
+                    'expected_path' => $this->resolvePrivateDocumentAbsolutePath($storedPath),
                     'document_path' => $documentPath,
-                    'normalized_path' => $normalizedRequestPath,
+                    'stored_path' => $storedPath,
                 ]);
 
                 return response()->json([
@@ -787,7 +855,9 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            return Storage::disk('private')->download($normalizedRequestPath, $documentName);
+            $documentName = (string) ($matchedDoc['name'] ?? basename($diskRelative));
+
+            return Storage::disk('private')->download($diskRelative, $documentName);
         } catch (\Exception $e) {
             Log::error('Error downloading document: ' . $e->getMessage());
             return response()->json([
