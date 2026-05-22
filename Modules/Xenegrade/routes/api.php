@@ -179,6 +179,16 @@ Route::group([
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/upload',
         [CourseEvaluationController::class, 'uploadDocument']
     );
+    // Prefer query ?path= (avoids %2F in URL path — many proxies return 404)
+    Route::get(
+        '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/download',
+        [CourseEvaluationController::class, 'downloadDocument']
+    );
+    Route::delete(
+        '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document',
+        [CourseEvaluationController::class, 'deleteDocument']
+    );
+    // Legacy path-param routes (may fail behind nginx when path contains slashes)
     Route::get(
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/{documentPath}/download',
         [CourseEvaluationController::class, 'downloadDocument']
