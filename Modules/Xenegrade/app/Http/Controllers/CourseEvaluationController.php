@@ -99,6 +99,52 @@ class CourseEvaluationController extends Controller
     }
 
     /**
+     * Ensure course monitoring upload directory exists and is writable by the PHP process.
+     */
+    private function ensureCourseMonitoringUploadDirectory(): void
+    {
+        $relativeDir = 'uploads/courseMonitoring';
+        if (! Storage::disk('private')->exists($relativeDir)) {
+            Storage::disk('private')->makeDirectory($relativeDir);
+        }
+        $absoluteDir = Storage::disk('private')->path($relativeDir);
+        if (is_dir($absoluteDir)) {
+            @chmod($absoluteDir, 0775);
+        }
+    }
+
+    /**
+     * Delete a file on the private disk without throwing (unlink needs write permission on the parent directory).
+     */
+    private function tryDeletePrivateDocumentFile(?string $diskRelative): void
+    {
+        if ($diskRelative === null || $diskRelative === '') {
+            return;
+        }
+
+        $normalized = $this->normalizeDocumentPath($diskRelative);
+        $absolute = Storage::disk('private')->path($normalized);
+
+        if (! is_file($absolute)) {
+            return;
+        }
+
+        $parentDir = dirname($absolute);
+        if (is_dir($parentDir) && ! is_writable($parentDir)) {
+            @chmod($parentDir, 0775);
+        }
+
+        $deleted = @unlink($absolute);
+        if (! $deleted && is_file($absolute)) {
+            Log::warning('Course monitoring document could not be removed from disk', [
+                'disk_path' => $normalized,
+                'absolute' => $absolute,
+                'parent_writable' => is_dir($parentDir) && is_writable($parentDir),
+            ]);
+        }
+    }
+
+    /**
      * Get course evaluation for a lecturer
      * Creates the document if it doesn't exist
      */
@@ -376,6 +422,66 @@ class CourseEvaluationController extends Controller
         }
     }
 
+    private function emailsEqualInsensitive(?string $a, ?string $b): bool
+    {
+        if ($a === null || $b === null) {
+            return false;
+        }
+
+        return strtolower(trim($a)) === strtolower(trim($b));
+    }
+
+    /**
+     * Whether the logged-in viewer may download appendix files for this lecturer's course.
+     * Route {email} is the instructor (Firestore document id), not necessarily the viewer.
+     */
+    private function viewerMayDownloadCourseDocument(
+        string $viewerEmail,
+        string $lecturerEmail,
+        string $courseCode,
+        string $courseSection,
+        string $semester
+    ): bool {
+        if ($viewerEmail === '' || $this->emailsEqualInsensitive($viewerEmail, $lecturerEmail)) {
+            return true;
+        }
+
+        $spreadsheetId = env('GOOGLE_SHEET_ID');
+        if (! $spreadsheetId) {
+            return true;
+        }
+
+        $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
+        $roles = ['courseCoordinator', 'programCoordinator', 'chair', 'dean', 'VP'];
+
+        foreach ($roles as $role) {
+            $keys = GoogleSheetService::getMonitoringCourseKeysForPerson(
+                $spreadsheetId,
+                $range,
+                $semester,
+                $role,
+                $viewerEmail,
+                $lecturerEmail
+            );
+            foreach ($keys as $pair) {
+                if ($this->monitoringCourseKeyMatches($pair, $courseCode, $courseSection)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array{courseCode?: string, courseSection?: string}  $pair
+     */
+    private function monitoringCourseKeyMatches(array $pair, string $courseCode, string $courseSection): bool
+    {
+        return strtolower(trim((string) ($pair['courseCode'] ?? ''))) === strtolower(trim($courseCode))
+            && strtolower(trim((string) ($pair['courseSection'] ?? ''))) === strtolower(trim($courseSection));
+    }
+
     /**
      * Find course index in courses array
      */
@@ -632,11 +738,16 @@ class CourseEvaluationController extends Controller
             $extension = $file->getClientOriginalExtension();
             $fileName = Str::random(40) . '.' . $extension;
             
-            // Store file
-            $filePath = $file->storeAs('uploads/courseMonitoring', $fileName, 'private');
-            
-            // Generate path for storage (relative to storage/app/private)
+            $this->ensureCourseMonitoringUploadDirectory();
+
+            $file->storeAs('uploads/courseMonitoring', $fileName, 'private');
+
             $storagePath = 'uploads/courseMonitoring/' . $fileName;
+
+            $absoluteStored = Storage::disk('private')->path($storagePath);
+            if (is_file($absoluteStored)) {
+                @chmod($absoluteStored, 0664);
+            }
             
             // Get existing course
             $existingCourse = $courses[$courseIndex];
@@ -727,18 +838,22 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Find and remove document
             $documents = $existingCourse['appendix']['documents'];
-            $documentIndex = -1;
-            
-            $documentIndex = -1;
             $matchedDoc = $this->findAppendixDocument($documents, $documentPath);
-            if ($matchedDoc !== null) {
-                foreach ($documents as $index => $doc) {
-                    if (($doc['path'] ?? '') === ($matchedDoc['path'] ?? '')) {
-                        $documentIndex = $index;
-                        break;
-                    }
+
+            if ($matchedDoc === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Document not found'
+                ], 404);
+            }
+
+            $documentIndex = -1;
+            $matchedNormalized = $this->normalizeDocumentPath((string) ($matchedDoc['path'] ?? ''));
+            foreach ($documents as $index => $doc) {
+                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $matchedNormalized) {
+                    $documentIndex = $index;
+                    break;
                 }
             }
 
@@ -750,12 +865,7 @@ class CourseEvaluationController extends Controller
             }
 
             $diskRelative = $this->resolvePrivateDiskRelativePath((string) ($matchedDoc['path'] ?? $documentPath));
-            $filePath = $diskRelative !== null
-                ? $this->resolvePrivateDocumentAbsolutePath($diskRelative)
-                : $this->resolvePrivateDocumentAbsolutePath($documentPath);
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
+            $this->tryDeletePrivateDocumentFile($diskRelative);
 
             // Remove document from array
             array_splice($documents, $documentIndex, 1);
@@ -797,9 +907,18 @@ class CourseEvaluationController extends Controller
             ], 422);
         }
 
+        $lecturerEmail = $email;
+        $viewerEmail = trim((string) $request->query('viewerEmail', ''));
+        if (! $this->viewerMayDownloadCourseDocument($viewerEmail, $lecturerEmail, $courseCode, $courseSection, $semester)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to download this document',
+            ], 403);
+        }
+
         try {
             $firestore = FirestoreService::firestore();
-            $docRef = $firestore->collection($this->collectionName)->document($email);
+            $docRef = $firestore->collection($this->collectionName)->document($lecturerEmail);
             $snapshot = $docRef->snapshot();
 
             if (!$snapshot->exists()) {

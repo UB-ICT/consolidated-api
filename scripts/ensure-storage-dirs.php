@@ -17,6 +17,9 @@ $dirs = [
     $base.'/storage/framework/testing',
     $base.'/storage/framework/views',
     $base.'/storage/logs',
+    $base.'/storage/app/private',
+    $base.'/storage/app/private/uploads',
+    $base.'/storage/app/private/uploads/courseMonitoring',
     $base.'/bootstrap/cache',
 ];
 
@@ -26,5 +29,8 @@ foreach ($dirs as $dir) {
     }
     if (! is_dir($dir)) {
         mkdir($dir, 0775, true);
+    }
+    if (is_dir($dir)) {
+        @chmod($dir, 0775);
     }
 }
