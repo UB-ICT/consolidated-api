@@ -20,7 +20,7 @@ class UserController extends Controller
     /**
      * Display a listing of the users.
      */
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
         try {
             $users = User::with(['userStatus'])
@@ -65,8 +65,6 @@ class UserController extends Controller
 
         try {
             $userData = $validator->validated();
-            $userData['type'] = $userData['type'] ?? 'public_safety';
-            $userData['domain'] = $userData['domain'] ?? 'ub.edu.bz';
             $userData['password'] = bcrypt(Str::random(16)); // Generate random password
             $userData['email_verified_at'] = now();
 
@@ -198,8 +196,6 @@ class UserController extends Controller
                 ['email' => $googleUser['email']],
                 [
                     'name' => $googleUser['name'],
-                    'type' => 'public_safety',
-                    'domain' => 'ub.edu.bz',
                     'google_id' => $googleUser['id'],
                     'password' => bcrypt(Str::random(32)),
                     'email_verified_at' => now(),

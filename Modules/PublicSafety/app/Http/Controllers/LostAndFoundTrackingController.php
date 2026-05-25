@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -19,6 +18,7 @@ class LostAndFoundTrackingController extends Controller
     {
         try {
             $defaultReport = [
+                'caseNumber' => $this->generateCaseNumber(),
                 'facilityName' => '',
                 'incidentReportStatus' => '',
                 'time' => '',
@@ -44,6 +44,7 @@ class LostAndFoundTrackingController extends Controller
                 'returnedToOwnerSignature' => [],
                 'ownerAcknowledgementSignature' => [],
                 'uploadedBy' => $request->user()->name ?? '',
+                'isRead' => false,
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
@@ -57,7 +58,7 @@ class LostAndFoundTrackingController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
@@ -106,6 +107,10 @@ class LostAndFoundTrackingController extends Controller
                 'formSubmitted' => 'required|boolean',
             ]);
 
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
+
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
             // Get the document ID
             $documentId = $documentRef->id();
@@ -134,7 +139,7 @@ class LostAndFoundTrackingController extends Controller
         return response()->json($response);
     }
 
-    public function show(Request $request, string $lostAndFoundTrackingID)
+    public function show(string $lostAndFoundTrackingID)
     {
         try {
             $lostAndFoundTracking = FirestoreService::getDocument($this->collectionName, $lostAndFoundTrackingID);
@@ -192,6 +197,7 @@ class LostAndFoundTrackingController extends Controller
                     'returnedToOwnerSignature',
                     'ownerAcknowledgementSignature',
                     'uploadedBy',
+                    'isRead',
                     'formSubmitted',
                 ]
             );
@@ -252,7 +258,7 @@ class LostAndFoundTrackingController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalLoandFoundTracking(Request $request)
+    public function getTotalLoandFoundTracking()
     {
         try {
             // 1️⃣ Get all documents
@@ -349,112 +355,34 @@ class LostAndFoundTrackingController extends Controller
         }
     }
 
-
-    public function getActiveLostAndFoundTracking()
+    /**
+     * Generate a sequential case number (Firestore-safe)
+     * Format: LF-0001
+     */
+    private function generateCaseNumber(): string
     {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
+        $prefix = "LF-";
 
-            $activeCount = 0;
+        // Get all Lost and found reports for today
+        $reports = FirestoreService::getCollection($this->collectionName);
 
-            if (is_array($lostAndFoundTracking)) {
-                foreach ($lostAndFoundTracking as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+        $lastNumber = 0;
 
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
-                        $activeCount++;
-                    }
+        if (is_array($reports)) {
+            foreach ($reports as $report) {
+                if (
+                    isset($report['caseNumber']) &&
+                    str_starts_with($report['caseNumber'], $prefix)
+                ) {
+                    // Extract numeric part
+                    $number = (int) substr($report['caseNumber'], -4);
+                    $lastNumber = max($lastNumber, $number);
                 }
             }
-
-            $response = [
-                'success' => true,
-                'message' => 'Active incidents retrieved successfully',
-                'data' => ['totalActive' => $activeCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
         }
 
-        return response($response, 200);
-    }
+        $nextNumber = $lastNumber + 1;
 
-    public function getResolvedLostAndFoundTracking()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $lostAndFoundTracking = FirestoreService::getCollection($this->collectionName);
-
-            $resolvedCount = 0;
-
-            if (is_array($lostAndFoundTracking)) {
-                foreach ($lostAndFoundTracking as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
-                        $resolvedCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Resolved incidents retrieved successfully',
-                'data' => ['totalResolved' => $resolvedCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getPendingLostAndFoundTracking()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $incidentLogs = FirestoreService::getCollection($this->collectionName);
-
-            $pendingCount = 0;
-
-            if (is_array($incidentLogs)) {
-                foreach ($incidentLogs as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
-                        $pendingCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Pending incidents retrieved successfully',
-                'data' => ['totalPending' => $pendingCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
 }

@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,6 +17,7 @@ class LostPropertyController extends Controller
     {
         try {
             $defaultReport = [
+                'caseNumber' => $this->generateCaseNumber(),
                 'complainantName' => '',
                 'complainantAddress' => '',
                 'complainantDOB' => '',
@@ -51,6 +51,7 @@ class LostPropertyController extends Controller
                 'returnedToOwnerSignature' => [],
 
                 'uploadedBy' => $request->user()->name,
+                'isRead' => false,
                 'formSubmitted' => false,
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString()
@@ -64,7 +65,7 @@ class LostPropertyController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $lostProperty = FirestoreService::getCollection($this->collectionName);
@@ -121,6 +122,11 @@ class LostPropertyController extends Controller
 
                 // Add other validation rules as needed
             ]);
+
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
+
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
             //Get document ID
             $documentId = $documentRef->id();
@@ -213,7 +219,7 @@ class LostPropertyController extends Controller
                 'signatureDPS',
                 'returnedToOwnerSignature',
                 'incidentReportStatus',
-
+                'isRead',
                 'uploadedBy',
                 'formSubmitted',
                 'created_at',
@@ -375,111 +381,30 @@ class LostPropertyController extends Controller
         }
     }
 
-    public function getActiveLostProperty()
+    private function generateCaseNumber(): string
     {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $lostProperty = FirestoreService::getCollection($this->collectionName);
+        $prefix = "LP-";
 
-            $activeCount = 0;
+        // Get all Lost and found reports for today
+        $reports = FirestoreService::getCollection($this->collectionName);
 
-            if (is_array($lostProperty)) {
-                foreach ($lostProperty as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+        $lastNumber = 0;
 
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
-                        $activeCount++;
-                    }
+        if (is_array($reports)) {
+            foreach ($reports as $report) {
+                if (
+                    isset($report['caseNumber']) &&
+                    str_starts_with($report['caseNumber'], $prefix)
+                ) {
+                    // Extract numeric part
+                    $number = (int) substr($report['caseNumber'], -4);
+                    $lastNumber = max($lastNumber, $number);
                 }
             }
-
-            $response = [
-                'success' => true,
-                'message' => 'Active incidents retrieved successfully',
-                'data' => ['totalActive' => $activeCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
         }
 
-        return response($response, 200);
-    }
+        $nextNumber = $lastNumber + 1;
 
-    public function getResolvedLostProperty()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $lostProperty = FirestoreService::getCollection($this->collectionName);
-
-            $resolvedCount = 0;
-
-            if (is_array($lostProperty)) {
-                foreach ($lostProperty as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
-                        $resolvedCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Resolved incidents retrieved successfully',
-                'data' => ['totalResolved' => $resolvedCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
-    }
-
-    public function getPendingLostProperty()
-    {
-        try {
-            // 1️⃣ Get all incident logs from Firestore
-            $lostProperty = FirestoreService::getCollection($this->collectionName);
-
-            $pendingCount = 0;
-
-            if (is_array($lostProperty)) {
-                foreach ($lostProperty as $log) {
-                    // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
-
-                    // ✅ Check if incident is "Investigating" or any "active" status
-                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
-                        $pendingCount++;
-                    }
-                }
-            }
-
-            $response = [
-                'success' => true,
-                'message' => 'Pending incidents retrieved successfully',
-                'data' => ['totalPending' => $pendingCount]
-            ];
-        } catch (\Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
-        }
-
-        return response($response, 200);
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
 }

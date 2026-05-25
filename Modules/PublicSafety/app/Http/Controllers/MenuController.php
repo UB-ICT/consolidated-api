@@ -32,7 +32,8 @@ class MenuController extends Controller
             'order' => 'integer|min:0',
             'is_active' => 'boolean',
             'component' => 'nullable|string',
-            'roles' => 'array'
+            'roles' => 'array',
+            'system' => 'nullable|string',
         ]);
         try {
             $documentRef = FirestoreService::createPublicSafetyMenuItem($this->collectionName, $validated);
@@ -58,7 +59,8 @@ class MenuController extends Controller
             'icon' => 'nullable|string|max:255',
             'order' => 'sometimes|integer|min:0',
             'is_active' => 'sometimes|boolean',
-            'permission' => 'nullable|string'
+            'permission' => 'nullable|string',
+            'system' => 'nullable|string',
         ]);
         try {
             $success = FirestoreService::updatePublicSafetyMenuItem($this->collectionName, $id, $validated);
