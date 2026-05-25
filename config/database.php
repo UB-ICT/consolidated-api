@@ -47,7 +47,7 @@ return [
         'porsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'api-db'),
+            'host' => env('DB_HOST', 'consolidated-api-db'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('PGSQL_DATABASE', 'ub'),
             'username' => env('PGSQL_USERNAME', 'postgres'),
@@ -76,8 +76,9 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'encrypt' => env('DB_ENCRYPT', 'yes'),                 // yes/no
+            'encrypt' => env('DB_ENCRYPT', 'yes'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
+            // Uses App\Database\Connectors\SqlServerConnector (pdo_sqlsrv-safe PDO options).
         ],
     ],
 
