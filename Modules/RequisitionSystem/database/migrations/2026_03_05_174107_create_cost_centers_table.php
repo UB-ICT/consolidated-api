@@ -12,12 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::connection($this->connection)->hasTable('cost_centers')) {
-            return;
-        }
-
-        Schema::connection($this->connection)->create('cost_centers', function (Blueprint $table) {
-            $table->id();
+        Schema::create('cost_centers', function (Blueprint $table) {
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('type');
         });
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection($this->connection)->dropIfExists('cost_centers');
+        Schema::dropIfExists('cost_centers');
     }
 };

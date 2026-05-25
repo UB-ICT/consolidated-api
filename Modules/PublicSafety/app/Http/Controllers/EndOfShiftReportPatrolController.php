@@ -24,6 +24,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'campus' => '',
                 'endOfShiftReportPatrolFiles' => [],
                 'report' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
             ];
         } catch (\Exception $e) {
@@ -33,7 +34,7 @@ class EndOfShiftReportPatrolController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $patrolReports = FirestoreService::getCollection($this->collectionName);
@@ -66,6 +67,10 @@ class EndOfShiftReportPatrolController extends Controller
                 'formSubmitted' => 'required|boolean',
             ]);
 
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
+
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
 
             // Get the document ID
@@ -96,7 +101,7 @@ class EndOfShiftReportPatrolController extends Controller
     }
 
     //read
-    public function show(Request $request, string $patrolReportID)
+    public function show(string $patrolReportID)
     {
         try {
             $patrolReport = FirestoreService::getDocument($this->collectionName, $patrolReportID);
@@ -134,6 +139,7 @@ class EndOfShiftReportPatrolController extends Controller
                 'uploadedBy',
                 'report',
                 'endOfShiftReportPatrolFiles',
+                'isRead',
                 'formSubmitted',
             ]);
             $success = FirestoreService::updateDocument(
@@ -197,7 +203,7 @@ class EndOfShiftReportPatrolController extends Controller
     }
 
 
-    public function getTotalEndOfShiftReportPatrol(Request $request)
+    public function getTotalEndOfShiftReportPatrol()
     {
         try {
             // 1️⃣ Get all patrol end-of-shift reports

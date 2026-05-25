@@ -12,7 +12,7 @@ class BuildingController extends Controller
     protected const COLLECTION_PREFIX = 'publicSafety_';
     protected string $collectionName = self::COLLECTION_PREFIX . 'buildings';
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $buildings = FirestoreService::getCollection($this->collectionName);
@@ -85,7 +85,7 @@ class BuildingController extends Controller
     }
 
     //read
-    public function show(Request $request, string $buildingID)
+    public function show(string $buildingID)
     {
         try {
             $building = FirestoreService::getDocument($this->collectionName, $buildingID);
@@ -115,9 +115,6 @@ class BuildingController extends Controller
         return response($response, 200);
     }
 
-
-
-    //update
     // Update building
     public function update(Request $request, string $id)
     {
@@ -163,6 +160,7 @@ class BuildingController extends Controller
             ], 500);
         }
     }
+
     //delete
     public function destroy(string $id)
     {

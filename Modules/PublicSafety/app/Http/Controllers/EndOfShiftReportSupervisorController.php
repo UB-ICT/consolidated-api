@@ -4,7 +4,6 @@ namespace Modules\PublicSafety\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -24,6 +23,7 @@ class EndOfShiftReportSupervisorController extends Controller
                 'uploadedBy' => $request->user()->name ?? '', //Supervisor Officer
                 'campus' => '',
                 'report' => '',
+                'isRead' => false,
                 'formSubmitted' => false,
             ];
         } catch (\Exception $e) {
@@ -33,7 +33,7 @@ class EndOfShiftReportSupervisorController extends Controller
         return array_merge($defaultReport, ['id' => $documentRef->id()]);
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $supervisorReports = FirestoreService::getCollection($this->collectionName);
@@ -66,6 +66,11 @@ class EndOfShiftReportSupervisorController extends Controller
                 'formSubmitted' => 'required|boolean',
             ]);
 
+
+            // prepare the data to save
+            $data = $request->all();
+            $data['isRead'] = false;
+
             $documentRef = FirestoreService::syncDocumentAndGetRef($this->collectionName, $request->all());
 
             // Get the document ID
@@ -96,7 +101,7 @@ class EndOfShiftReportSupervisorController extends Controller
     }
 
     //read
-    public function show(Request $request, string $supervisorReport)
+    public function show(string $supervisorReport)
     {
         try {
             $supervisorReport = FirestoreService::getDocument($this->collectionName, $supervisorReport);
@@ -137,6 +142,7 @@ class EndOfShiftReportSupervisorController extends Controller
                 'uploadedBy',
                 'report',
                 'endOfShiftReportSupervisorFiles',
+                'isRead',
                 'formSubmitted',
             ]);
 
@@ -200,7 +206,7 @@ class EndOfShiftReportSupervisorController extends Controller
         return response($response, 200);
     }
 
-    public function getTotalEndOfShiftReportSupervisor(Request $request)
+    public function getTotalEndOfShiftReportSupervisor()
     {
         try {
             // 1️⃣ Get all supervisor end-of-shift reports

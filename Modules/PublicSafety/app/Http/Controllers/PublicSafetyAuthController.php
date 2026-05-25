@@ -30,7 +30,7 @@ class PublicSafetyAuthController extends Controller
         // This ensures it works across different environments (local, staging, production)
         $redirectUri = config('services.google_public_safety.redirect_uri');
         Log::info('Redirect URI11: ' . $redirectUri);
-        
+
         // If not set in config, construct absolute URL from request
         if (!$redirectUri) {
             $baseUrl = rtrim(config('app.url'), '/');
@@ -42,7 +42,7 @@ class PublicSafetyAuthController extends Controller
         }
 
         Log::info('Redirect URI: ' . $redirectUri);
-        
+
         return Socialite::driver('google')
             ->stateless()
             ->redirectUrl($redirectUri)
@@ -68,7 +68,7 @@ class PublicSafetyAuthController extends Controller
             // 1. Fetch authenticated user information from Google
             // Construct redirect URI dynamically to match what was sent in redirect()
             $redirectUri = config('services.google_public_safety.redirect_uri');
-            
+
             // If not set in config, construct absolute URL from request
             if (!$redirectUri) {
                 $baseUrl = rtrim(config('app.url'), '/');
@@ -78,7 +78,7 @@ class PublicSafetyAuthController extends Controller
                 }
                 $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
             }
-           
+
             Log::info('Redirect URI: ' . $redirectUri);
             $googleUser = Socialite::driver('google')
                 ->stateless()
@@ -90,6 +90,8 @@ class PublicSafetyAuthController extends Controller
                 ['email' => $googleUser->email],
                 [
                     'name' => $googleUser->name,
+                    'type' => 'public_safety',
+                    'domain' => 'ub.edu.bz',
                     'google_id' => $googleUser->id,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
@@ -104,6 +106,9 @@ class PublicSafetyAuthController extends Controller
 
             // 4. SECURITY CHECK
             if (!$this->isPublicSafetyUser($user->email)) {
+                Log::warning('Public Safety login denied for user not found in allowed groups', [
+                    'email' => $user->email,
+                ]);
                 return redirect(config('app.public_safety_frontend') . '?error=unauthorized');
             }
 
@@ -111,14 +116,21 @@ class PublicSafetyAuthController extends Controller
             Auth::login($user);
 
             // 6. Create Sanctum token
-            $token = $user->createToken('public-safety-token', ['access-public-safety'])->plainTextToken;
+            $token = $user->createToken('public-safety-token', ['public-safety'])->plainTextToken;
 
-            // 7. Initialize Firestore
-            $this->createPublicSafetyProfile($user->email);
+            // 7. Initialize Firestore (non-blocking — failure must not prevent login)
+            try {
+                $this->createPublicSafetyProfile($user->email);
+            } catch (\Exception $e) {
+                Log::warning('Firestore profile creation failed (non-fatal)', [
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // 8. Redirect with token
             $frontendUrl = rtrim(config('app.public_safety_frontend'), '/');
-            return redirect("{$frontendUrl}?token={$token}");
+            return redirect("{$frontendUrl}?token={$token}&system=public-safety");
 
         } catch (\Exception $e) {
             // Log safely, using null-coalescing operator
@@ -144,6 +156,10 @@ class PublicSafetyAuthController extends Controller
         // Get authenticated user from Sanctum token
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         // Get the token currently being used
         $token = $user->currentAccessToken();
 
@@ -151,7 +167,7 @@ class PublicSafetyAuthController extends Controller
          * Ensure token belongs to the Public Safety system.
          * Prevents token reuse across apps.
          */
-        if (!$token || !in_array('public-safety', $token->abilities)) {
+        if (!$token || !array_intersect(['public-safety', 'access-public-safety'], $token->abilities ?? [])) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -205,8 +221,9 @@ class PublicSafetyAuthController extends Controller
              */
             $publicSafetyGroups = [
                 'api_public_safety@ub.edu.bz',
-                'api_public_safety_Admin@ub.edu.bz',
-                'api_public_safety_Security@ub.edu.bz',
+                'api_public_safety_Admin@ub.edu.bz', //Chief Public Safety Officer, and Supervisor
+                'api_public_safety_Security@ub.edu.bz', //Shift Supervisors
+                'api_public_safety_Officer@ub.edu.bz',  //public Safety officers
             ];
 
             /**
@@ -216,14 +233,44 @@ class PublicSafetyAuthController extends Controller
                 try {
                     // If user is a member, this call succeeds
                     $directory->members->get($groupEmail, $email);
+                    Log::info('Public Safety group check: user IS member', [
+                        'email'  => $email,
+                        'group'  => $groupEmail,
+                    ]);
                     return true;
+                } catch (\Google\Service\Exception $e) {
+                    $status = $e->getCode();
+                    if ($status === 404) {
+                        // Normal: user simply not in this group
+                        Log::debug('Public Safety group check: not a member', [
+                            'email' => $email,
+                            'group' => $groupEmail,
+                        ]);
+                    } else {
+                        // Unexpected API error (403 auth, 500, quota, etc.)
+                        Log::error('Public Safety group check: API error', [
+                            'email'  => $email,
+                            'group'  => $groupEmail,
+                            'status' => $status,
+                            'error'  => $e->getMessage(),
+                        ]);
+                    }
+                    continue;
                 } catch (\Exception $e) {
-                    // Not in this group — continue checking others
+                    Log::error('Public Safety group check: unexpected error', [
+                        'email' => $email,
+                        'group' => $groupEmail,
+                        'error' => $e->getMessage(),
+                    ]);
                     continue;
                 }
             }
 
-            // User is not in ANY allowed Public Safety group
+            Log::warning('Public Safety group check: user not found in any allowed group', [
+                'email'  => $email,
+                'groups' => $publicSafetyGroups,
+            ]);
+
             return false;
 
         } catch (\Exception $e) {
@@ -231,9 +278,10 @@ class PublicSafetyAuthController extends Controller
              * If something goes wrong (API error, config issue),
              * FAIL CLOSED (deny access).
              */
-            Log::error('Public Safety group check failed', [
+            Log::error('Public Safety group check: client initialisation failed', [
                 'email' => $email,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return false;

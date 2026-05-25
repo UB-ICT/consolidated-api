@@ -13,9 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('approvals', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('requisition_id')->constrained('requisitions');
-            $table->foreignId('user_id')->constrained('por_users');
+            $table->uuid('id')->primary();
+            $table->foreignUuId('requisition_id')->constrained('requisitions');
+            $table->foreignUuId('user_id')->constrained('users');
             $table->timestamp('signed_at')->useCurrent();
             $table->string('comments')->nullable();
         });

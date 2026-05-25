@@ -13,13 +13,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('addresses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->uuid('id')->primary();
+            $table->foreignUuId('supplier_id')->constrained('suppliers');
             $table->string('street');
             $table->string('city');
             $table->string('district');
             $table->string('postal_code')->nullable();
-            $table->foreignId('country_id')->constrained('countries');
+            $table->foreignUuId('country_id')->constrained('countries');
         });
     }
 
