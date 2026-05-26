@@ -114,11 +114,7 @@ class UBPortalDatabaseSeeder extends Seeder
 
         // 5. Create example users for each stage of the flow.
         $admin = User::query()->where('email', 'admin@ub.edu.bz')->first();
-<<<<<<< HEAD
-        if (! $admin) {
-=======
         if (!$admin) {
->>>>>>> origin/dev
             $admin = User::query()->forceCreate([
                 'id' => (string) Str::uuid(),
                 'name' => 'System Administrator',
@@ -130,11 +126,7 @@ class UBPortalDatabaseSeeder extends Seeder
         }
 
         $registrarUser = User::query()->where('email', 'registrar@ub.edu.bz')->first();
-<<<<<<< HEAD
-        if (! $registrarUser) {
-=======
         if (!$registrarUser) {
->>>>>>> origin/dev
             $registrarUser = User::query()->forceCreate([
                 'id' => (string) Str::uuid(),
                 'name' => 'Registrar Officer',
@@ -146,11 +138,7 @@ class UBPortalDatabaseSeeder extends Seeder
         }
 
         $employee = User::query()->where('email', 'employee@ub.edu.bz')->first();
-<<<<<<< HEAD
-        if (! $employee) {
-=======
         if (!$employee) {
->>>>>>> origin/dev
             $employee = User::query()->forceCreate([
                 'id' => (string) Str::uuid(),
                 'name' => 'Example Employee',

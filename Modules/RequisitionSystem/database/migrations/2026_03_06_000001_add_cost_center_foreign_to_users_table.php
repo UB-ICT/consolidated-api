@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'porsql';
+    protected $connection = 'pgsql';
 
     /**
      * Add cost_center_id FK to the shared users table after cost_centers is created.

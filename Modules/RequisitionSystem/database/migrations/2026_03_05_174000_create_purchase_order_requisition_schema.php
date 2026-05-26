@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    protected $connection = 'porsql';
+    protected $connection = 'pgsql';
 
     /**
      * Run the migrations.

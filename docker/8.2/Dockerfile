@@ -19,19 +19,12 @@ ENV SUPERVISOR_PHP_USER="sail"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
 
-<<<<<<< HEAD
 RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
     echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99custom && \
     echo "Acquire::BrokenProxy     true;" >> /etc/apt/apt.conf.d/99custom
 
 # Core PHP and Tools Installation
 RUN apt-get update && apt-get upgrade -y \
-=======
-# --------------------------------------------------------------------
-# Base Dependencies
-# --------------------------------------------------------------------
-RUN apt-get update \
->>>>>>> origin/dev
     && mkdir -p /etc/apt/keyrings \
     && apt-get install -y gnupg gosu curl ca-certificates zip unzip git supervisor sqlite3 libcap2-bin libpng-dev python3 dnsutils librsvg2-bin fswatch ffmpeg nano \
     && curl -sS 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xb8dc7e53946656efbce4c1dd71daeaab4ad4cab6' | gpg --dearmor | tee /etc/apt/keyrings/ppa_ondrej_php.gpg > /dev/null \
@@ -51,12 +44,6 @@ RUN apt-get update \
     && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_VERSION.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
     && apt-get update \
     && apt-get install -y nodejs \
-<<<<<<< HEAD
-=======
-    && corepack enable \
-    && corepack prepare pnpm@latest --activate \
-    && npm install -g bun \
->>>>>>> origin/dev
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /etc/apt/keyrings/yarn.gpg >/dev/null \
     && echo "deb [signed-by=/etc/apt/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
     && curl -sS https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /etc/apt/keyrings/pgdg.gpg >/dev/null \
@@ -78,7 +65,6 @@ RUN curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xb8dc7e53
     > /etc/apt/sources.list.d/ppa_ondrej_php.list
 
 # --------------------------------------------------------------------
-<<<<<<< HEAD
 # gRPC Extension
 # --------------------------------------------------------------------
 RUN apt-get update && \
@@ -94,41 +80,6 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /et
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 unixodbc-dev \
     && pecl install sqlsrv-5.11.0 pdo_sqlsrv-5.11.0 \
-=======
-# NodeSource Repository
-# --------------------------------------------------------------------
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
-    | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" \
-    > /etc/apt/sources.list.d/nodesource.list
-
-# --------------------------------------------------------------------
-# PostgreSQL Repository
-# --------------------------------------------------------------------
-RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-    | gpg --dearmor -o /etc/apt/keyrings/pgdg.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
-    > /etc/apt/sources.list.d/pgdg.list
-
-# --------------------------------------------------------------------
-# Microsoft SQL Server Repository
-# --------------------------------------------------------------------
-RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
-    | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
-    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/24.04/prod noble main" \
-    > /etc/apt/sources.list.d/mssql-release.list
-
-# --------------------------------------------------------------------
-# Install PHP + Node + Database Clients
-# --------------------------------------------------------------------
-RUN apt-get update \
-    && apt-get install -y \
-        unixodbc-dev \
-        gnupg2 \
-        build-essential \
-        php8.2-dev \
-    && pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 \
->>>>>>> origin/dev
     && echo "extension=sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-sqlsrv.ini \
     && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-pdo_sqlsrv.ini \
     && ln -sfn /opt/mssql-tools18/bin/sqlcmd /usr/bin/sqlcmd \
@@ -137,31 +88,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------
-<<<<<<< HEAD
 # User Setup
 # --------------------------------------------------------------------
 RUN userdel -r ubuntu || true
 RUN groupadd --force -g 1337 sail
 RUN useradd -ms /bin/bash --no-user-group -g 1337 -u 1337 sail
-=======
-# Composer
-# --------------------------------------------------------------------
-RUN curl -fsSL https://getcomposer.org/installer \
-    | php -- --install-dir=/usr/bin/ --filename=composer
-
-# --------------------------------------------------------------------
-# Node Tooling
-# --------------------------------------------------------------------
-# --------------------------------------------------------------------
-# Node Tooling (FIXED)
-# --------------------------------------------------------------------
-RUN corepack enable \
-    && corepack prepare pnpm@latest --activate
-# --------------------------------------------------------------------
-# Bun
-# --------------------------------------------------------------------
-RUN curl -fsSL https://bun.sh/install | bash
->>>>>>> origin/dev
 
 ENV PATH="/root/.bun/bin:$PATH"
 

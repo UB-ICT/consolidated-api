@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    protected $connection = 'porsql';
+    protected $connection = 'pgsql';
     /**
      * Run the migrations.
      */

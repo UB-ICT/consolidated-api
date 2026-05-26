@@ -22,7 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail, LdapAuthenticatab
 {
     use HasFactory, HasUuids, Notifiable, HasApiTokens, HasRoles, AuthenticatesWithLdap, HasLdapUser;
 
-    protected $connection = 'porsql';
+    protected $connection = 'pgsql';
     protected $keyType = 'string';
     public $incrementing = false;
 
