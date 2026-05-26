@@ -6,11 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'ubportal';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+
+        if (Schema::hasTable('user_groups')) {
+            return;
+        }
+
         // Pivot table mapping users to groups.
         Schema::create('user_groups', function (Blueprint $table) {
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');

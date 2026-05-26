@@ -6,11 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'ubportal';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+
+        if (Schema::hasTable('permissions')) {
+            return;
+        }
+
         // Stores granular permission actions grouped by category.
         Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();

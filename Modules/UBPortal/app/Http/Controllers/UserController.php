@@ -57,7 +57,7 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:porsql.users,email',
+            'email' => 'required|email|unique:ubportal.users,email',
             'password' => 'sometimes|nullable|string|min:8',
             'type' => 'sometimes|string|max:255',
             'domain' => 'sometimes|string|max:255',
@@ -124,7 +124,7 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:porsql.users,email,' . $user->getKey() . ',id',
+            'email' => 'sometimes|required|email|unique:ubportal.users,email,' . $user->getKey() . ',id',
             'password' => 'sometimes|nullable|string|min:8',
             'type' => 'sometimes|string|max:255',
             'domain' => 'sometimes|string|max:255',

@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Permission extends Model
 {
+    protected $connection = 'ubportal';
+
     use HasUuids;
 
     /**

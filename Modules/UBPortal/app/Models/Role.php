@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Role extends Model
 {
+    protected $connection = 'ubportal';
+
     use HasUuids;
 
     /**

@@ -6,11 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'ubportal';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+        if (Schema::hasTable('access_requests')) {
+            return;
+        }
         // Tracks user requests for role-based application access.
         Schema::create('access_requests', function (Blueprint $table) {
             $table->uuid('id')->primary();

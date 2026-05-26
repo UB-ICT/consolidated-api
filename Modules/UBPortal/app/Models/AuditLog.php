@@ -15,6 +15,8 @@ use Modules\Auth\Models\User;
  */
 class AuditLog extends Model
 {
+    protected $connection = 'ubportal';
+
     use HasUuids;
 
     /**

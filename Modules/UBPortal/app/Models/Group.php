@@ -15,6 +15,8 @@ use Modules\Auth\Models\User;
  */
 class Group extends Model
 {
+    protected $connection = 'ubportal';
+
     use HasUuids;
 
     /**

@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MenuItem extends Model
 {
+    protected $connection = 'ubportal';
+
     use HasUuids;
 
     /**

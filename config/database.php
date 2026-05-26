@@ -59,6 +59,24 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        // UBPortal lives in its own PostgreSQL schema while still sharing
+        // cross-module tables (for example `users`) from `public`.
+        'ubportal' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', 'consolidated-api-db'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('PGSQL_DATABASE', 'ub'),
+            'username' => env('PGSQL_USERNAME', 'postgres'),
+            'password' => env('PGSQL_PASSWORD', 'password'),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            // Resolve unqualified table names in `ubportal` first, then `public`.
+            'search_path' => 'ubportal,public',
+            'sslmode' => 'prefer',
+        ],
+
 
         'firestore' => [
             'driver' => 'mongodb',
