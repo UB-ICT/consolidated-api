@@ -17,6 +17,134 @@ class CourseEvaluationController extends Controller
     protected $collectionName = 'cmon_courseMonitoring';
 
     /**
+     * Normalize appendix document paths for comparison and disk lookup (private disk root).
+     */
+    private function normalizeDocumentPath(string $path): string
+    {
+        $path = urldecode($path);
+        $path = str_replace('\\', '/', $path);
+        $path = ltrim($path, '/');
+
+        if (str_starts_with($path, 'private/')) {
+            $path = substr($path, strlen('private/'));
+        }
+
+        return $path;
+    }
+
+    /**
+     * Resolve absolute path on the private disk for a stored relative path.
+     */
+    private function resolvePrivateDocumentAbsolutePath(string $relativePath): string
+    {
+        return storage_path('app/private/' . $this->normalizeDocumentPath($relativePath));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $documents
+     * @return array<string, mixed>|null
+     */
+    private function findAppendixDocument(array $documents, string $requestPath): ?array
+    {
+        $normalized = $this->normalizeDocumentPath($requestPath);
+
+        foreach ($documents as $doc) {
+            if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $normalized) {
+                return $doc;
+            }
+        }
+
+        $basename = basename($normalized);
+        if ($basename !== '') {
+            foreach ($documents as $doc) {
+                if (basename($this->normalizeDocumentPath((string) ($doc['path'] ?? ''))) === $basename) {
+                    return $doc;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return string|null Relative path on the private disk
+     */
+    private function resolvePrivateDiskRelativePath(string $storedPath): ?string
+    {
+        $normalized = $this->normalizeDocumentPath($storedPath);
+
+        if (Storage::disk('private')->exists($normalized)) {
+            return $normalized;
+        }
+
+        $basename = basename($normalized);
+        if ($basename !== '') {
+            $fallback = 'uploads/courseMonitoring/' . $basename;
+            if (Storage::disk('private')->exists($fallback)) {
+                return $fallback;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Path from ?path= query (preferred) or legacy {documentPath} route segment.
+     */
+    private function documentPathFromRequest(Request $request, ?string $documentPath = null): string
+    {
+        $path = $request->query('path', $documentPath ?? '');
+
+        return is_string($path) ? trim($path) : '';
+    }
+
+    /**
+     * Ensure course monitoring upload directory exists and is writable by the PHP process.
+     */
+    private function ensureCourseMonitoringUploadDirectory(): void
+    {
+        $relativeDir = 'uploads/courseMonitoring';
+        if (! Storage::disk('private')->exists($relativeDir)) {
+            Storage::disk('private')->makeDirectory($relativeDir);
+        }
+        $absoluteDir = Storage::disk('private')->path($relativeDir);
+        if (is_dir($absoluteDir)) {
+            @chmod($absoluteDir, 0775);
+        }
+    }
+
+    /**
+     * Delete a file on the private disk without throwing (unlink needs write permission on the parent directory).
+     */
+    private function tryDeletePrivateDocumentFile(?string $diskRelative): void
+    {
+        if ($diskRelative === null || $diskRelative === '') {
+            return;
+        }
+
+        $normalized = $this->normalizeDocumentPath($diskRelative);
+        $absolute = Storage::disk('private')->path($normalized);
+
+        if (! is_file($absolute)) {
+            return;
+        }
+
+        $parentDir = dirname($absolute);
+        if (is_dir($parentDir) && ! is_writable($parentDir)) {
+            @chmod($parentDir, 0775);
+        }
+
+        $deleted = @unlink($absolute);
+        if (! $deleted && is_file($absolute)) {
+            Log::warning('Course monitoring document could not be removed from disk', [
+                'disk_path' => $normalized,
+                'absolute' => $absolute,
+                'parent_writable' => is_dir($parentDir) && is_writable($parentDir),
+            ]);
+        }
+    }
+
+    /**
      * Get course evaluation for a lecturer
      * Creates the document if it doesn't exist
      */
@@ -28,10 +156,9 @@ class CourseEvaluationController extends Controller
             $snapshot = $docRef->snapshot();
 
             if (!$snapshot->exists()) {
-                // Create document with empty courses array
+                // Omit `courses` until first course; readers use courses ?? [].
                 $docRef->set([
                     'email' => $email,
-                    'courses' => []
                 ]);
                 return response()->json([
                     'success' => true,
@@ -72,7 +199,6 @@ class CourseEvaluationController extends Controller
             if (!$snapshot->exists()) {
                 $docRef->set([
                     'email' => $email,
-                    'courses' => []
                 ]);
                 $courses = [];
             } else {
@@ -294,6 +420,66 @@ class CourseEvaluationController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function emailsEqualInsensitive(?string $a, ?string $b): bool
+    {
+        if ($a === null || $b === null) {
+            return false;
+        }
+
+        return strtolower(trim($a)) === strtolower(trim($b));
+    }
+
+    /**
+     * Whether the logged-in viewer may download appendix files for this lecturer's course.
+     * Route {email} is the instructor (Firestore document id), not necessarily the viewer.
+     */
+    private function viewerMayDownloadCourseDocument(
+        string $viewerEmail,
+        string $lecturerEmail,
+        string $courseCode,
+        string $courseSection,
+        string $semester
+    ): bool {
+        if ($viewerEmail === '' || $this->emailsEqualInsensitive($viewerEmail, $lecturerEmail)) {
+            return true;
+        }
+
+        $spreadsheetId = env('GOOGLE_SHEET_ID');
+        if (! $spreadsheetId) {
+            return true;
+        }
+
+        $range = env('COURSES_GOOGLE_SHEET_RANGE', 'courses!A1:Z2000');
+        $roles = ['courseCoordinator', 'programCoordinator', 'chair', 'dean', 'VP'];
+
+        foreach ($roles as $role) {
+            $keys = GoogleSheetService::getMonitoringCourseKeysForPerson(
+                $spreadsheetId,
+                $range,
+                $semester,
+                $role,
+                $viewerEmail,
+                $lecturerEmail
+            );
+            foreach ($keys as $pair) {
+                if ($this->monitoringCourseKeyMatches($pair, $courseCode, $courseSection)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array{courseCode?: string, courseSection?: string}  $pair
+     */
+    private function monitoringCourseKeyMatches(array $pair, string $courseCode, string $courseSection): bool
+    {
+        return strtolower(trim((string) ($pair['courseCode'] ?? ''))) === strtolower(trim($courseCode))
+            && strtolower(trim((string) ($pair['courseSection'] ?? ''))) === strtolower(trim($courseSection));
     }
 
     /**
@@ -552,11 +738,16 @@ class CourseEvaluationController extends Controller
             $extension = $file->getClientOriginalExtension();
             $fileName = Str::random(40) . '.' . $extension;
             
-            // Store file
-            $filePath = $file->storeAs('uploads/courseMonitoring', $fileName, 'private');
-            
-            // Generate path for storage (relative to storage/app/private)
+            $this->ensureCourseMonitoringUploadDirectory();
+
+            $file->storeAs('uploads/courseMonitoring', $fileName, 'private');
+
             $storagePath = 'uploads/courseMonitoring/' . $fileName;
+
+            $absoluteStored = Storage::disk('private')->path($storagePath);
+            if (is_file($absoluteStored)) {
+                @chmod($absoluteStored, 0664);
+            }
             
             // Get existing course
             $existingCourse = $courses[$courseIndex];
@@ -605,8 +796,16 @@ class CourseEvaluationController extends Controller
     /**
      * Delete a document from course evaluation
      */
-    public function deleteDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, string $documentPath)
+    public function deleteDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, ?string $documentPath = null)
     {
+        $documentPath = $this->documentPathFromRequest($request, $documentPath);
+        if ($documentPath === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document path is required (use ?path=)',
+            ], 422);
+        }
+
         try {
             $firestore = FirestoreService::firestore();
             $docRef = $firestore->collection($this->collectionName)->document($email);
@@ -639,12 +838,20 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Find and remove document
             $documents = $existingCourse['appendix']['documents'];
+            $matchedDoc = $this->findAppendixDocument($documents, $documentPath);
+
+            if ($matchedDoc === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Document not found'
+                ], 404);
+            }
+
             $documentIndex = -1;
-            
+            $matchedNormalized = $this->normalizeDocumentPath((string) ($matchedDoc['path'] ?? ''));
             foreach ($documents as $index => $doc) {
-                if (($doc['path'] ?? '') === $documentPath) {
+                if ($this->normalizeDocumentPath((string) ($doc['path'] ?? '')) === $matchedNormalized) {
                     $documentIndex = $index;
                     break;
                 }
@@ -657,11 +864,8 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Delete file from storage
-            $filePath = storage_path('app/private/' . $documentPath);
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
+            $diskRelative = $this->resolvePrivateDiskRelativePath((string) ($matchedDoc['path'] ?? $documentPath));
+            $this->tryDeletePrivateDocumentFile($diskRelative);
 
             // Remove document from array
             array_splice($documents, $documentIndex, 1);
@@ -693,11 +897,28 @@ class CourseEvaluationController extends Controller
     /**
      * Download a document from course evaluation
      */
-    public function downloadDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, string $documentPath)
+    public function downloadDocument(Request $request, string $email, string $courseCode, string $courseSection, string $academicYear, string $semester, ?string $documentPath = null)
     {
+        $documentPath = $this->documentPathFromRequest($request, $documentPath);
+        if ($documentPath === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document path is required (use ?path=)',
+            ], 422);
+        }
+
+        $lecturerEmail = $email;
+        $viewerEmail = trim((string) $request->query('viewerEmail', ''));
+        if (! $this->viewerMayDownloadCourseDocument($viewerEmail, $lecturerEmail, $courseCode, $courseSection, $semester)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to download this document',
+            ], 403);
+        }
+
         try {
             $firestore = FirestoreService::firestore();
-            $docRef = $firestore->collection($this->collectionName)->document($email);
+            $docRef = $firestore->collection($this->collectionName)->document($lecturerEmail);
             $snapshot = $docRef->snapshot();
 
             if (!$snapshot->exists()) {
@@ -727,51 +948,35 @@ class CourseEvaluationController extends Controller
                 ], 404);
             }
 
-            // Verify document exists in the course
             $documents = $existingCourse['appendix']['documents'];
-            $documentExists = false;
-            $documentName = '';
-            
-            foreach ($documents as $doc) {
-                if (($doc['path'] ?? '') === $documentPath) {
-                    $documentExists = true;
-                    $documentName = $doc['name'] ?? basename($documentPath);
-                    break;
-                }
-            }
+            $matchedDoc = $this->findAppendixDocument($documents, $documentPath);
 
-            if (!$documentExists) {
+            if ($matchedDoc === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Document not found'
+                    'message' => 'Document not found',
                 ], 404);
             }
 
-            // Decode the document path (in case it's URL encoded)
-            $decodedPath = urldecode($documentPath);
-            
-            // Get file path
-            $filePath = storage_path('app/private/' . $decodedPath);
-            
-            if (!file_exists($filePath)) {
+            $storedPath = (string) ($matchedDoc['path'] ?? $documentPath);
+            $diskRelative = $this->resolvePrivateDiskRelativePath($storedPath);
+
+            if ($diskRelative === null) {
                 Log::error('File not found', [
-                    'expected_path' => $filePath,
+                    'expected_path' => $this->resolvePrivateDocumentAbsolutePath($storedPath),
                     'document_path' => $documentPath,
-                    'decoded_path' => $decodedPath
+                    'stored_path' => $storedPath,
                 ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'File not found on server',
-                    'debug' => [
-                        'document_path' => $documentPath,
-                        'decoded_path' => $decodedPath,
-                        'file_path' => $filePath
-                    ]
                 ], 404);
             }
 
-            // Return file download response
-            return response()->download($filePath, $documentName);
+            $documentName = (string) ($matchedDoc['name'] ?? basename($diskRelative));
+
+            return Storage::disk('private')->download($diskRelative, $documentName);
         } catch (\Exception $e) {
             Log::error('Error downloading document: ' . $e->getMessage());
             return response()->json([

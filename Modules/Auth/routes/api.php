@@ -18,6 +18,8 @@ use Modules\Auth\Http\Controllers\GoogleAuthController;
 Route::post('/v1/auth/login', [AuthController::class, 'login']);
 Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/v1/user', [GoogleAuthController::class, 'getAnnualReportUserInfo'])->middleware('auth:sanctum');
+/** Accepts Sanctum PAT or Google OIDC `id_token` in `Authorization: Bearer` (see controller). */
+Route::get('/user', [GoogleAuthController::class, 'user']);
 Route::post('/v1/auth/mockGoogleLogin', [GoogleAuthController::class, 'mockGoogleLogin']);
 Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo'])->middleware('auth:sanctum');
 Route::get('/v1/ubportal/user', [GoogleAuthController::class, 'getUbPortalUserInfo'])->middleware('auth:sanctum');

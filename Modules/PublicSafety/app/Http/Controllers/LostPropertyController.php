@@ -407,4 +407,79 @@ class LostPropertyController extends Controller
 
         return sprintf('%s%04d', $prefix, $nextNumber);
     }
+
+
+    public function getResolvedLostProperty()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
+
+            $resolvedCount = 0;
+
+            if (is_array($lostProperty)) {
+                foreach ($lostProperty as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
+                        $resolvedCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Resolved incidents retrieved successfully',
+                'data' => ['totalResolved' => $resolvedCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
+
+    public function getPendingLostProperty()
+    {
+        try {
+            // 1️⃣ Get all incident logs from Firestore
+            $lostProperty = FirestoreService::getCollection($this->collectionName);
+
+            $pendingCount = 0;
+
+            if (is_array($lostProperty)) {
+                foreach ($lostProperty as $log) {
+                    // ✅ Only count submitted forms
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
+
+                    // ✅ Check if incident is "Investigating" or any "active" status
+                    if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {
+                        $pendingCount++;
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Pending incidents retrieved successfully',
+                'data' => ['totalPending' => $pendingCount]
+            ];
+        } catch (\Exception $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
+
+        return response($response, 200);
+    }
 }

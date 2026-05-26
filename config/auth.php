@@ -44,6 +44,10 @@ return [
             'driver' => 'passport',
             'provider' => 'users',
         ],
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'sanctum_users',
+        ],
     ],
 
     /*
@@ -77,6 +81,10 @@ return [
                     'email' => 'mail',
                 ],
             ],
+        ],
+        'sanctum_users' => [
+            'driver' => 'eloquent',
+            'model' => Modules\Auth\Models\User::class,
         ],
     ],
 

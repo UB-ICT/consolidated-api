@@ -1,5 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+$googleOAuth = require __DIR__.'/paths/google-oauth-web-client.php';
+$googleClientId = $googleOAuth['client_id'] ?? env('GOOGLE_CLIENT_ID');
+$googleClientSecret = $googleOAuth['client_secret'] ?? env('GOOGLE_CLIENT_SECRET');
+
 return [
 
     /*
@@ -9,8 +15,8 @@ return [
     |
     | This file is for storing the credentials for third party services such
     | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
+    | location for this type of information, allowing packages to have a
+    | conventional location to find the various service credentials.
     |
     */
 
@@ -36,26 +42,26 @@ return [
     ],
 
     'google' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'client_id' => $googleClientId,
+        'client_secret' => $googleClientSecret,
         'redirect' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
         'redirect_uri' => env('GOOGLE_REDIRECT', 'http://localhost:3031/auth/google/callback'),
-        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
+        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz'),
     ],
 
     'google_public_safety' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI',  'http://localhost:3031/auth/google/public-safety-callback'),
-        'redirect_uri' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI',  'http://localhost:3031/auth/google/public-safety-callback'),
-        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
+        'client_id' => $googleClientId,
+        'client_secret' => $googleClientSecret,
+        'redirect' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI', 'http://localhost:3031/auth/google/public-safety-callback'),
+        'redirect_uri' => env('GOOGLE_PUBLIC_SAFETY_REDIRECT_URI', 'http://localhost:3031/auth/google/public-safety-callback'),
+        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz'),
     ],
 
     'google_annual_report' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI',  'http://localhost:3031/auth/google/annual-report-callback'),
-        'redirect_uri' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI',  'http://localhost:3031/auth/google/annual-report-callback'),
-        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz')
-    ]
+        'client_id' => $googleClientId,
+        'client_secret' => $googleClientSecret,
+        'redirect' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI', 'http://localhost:3031/auth/google/annual-report-callback'),
+        'redirect_uri' => env('GOOGLE_ANNUAL_REPORT_REDIRECT_URI', 'http://localhost:3031/auth/google/annual-report-callback'),
+        'domain' => env('GOOGLE_DOMAIN', 'ub.edu.bz'),
+    ],
 ];

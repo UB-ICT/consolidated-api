@@ -35,7 +35,6 @@ class User extends Authenticatable implements MustVerifyEmail, LdapAuthenticatab
         'device_token',
         'role_id',
         'menu_id',
-        'campus_id',
         'user_status_id',
         'profile_picture',
         'google_id',

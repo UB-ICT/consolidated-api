@@ -46,7 +46,7 @@ class ApplicationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'app_name'    => 'required|string|max:255|unique:applications,app_name',
+            'app_name' => 'required|string|max:255|unique:applications,app_name',
             'description' => 'nullable|string',
         ]);
 
@@ -77,7 +77,7 @@ class ApplicationController extends Controller
     {
         $data = $request->validate([
             // Keep app_name unique while ignoring the current application.
-            'app_name'    => 'sometimes|required|string|max:255|unique:applications,app_name,' . $application->id,
+            'app_name' => 'sometimes|required|string|max:255|unique:applications,app_name,' . $application->id,
             'description' => 'nullable|string',
         ]);
 

@@ -488,7 +488,8 @@ class ImpoundedReportTrackingFormController extends Controller
             if (is_array($impoundedReport)) {
                 foreach ($impoundedReport as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Investigating') {
@@ -524,7 +525,8 @@ class ImpoundedReportTrackingFormController extends Controller
             if (is_array($impoundedReport)) {
                 foreach ($impoundedReport as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Resolved') {
@@ -560,7 +562,8 @@ class ImpoundedReportTrackingFormController extends Controller
             if (is_array($incidentLogs)) {
                 foreach ($incidentLogs as $log) {
                     // ✅ Only count submitted forms
-                    if (!isset($log['formSubmitted']) || !$log['formSubmitted']) continue;
+                    if (!isset($log['formSubmitted']) || !$log['formSubmitted'])
+                        continue;
 
                     // ✅ Check if incident is "Investigating" or any "active" status
                     if (isset($log['incidentReportStatus']) && $log['incidentReportStatus'] === 'Pending') {

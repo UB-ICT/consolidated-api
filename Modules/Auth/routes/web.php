@@ -31,9 +31,3 @@ Route::middleware(['web'])->group(function () {
     Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
     Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
 });
-
-Route::prefix('api')->middleware('auth:sanctum')->group(function () {
-    // Route::get('/user', [GoogleAuthController::class, 'getAnnualReportUserInfo']);
-    // Route::get('/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo']);
-    Route::get('/user', [GoogleAuthController::class, 'user']);
-});

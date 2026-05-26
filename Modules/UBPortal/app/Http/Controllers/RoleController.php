@@ -33,9 +33,9 @@ class RoleController extends Controller
     {
         // Load related permissions and applications
         $roles = Role::with([
-                'permissions',
-                'applications'
-            ])
+            'permissions',
+            'applications'
+        ])
             // Adds permissions_count attribute automatically
             ->withCount('permissions')
 

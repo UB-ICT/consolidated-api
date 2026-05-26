@@ -51,16 +51,16 @@ class AccessRequestController extends Controller
         // Validate request payload
         $data = $request->validate([
             // User requesting access
-            'requester_id'      => 'required|uuid|exists:users,id',
+            'requester_id' => 'required|uuid|exists:users,id',
 
             // Application the user wants access to
-            'app_id'            => 'required|uuid|exists:applications,id',
+            'app_id' => 'required|uuid|exists:applications,id',
 
             // Role being requested
             'requested_role_id' => 'required|uuid|exists:roles,id',
 
             // Optional explanation for why access is needed
-            'reason'            => 'nullable|string',
+            'reason' => 'nullable|string',
         ]);
 
         // New requests should always start as pending

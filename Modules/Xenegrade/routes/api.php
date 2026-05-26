@@ -161,20 +161,12 @@ Route::group([
         '/gradeDistribution/{courseCode}/{courseSection}',
         [GradeDistributionController::class, 'show']
     );
-    Route::get(
-        '/{courseCode}/{courseSection}',
-        [CourseSectionController::class, 'getCourseRows']
-    );
 
+    // Course monitoring (register before /{courseCode}/{courseSection} catch-all)
     Route::get(
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}',
         [CourseEvaluationController::class, 'getCourse']
     );
-    // Course Evaluation CRUD routes
-    // Route::get(
-    //     '/courseMonitoring/{email}',
-    //     [CourseEvaluationController::class, 'getCourseEvaluation']
-    // );
     Route::put(
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}',
         [CourseEvaluationController::class, 'updateCourse']
@@ -187,12 +179,27 @@ Route::group([
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/upload',
         [CourseEvaluationController::class, 'uploadDocument']
     );
+    // Prefer query ?path= (avoids %2F in URL path — many proxies return 404)
+    Route::get(
+        '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/download',
+        [CourseEvaluationController::class, 'downloadDocument']
+    );
+    Route::delete(
+        '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document',
+        [CourseEvaluationController::class, 'deleteDocument']
+    );
+    // Legacy path-param routes (may fail behind nginx when path contains slashes)
+    Route::get(
+        '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/{documentPath}/download',
+        [CourseEvaluationController::class, 'downloadDocument']
+    )->where('documentPath', '.*');
     Route::delete(
         '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/{documentPath}',
         [CourseEvaluationController::class, 'deleteDocument']
+    )->where('documentPath', '.*');
+
+    Route::get(
+        '/{courseCode}/{courseSection}',
+        [CourseSectionController::class, 'getCourseRows']
     );
-    // Route::get(
-    //     '/courseMonitoring/{email}/{courseCode}/{courseSection}/{academicYear}/{semester}/document/{documentPath}/download',
-    //     [CourseEvaluationController::class, 'downloadDocument']
-    // )->where('documentPath', '.*');
 });

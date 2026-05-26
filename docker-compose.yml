@@ -7,44 +7,72 @@ services:
             args:
                 WWWGROUP: "${WWWGROUP}"
         image: sail-8.2/app
+<<<<<<< HEAD
         container_name: api-web
+=======
+        container_name: consolidated-api-web
+
+>>>>>>> origin/dev
         extra_hosts:
             - "host.docker.internal:host-gateway"
+
         ports:
-            # - '${APP_PORT:-80}:80'
-            - "3031:80" # Map port 8000 on your host to port 80 in the container
-            #- "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
+            - "3031:80"
+
         environment:
             WWWUSER: "${WWWUSER}"
             LARAVEL_SAIL: 1
             XDEBUG_MODE: "${SAIL_XDEBUG_MODE:-off}"
             XDEBUG_CONFIG: "${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}"
             IGNITION_LOCAL_SITES_PATH: "${PWD}"
+
         volumes:
             - ".:/var/www/html"
             - "./storage/app/google:/var/www/html/storage/app/google"
-            # - "./docker-config/php.ini:/etc/php/8.2/cli/php.ini"
+
         networks:
             - sail
+
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
     pgsql:
+<<<<<<< HEAD
         image: "postgres:15"
         container_name: api-db
+=======
+        image: postgres:15
+        container_name: consolidated-api-db
+
+>>>>>>> origin/dev
         ports:
-            # - "${DB_PORT:-5432}:5432"
             - "5432:5432"
+
         environment:
+<<<<<<< HEAD
             POSTGRES_DB: "${PGSQL_DATABASE}"
             POSTGRES_USER: "${PGSQL_USERNAME}"
             POSTGRES_PASSWORD: "${PGSQL_PASSWORD}"
+=======
+            POSTGRES_DB: "${PGSQL_DATABASE:-ub}"
+            POSTGRES_USER: "${PGSQL_USERNAME:-postgres}"
+            POSTGRES_PASSWORD: "${PGSQL_PASSWORD:-password}"
+
+>>>>>>> origin/dev
         volumes:
-            - "sail-pgsql:/var/lib/postgresql/data"
-            - "./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql"
+            - sail-pgsql:/var/lib/postgresql/data
+            - ./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql
+
         networks:
-            - sail
+            sail:
+                aliases:
+                    - api-db
+
         healthcheck:
+<<<<<<< HEAD
             test:
                 - CMD
                 - pg_isready
@@ -54,26 +82,41 @@ services:
                 - "-U"
                 - "${PGSQL_USERNAME}"
             retries: 3
+=======
+            test: ["CMD", "pg_isready", "-U", "${PGSQL_USERNAME:-postgres}", "-d", "${PGSQL_DATABASE:-ub}"]
+            interval: 5s
+>>>>>>> origin/dev
             timeout: 5s
+            retries: 5
+
     redis:
+<<<<<<< HEAD
         image: "redis:alpine"
         container_name: api-cache
+=======
+        image: redis:alpine
+        container_name: consolidated-api-cache
+
+>>>>>>> origin/dev
         ports:
             - "${FORWARD_REDIS_PORT:-6379}:6379"
+
         volumes:
-            - "sail-redis:/data"
+            - sail-redis:/data
+
         networks:
             - sail
+
         healthcheck:
-            test:
-                - CMD
-                - redis-cli
-                - ping
-            retries: 3
-            timeout: 5s
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+
 networks:
     sail:
         driver: bridge
+
 volumes:
     sail-pgsql:
         driver: local
