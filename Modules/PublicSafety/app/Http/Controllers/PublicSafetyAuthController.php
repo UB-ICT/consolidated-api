@@ -91,7 +91,10 @@ class PublicSafetyAuthController extends Controller
                 [
                     'name' => $googleUser->name,
                     'type' => 'public_safety',
+<<<<<<< Updated upstream
                     'domain' => 'ub.edu.bz',
+=======
+>>>>>>> Stashed changes
                     'google_id' => $googleUser->id,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
@@ -130,8 +133,13 @@ class PublicSafetyAuthController extends Controller
 
             // 8. Redirect with token
             $frontendUrl = rtrim(config('app.public_safety_frontend'), '/');
+<<<<<<< Updated upstream
             return redirect("{$frontendUrl}?token={$token}&system=public-safety");
 
+=======
+            Log::info('Public Safety OAuth success', ['email' => $user->email, 'frontend' => $frontendUrl]);
+            return redirect("{$frontendUrl}?token={$token}");
+>>>>>>> Stashed changes
         } catch (\Exception $e) {
             // Log safely, using null-coalescing operator
             Log::error('Public Safety OAuth callback error', [
@@ -194,7 +202,27 @@ class PublicSafetyAuthController extends Controller
              * Initialize Google Client using service account
              */
             $client = new GoogleClient();
-            $client->setAuthConfig(config('google.service_account_key_path'));
+
+            $configuredPath = env('GOOGLE_SERVICE_ACCOUNT_CREDENTIALS');
+            $candidatePaths = [
+                storage_path('app/google-service-account.json'),
+                $configuredPath ? base_path($configuredPath) : null,
+                $configuredPath ? storage_path(ltrim($configuredPath, '/')) : null,
+            ];
+
+            $serviceAccountPath = null;
+            foreach ($candidatePaths as $path) {
+                if ($path && file_exists($path)) {
+                    $serviceAccountPath = $path;
+                    break;
+                }
+            }
+
+            if (is_null($serviceAccountPath)) {
+                throw new \RuntimeException('Google service account file not found. Checked: ' . implode(', ', array_filter($candidatePaths)));
+            }
+
+            $client->setAuthConfig($serviceAccountPath);
 
             /**
              * Required scopes to read users & group membership
