@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('conversion_rates', function (Blueprint $table) {
+        if (Schema::connection($this->connection)->hasTable('conversion_rates')) {
+            return;
+        }
+
+        Schema::connection($this->connection)->create('conversion_rates', function (Blueprint $table) {
             $table->id();
             $table->decimal('rate', 10, 2);
             $table->foreignId('currency_id')->constrained('currencies');
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('conversion_rates');
+        Schema::connection($this->connection)->dropIfExists('conversion_rates');
     }
 };
