@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('attachments', function (Blueprint $table) {
+        if (Schema::connection($this->connection)->hasTable('attachments')) {
+            return;
+        }
+
+        Schema::connection($this->connection)->create('attachments', function (Blueprint $table) {
             $table->id();
             $table->string('file_name');
             $table->string('file_path');
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('attachments');
+        Schema::connection($this->connection)->dropIfExists('attachments');
     }
 };
