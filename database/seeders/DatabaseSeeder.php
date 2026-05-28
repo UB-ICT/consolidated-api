@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            \Modules\PublicSafety\Database\Seeders\DatabaseSeeder::class,
+            \Modules\Auth\Database\Seeders\AuthDatabaseSeeder::class,
         ]);
     }
 }

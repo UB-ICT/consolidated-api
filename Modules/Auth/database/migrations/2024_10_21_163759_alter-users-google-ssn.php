@@ -6,14 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'pgsql';
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable();
-            $table->dateTime('email_verified_at')->default(now());
+            if (!Schema::hasColumn('users', 'google_id')) {
+                $table->string('google_id')->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'email_verified_at')) {
+                $table->dateTime('email_verified_at')->default(now());
+            }
         });
     }
 

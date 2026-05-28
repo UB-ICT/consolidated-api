@@ -1,0 +1,908 @@
+{
+  "info": {
+    "name": "Consolidated API - Auth Module",
+    "_postman_id": "d6c15411-5ef8-4f28-9b72-7600d76cf201",
+    "description": "Auth module endpoints with token auto-capture and chained IDs for one-click collection runs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Mock Google)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{mockEmail}}\",\n  \"password\": \"{{mockPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/mockGoogleLogin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "v1",
+                "auth",
+                "mockGoogleLogin"
+              ]
+            },
+            "description": "Uses mockGoogleLogin and stores the returned Sanctum token into variables."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('mock login responded', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const token = json?.data?.token || json?.token || null;",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.environment.set('token', token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mock Google Login (Re-issue Token)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{mockEmail}}\",\n  \"password\": \"{{mockPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/mockGoogleLogin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "v1",
+                "auth",
+                "mockGoogleLogin"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const token = json?.data?.token || json?.token || null;",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.environment.set('token', token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Google User Info",
+      "item": [
+        {
+          "name": "Get Annual Report User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/v1/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "v1",
+                "user"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Public Safety User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/v1/publicSafety/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "v1",
+                "publicSafety",
+                "user"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User (/user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "user"
+              ]
+            },
+            "description": "Accepts Sanctum token (or Google OIDC token depending on controller logic)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User {{$timestamp}}\",\n  \"email\": \"user{{$timestamp}}@example.com\",\n  \"password\": \"Passw0rd!23\",\n  \"domain\": \"ub.edu.bz\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const id = json?.data?.id || json?.id || null;",
+                  "if (id) { pm.environment.set('userId', id); pm.collectionVariables.set('userId', id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User {{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups"
+          }
+        },
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group_name\": \"Postman Group {{$timestamp}}\",\n  \"description\": \"Created by Postman runner\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const id = json?.id || json?.data?.id || null;",
+                  "if (id) { pm.environment.set('groupId', id); pm.collectionVariables.set('groupId', id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Group",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated by Postman {{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
+          }
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles"
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_name\": \"Postman Role {{$timestamp}}\",\n  \"description\": \"Created by Postman runner\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const id = json?.id || json?.data?.id || null;",
+                  "if (id) { pm.environment.set('roleId', id); pm.collectionVariables.set('roleId', id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}"
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated role {{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}"
+          }
+        },
+        {
+          "name": "Attach Permissions To Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission_ids\": [\"{{permissionId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}/permissions/attach"
+          }
+        },
+        {
+          "name": "Sync Permissions For Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission_ids\": [\"{{permissionId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}/permissions/sync"
+          }
+        },
+        {
+          "name": "Detach One Permission",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}/permissions/{{permissionId}}"
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/roles/{{roleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/permissions"
+          }
+        },
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"postman\",\n  \"action_name\": \"view_postman_{{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/permissions"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const id = json?.id || json?.data?.id || null;",
+                  "if (id) { pm.environment.set('permissionId', id); pm.collectionVariables.set('permissionId', id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Permission",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/permissions/{{permissionId}}"
+          }
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"postman-updated\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/permissions/{{permissionId}}"
+          }
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/permissions/{{permissionId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menu Items",
+      "item": [
+        {
+          "name": "List Menu Items",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items"
+          }
+        },
+        {
+          "name": "Create Menu Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Postman Menu {{$timestamp}}\",\n  \"path\": \"/postman/{{$timestamp}}\",\n  \"icon\": \"mdi-test-tube\",\n  \"sort_order\": 99\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "const id = json?.id || json?.data?.id || null;",
+                  "if (id) { pm.environment.set('menuItemId', id); pm.collectionVariables.set('menuItemId', id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Menu Item",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+          }
+        },
+        {
+          "name": "Update Menu Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Updated Menu {{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+          }
+        },
+        {
+          "name": "Delete Menu Item",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Groups (Pivot)",
+      "item": [
+        {
+          "name": "List User Groups",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups"
+          }
+        },
+        {
+          "name": "Create User Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"group_id\": \"{{groupId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups"
+          }
+        },
+        {
+          "name": "Get User Groups By User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}"
+          }
+        },
+        {
+          "name": "Get Specific User Group",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
+          }
+        },
+        {
+          "name": "Update User Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_group_id\": \"{{groupId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
+          }
+        },
+        {
+          "name": "Delete User Group",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Roles (Pivot)",
+      "item": [
+        {
+          "name": "List User Roles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles"
+          }
+        },
+        {
+          "name": "Create User Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"role_id\": \"{{roleId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles"
+          }
+        },
+        {
+          "name": "Get User Roles By User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles/{{userId}}"
+          }
+        },
+        {
+          "name": "Get Specific User Role",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles/{{userId}}/{{roleId}}"
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_role_id\": \"{{roleId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles/{{userId}}/{{roleId}}"
+          }
+        },
+        {
+          "name": "Delete User Role",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-roles/{{userId}}/{{roleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Group Roles (Pivot)",
+      "item": [
+        {
+          "name": "List Group Roles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles"
+          }
+        },
+        {
+          "name": "Create Group Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group_id\": \"{{groupId}}\",\n  \"role_id\": \"{{roleId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles"
+          }
+        },
+        {
+          "name": "Get Group Roles By Group",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}"
+          }
+        },
+        {
+          "name": "Get Specific Group Role",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
+          }
+        },
+        {
+          "name": "Update Group Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_role_id\": \"{{roleId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
+          }
+        },
+        {
+          "name": "Delete Group Role",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Role Permissions (Pivot)",
+      "item": [
+        {
+          "name": "List Role Permissions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions"
+          }
+        },
+        {
+          "name": "Create Role Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"{{roleId}}\",\n  \"permission_id\": \"{{permissionId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions"
+          }
+        },
+        {
+          "name": "Get Role Permissions By Role",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions/{{roleId}}"
+          }
+        },
+        {
+          "name": "Get Specific Role Permission",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions/{{roleId}}/{{permissionId}}"
+          }
+        },
+        {
+          "name": "Update Role Permission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_permission_id\": \"{{permissionId}}\"\n}"
+            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions/{{roleId}}/{{permissionId}}"
+          }
+        },
+        {
+          "name": "Delete Role Permission",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/role-permissions/{{roleId}}/{{permissionId}}"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('apiPrefix')) { pm.collectionVariables.set('apiPrefix', '/api'); }"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}

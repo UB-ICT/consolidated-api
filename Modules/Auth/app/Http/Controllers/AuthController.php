@@ -6,9 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller;
-// use LdapRecord\Connection;
-use LdapRecord\Container;
-use Modules\PublicSafety\Models\User;
 use Exception;
 
 class AuthController extends Controller
