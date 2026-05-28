@@ -38,16 +38,21 @@ class AuthTestDataSeeder extends Seeder
                     ['action_name' => $permission['action_name']],
                     ['category' => $permission['category']]
                 );
-            });
+            })->keyBy('action_name');
 
             $superAdminRole->permissions()->syncWithoutDetaching($permissions->pluck('id')->all());
-            $staffRole->permissions()->syncWithoutDetaching([$permissions->firstWhere('action_name', 'users_view')->id]);
+
+            // Guard against null access if permission definitions change.
+            if ($permissions->has('users_view')) {
+                $staffRole->permissions()->syncWithoutDetaching([$permissions->get('users_view')->id]);
+            }
 
 
             $adminUser = User::query()->updateOrCreate(
                 ['email' => 'mock.user@example.com'],
                 [
                     'name' => 'Postman Mock User',
+                    'guid' => 'mock-user-guid',
                     'domain' => 'ub.edu.bz',
                     'password' => Hash::make('Passw0rd!23'),
                     'google_id' => 'postman-mock-user',
@@ -60,6 +65,7 @@ class AuthTestDataSeeder extends Seeder
                 ['email' => 'staff.user@example.com'],
                 [
                     'name' => 'Staff Test User',
+                    'guid' => 'staff-user-guid',
                     'domain' => 'ub.edu.bz',
                     'password' => Hash::make('Passw0rd!23'),
                     'google_id' => 'staff-test-user',
