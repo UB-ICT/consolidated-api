@@ -42,11 +42,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
     ];
 
-    public function groups(): BelongsToMany
-    {
-        return $this->belongsToMany(Group::class, 'user_groups');
-    }
-
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');

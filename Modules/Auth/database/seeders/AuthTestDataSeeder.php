@@ -5,8 +5,7 @@ namespace Modules\Auth\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Modules\Auth\Models\Group;
-use Modules\Auth\Models\MenuItem;
+use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Permission;
 use Modules\Auth\Models\Role;
 use Modules\Auth\Models\User;
@@ -44,18 +43,6 @@ class AuthTestDataSeeder extends Seeder
             $superAdminRole->permissions()->syncWithoutDetaching($permissions->pluck('id')->all());
             $staffRole->permissions()->syncWithoutDetaching([$permissions->firstWhere('action_name', 'users_view')->id]);
 
-            $itGroup = Group::query()->updateOrCreate(
-                ['group_name' => 'IT Team'],
-                ['description' => 'IT test group']
-            );
-
-            $operationsGroup = Group::query()->updateOrCreate(
-                ['group_name' => 'Operations Team'],
-                ['description' => 'Operations test group']
-            );
-
-            $itGroup->roles()->syncWithoutDetaching([$superAdminRole->id]);
-            $operationsGroup->roles()->syncWithoutDetaching([$staffRole->id]);
 
             $adminUser = User::query()->updateOrCreate(
                 ['email' => 'mock.user@example.com'],
@@ -82,12 +69,10 @@ class AuthTestDataSeeder extends Seeder
             );
 
             $adminUser->roles()->syncWithoutDetaching([$superAdminRole->id]);
-            $adminUser->groups()->syncWithoutDetaching([$itGroup->id]);
 
             $staffUser->roles()->syncWithoutDetaching([$staffRole->id]);
-            $staffUser->groups()->syncWithoutDetaching([$operationsGroup->id]);
 
-            MenuItem::query()->updateOrCreate(
+            Menu::query()->updateOrCreate(
                 ['path' => '/dashboard'],
                 [
                     'label' => 'Dashboard',
@@ -98,7 +83,7 @@ class AuthTestDataSeeder extends Seeder
                 ]
             );
 
-            MenuItem::query()->updateOrCreate(
+            Menu::query()->updateOrCreate(
                 ['path' => '/admin/users'],
                 [
                     'label' => 'Manage Users',

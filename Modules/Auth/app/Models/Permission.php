@@ -5,6 +5,7 @@ namespace Modules\Auth\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Represents a granular permission action.
@@ -50,6 +51,12 @@ class Permission extends Model
     {
         return $this->belongsToMany(Role::class, 'role_permissions');
     }
+
+    public function menus(): HasMany
+    {
+        return $this->hasMany(Menu::class, 'permission_id');
+    }
+  
 }
 
 // You'll notice we used BelongsToMany for things like user_groups and 

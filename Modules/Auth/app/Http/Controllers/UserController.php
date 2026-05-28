@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $users = User::with(['groups', 'roles'])
+            $users = User::with(['roles'])
                 ->orderBy('name')
                 ->get();
 
@@ -67,7 +67,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
-                'data' => $user->load(['groups', 'roles']),
+                'data' => $user->load(['roles']),
             ], 201);
         } catch (Exception $e) {
             Log::error('Error creating Auth user: ' . $e->getMessage());
@@ -85,7 +85,7 @@ class UserController extends Controller
         try {
             return response()->json([
                 'success' => true,
-                'data' => $user->load(['groups', 'roles']),
+                'data' => $user->load(['roles']),
             ]);
         } catch (Exception $e) {
             Log::error('Error fetching Auth user: ' . $e->getMessage());
@@ -126,7 +126,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User updated successfully',
-                'data' => $user->fresh(['groups', 'roles']),
+                'data' => $user->fresh(['roles']),
             ]);
         } catch (Exception $e) {
             Log::error('Error updating Auth user: ' . $e->getMessage());

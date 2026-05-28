@@ -13,11 +13,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('menu_items')) {
+        if (Schema::hasTable('menus')) {
             return;
         }
         // Stores navigational items shown in the portal UI.
-        Schema::create('menu_items', function (Blueprint $table) {
+        Schema::create('menus', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('label');
             $table->string('path');
@@ -34,8 +34,8 @@ return new class extends Migration
         });
 
         // Adds self-referencing foreign key after table creation.
-        Schema::table('menu_items', function (Blueprint $table) {
-            $table->foreign('parent_id')->references('id')->on('menu_items')->onDelete('cascade');
+        Schema::table('menus', function (Blueprint $table) {
+            $table->foreign('parent_id')->references('id')->on('menus')->onDelete('cascade');
         });
     }
 
@@ -45,6 +45,6 @@ return new class extends Migration
     public function down(): void
     {
         // Drops the menu items table.
-        Schema::dropIfExists('menu_items');
+        Schema::dropIfExists('menus');
     }
 };

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Menu items can be tied to roles and organized into
  * parent/child hierarchies for nested navigation.
  */
-class MenuItem extends Model
+class Menu extends Model
 {
     protected $connection = 'pgsql';
 
@@ -46,6 +46,6 @@ class MenuItem extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(MenuItem::class, 'parent_id')->orderBy('sort_order');
+        return $this->hasMany(Menu::class, 'parent_id')->orderBy('sort_order');
     }
 }

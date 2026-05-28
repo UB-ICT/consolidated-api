@@ -5,7 +5,7 @@ namespace Modules\Auth\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Modules\Auth\Models\MenuItem;
+use Modules\Auth\Models\Menu;
 
 /**
  * Handles CRUD operations for portal menu items.
@@ -13,7 +13,7 @@ use Modules\Auth\Models\MenuItem;
  * Menu items can be nested through parent/child relationships
  * to build hierarchical navigation structures.
  */
-class MenuItemController extends Controller
+class MenuController extends Controller
 {
     /**
      * Display top-level menu items with nested children.
@@ -24,13 +24,13 @@ class MenuItemController extends Controller
     public function index(): JsonResponse
     {
         // Load only root items to avoid duplicating child nodes in the top-level list.
-        $menuItems = MenuItem::whereNull('parent_id')
+        $menus = Menu::whereNull('parent_id')
             // Include assigned role and recursively loaded descendants.
             ->with(['role', 'children'])
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json($menuItems);
+        return response()->json($menus);
     }
 
     /**
@@ -46,23 +46,23 @@ class MenuItemController extends Controller
             'path'       => 'required|string|max:255',
             'icon'       => 'nullable|string|max:255',
             'role_id'    => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'  => 'nullable|uuid|exists:pgsql.menu_items,id',
+            'parent_id'  => 'nullable|uuid|exists:pgsql.menus,id',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
         // Persist the menu item record.
-        $menuItem = MenuItem::create($data);
+        $menu = Menu::create($data);
 
-        return response()->json($menuItem, 201);
+        return response()->json($menu, 201);
     }
 
     /**
      * Display a specific menu item with related data.
      */
-    public function show(MenuItem $menuItem): JsonResponse
+    public function show(Menu $menu): JsonResponse
     {
         // Include role and nested children for detail views/edit screens.
-        return response()->json($menuItem->load(['role', 'children']));
+        return response()->json($menu->load(['role', 'children']));
     }
 
     /**
@@ -70,7 +70,7 @@ class MenuItemController extends Controller
      *
      * Uses partial validation so clients can send only changed fields.
      */
-    public function update(Request $request, MenuItem $menuItem): JsonResponse
+    public function update(Request $request, Menu $menu): JsonResponse
     {
         $payload = $request->all();
 
@@ -87,14 +87,14 @@ class MenuItemController extends Controller
             'path'       => 'sometimes|required|string|max:255',
             'icon'       => 'nullable|string|max:255',
             'role_id'    => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'  => 'nullable|uuid|exists:pgsql.menu_items,id',
+            'parent_id'  => 'nullable|uuid|exists:pgsql.menus,id',
             'sort_order' => 'nullable|integer|min:0',
         ])->validate();
 
         // Apply validated updates.
-        $menuItem->update($data);
+        $menu->update($data);
 
-        return response()->json($menuItem->fresh());
+        return response()->json($menu->fresh());
     }
 
     /**
@@ -103,10 +103,10 @@ class MenuItemController extends Controller
      * Child items are removed automatically when cascade delete
      * is configured on the parent relation.
      */
-    public function destroy(MenuItem $menuItem): JsonResponse
+    public function destroy(Menu $menu): JsonResponse
     {
         // Delete the selected menu item.
-        $menuItem->delete();
+        $menu->delete();
 
         return response()->json(['message' => 'Menu item deleted successfully']);
     }
