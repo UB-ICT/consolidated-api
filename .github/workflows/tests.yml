@@ -31,7 +31,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: bcmath, ctype, curl, dom, fileinfo, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
+          extensions: bcmath, ctype, curl, dom, fileinfo, grpc, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
           coverage: none
 
       - name: Get Composer cache directory
@@ -75,7 +75,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: bcmath, ctype, curl, dom, fileinfo, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
+          extensions: bcmath, ctype, curl, dom, fileinfo, grpc, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
           coverage: none
 
       - name: Get Composer cache directory
@@ -119,7 +119,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: bcmath, ctype, curl, dom, fileinfo, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
+          extensions: bcmath, ctype, curl, dom, fileinfo, grpc, intl, json, ldap, mbstring, mongodb, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
           coverage: none
 
       - name: Get Composer cache directory
