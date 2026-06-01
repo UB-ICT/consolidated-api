@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Google\Client;
+use Google\Service\Exception as GoogleServiceException;
 use Google\Service\Sheets;
 use Illuminate\Support\Facades\Log;
 
@@ -29,10 +30,59 @@ class GoogleSheetService
         try {
             self::initializeSheets();
             $response = self::$service->spreadsheets_values->get($spreadsheetId, $range);
+
             return $response->getValues() ?? [];
-        } catch (\Exception $e) {
-            Log::error('Google Sheets read error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            self::logSheetReadError($e, $spreadsheetId, $range);
+
             return [];
+        }
+    }
+
+    /**
+     * Log rich context for Google Sheets API failures (message alone is often unhelpful).
+     */
+    private static function logSheetReadError(\Throwable $e, string $spreadsheetId, string $range): void
+    {
+        $context = [
+            'spreadsheetId' => $spreadsheetId,
+            'range' => $range,
+            'exception' => $e::class,
+            'message' => $e->getMessage(),
+            'code' => $e->getCode(),
+        ];
+
+        if ($e instanceof GoogleServiceException) {
+            $context['googleErrors'] = $e->getErrors();
+        }
+
+        $decoded = json_decode($e->getMessage(), true);
+        if (is_array($decoded)) {
+            $context['decodedMessage'] = $decoded;
+        }
+
+        if ($e->getPrevious() !== null) {
+            $context['previous'] = [
+                'exception' => $e->getPrevious()::class,
+                'message' => $e->getPrevious()->getMessage(),
+                'code' => $e->getPrevious()->getCode(),
+            ];
+        }
+
+        $credentialsPath = config('google.service_account_key_path');
+        $context['credentialsPath'] = $credentialsPath;
+        $context['credentialsExists'] = is_string($credentialsPath) && is_readable($credentialsPath);
+        if ($context['credentialsExists']) {
+            $json = json_decode((string) file_get_contents($credentialsPath), true);
+            $context['serviceAccountEmail'] = is_array($json) ? ($json['client_email'] ?? null) : null;
+        }
+
+        Log::error('Google Sheets read error', $context);
+
+        if (config('app.debug')) {
+            Log::debug('Google Sheets read error stack trace', [
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -87,7 +137,7 @@ class GoogleSheetService
     public static function checkEmailRoles(string $spreadsheetId, string $range, string $email): array
     {
         $isVP = false;
-        if ($email == 'senrique.munoz@ub.edu.bz' || $email == 'luis.herrera@ub.edu.bz' || $email == 'mteck@ub.edu.bz') {
+        if ($email == 'senrique.munoz@ub.edu.bz' || $email == 'mteck@ub.edu.bz') {
             $isVP = true;
         }
 
@@ -886,8 +936,14 @@ class GoogleSheetService
                     if (! self::emailsEqual($chair1, $actorEmail) && ! self::emailsEqual($chair2, $actorEmail)) {
                         break;
                     }
-                    $progCoord = self::sheetCellGet($row, ['ProgramCoordinator', 'programCoordinator', 'Program Coordinator']);
-                    if (self::emailsEqual($progCoord, $personEmail)) {
+                    $ccVal = self::sheetCellGet($row, ['CourseCoordinator', 'courseCoordinator', 'Course Coordinator']);
+                    $inst = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
+                    $ccEmpty = $ccVal === null || $ccVal === '';
+                    if ($ccEmpty) {
+                        if ($inst !== null && strtolower(trim($inst)) === $personNorm) {
+                            $addKey($courseCode, $courseSection);
+                        }
+                    } elseif (self::emailsEqual($ccVal, $personEmail)) {
                         $addKey($courseCode, $courseSection);
                     }
                     break;
@@ -989,9 +1045,15 @@ class GoogleSheetService
                     if (!self::emailsEqual($chair1, $actorEmail) && !self::emailsEqual($chair2, $actorEmail)) {
                         continue;
                     }
-                    $progCoord = self::sheetCellGet($row, ['ProgramCoordinator', 'programCoordinator', 'Program Coordinator']);
-                    if ($progCoord) {
-                        $push($candidates, $progCoord, self::resolvePersonName($progCoord, $emailToName));
+                    $ccVal = self::sheetCellGet($row, ['CourseCoordinator', 'courseCoordinator', 'Course Coordinator']);
+                    if ($ccVal !== null && $ccVal !== '') {
+                        $push($candidates, $ccVal, self::resolvePersonName($ccVal, $emailToName));
+                    } else {
+                        $instEmail = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
+                        $instName = self::sheetCellGet($row, ['InstructorName', 'instructorName', 'Instructor Name']);
+                        if ($instEmail) {
+                            $push($candidates, $instEmail, $instName ?: self::resolvePersonName($instEmail, $emailToName));
+                        }
                     }
                 }
                 break;

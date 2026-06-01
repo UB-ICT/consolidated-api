@@ -118,23 +118,17 @@ class LecturerCourseController extends Controller
                 ], 422);
             } else {
                 $viewerSheetRoles = GoogleSheetService::checkEmailRoles($spreadsheetId, $range, $viewerEmail);
-                $roleClaims = [
-                    'courseCoordinator' => 'courseCoordinator',
-                    'programCoordinator' => 'programCoordinator',
-                    'chair' => 'chair',
-                    'dean' => 'dean',
-                    'VP' => 'VP',
-                ];
-
-                // Use union of all viewer roles for teacher-course visibility.
-                // This ensures courseCoordinator visibility is included even when the active view role is broader.
-                $actingRoles = [$requestedRole];
-                foreach ($roleClaims as $roleName => $claimKey) {
-                    if (!empty($viewerSheetRoles[$claimKey])) {
-                        $actingRoles[] = $roleName;
-                    }
+                $roleClaimKey = $requestedRole === 'VP' ? 'VP' : $requestedRole;
+                if (empty($viewerSheetRoles[$roleClaimKey])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The viewer does not have the requested role in the spreadsheet.',
+                    ], 403);
                 }
-                $actingRoles = array_values(array_unique($actingRoles));
+
+                // Scope courses to the requested role only. VP may view any instructor;
+                // other roles only see courses assigned under them in the sheet hierarchy.
+                $actingRoles = [$requestedRole];
             }
 
             $lecturerOnly = $actingRoles === ['lecturer'];
@@ -299,52 +293,16 @@ class LecturerCourseController extends Controller
         $limit = $request->query('limit');
         $limit = is_numeric($limit) ? (int) $limit : null;
 
-        // Use union of all monitoring roles assigned to the viewer so that
-        // courseCoordinator scope is still visible even when the UI is opened
-        // under a broader role (programCoordinator/chair/dean/VP).
-        $roleClaims = [
-            'courseCoordinator' => 'courseCoordinator',
-            'programCoordinator' => 'programCoordinator',
-            'chair' => 'chair',
-            'dean' => 'dean',
-            'VP' => 'VP',
-        ];
-        $actingRoles = [$actingRole];
-        foreach ($roleClaims as $roleName => $claimKey) {
-            if (!empty($roles[$claimKey])) {
-                $actingRoles[] = $roleName;
-            }
-        }
-        $actingRoles = array_values(array_unique($actingRoles));
-
-        $peopleBuckets = [];
-        foreach ($actingRoles as $roleForQuery) {
-            $bucket = GoogleSheetService::getLecturersByReportingRole(
-                $spreadsheetId,
-                $range,
-                $semester,
-                $roleForQuery,
-                $email,
-                $search
-            );
-            foreach ($bucket as $p) {
-                $peopleBuckets[] = $p;
-            }
-        }
-
-        // Deduplicate by email after combining all role scopes.
-        $peopleMap = [];
-        foreach ($peopleBuckets as $p) {
-            $e = strtolower(trim((string) ($p['email'] ?? '')));
-            if ($e === '') {
-                continue;
-            }
-            $peopleMap[$e] = [
-                'email' => trim((string) ($p['email'] ?? '')),
-                'name' => trim((string) ($p['name'] ?? '')),
-            ];
-        }
-        $people = array_values($peopleMap);
+        // Scope to the requested role only. VP sees all instructors; every other role
+        // sees people assigned under them in the sheet hierarchy.
+        $people = GoogleSheetService::getLecturersByReportingRole(
+            $spreadsheetId,
+            $range,
+            $semester,
+            $actingRole,
+            $email,
+            $search
+        );
 
         // Final safeguard: return people alphabetically by display name.
         usort($people, function ($a, $b) {
