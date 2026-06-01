@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('addresses', function (Blueprint $table) {
+        if (Schema::connection($this->connection)->hasTable('addresses')) {
+            return;
+        }
+
+        Schema::connection($this->connection)->create('addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id')->constrained('suppliers');
             $table->string('street');
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('addresses');
+        Schema::connection($this->connection)->dropIfExists('addresses');
     }
 };

@@ -119,66 +119,6 @@ class GoogleAuthController extends Controller
         return redirect($callerDomain.$separator.$query);
     }
 
-
-    /**
-     * Check if user is in the api_annual_reports Google group
-     */
-    private function isUserInAnnualReportsGroup($email)
-    {
-        try {
-            // Initialize Google Client with service account credentials
-            $client = new GoogleClient();
-            $client->setAuthConfig(config('google.service_account_key_path'));
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $groupEmail = 'api_annual_reports@ub.edu.bz';
-            $client->setSubject($email);
-
-            // Create Directory service
-            $service = new GoogleDirectory($client);
-            // Check if user is a member of the api_annual_reports group
-
-            try {
-                $service->members->get($groupEmail, $email);
-                return true;
-            } catch (Exception $e) {
-                Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
-                return false;
-            }
-        } catch (Exception $e) {
-            Log::error('Error initializing Google API client: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    private function isUserInPublicSafetyGroup($email)
-    {
-        try {
-            // Initialize Google Client with service account credentials
-            $client = new GoogleClient();
-            $client->setAuthConfig(config('google.service_account_key_path'));
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $groupEmail = 'api_public_safety@ub.edu.bz';
-            $client->setSubject($email);
-
-            // Create Directory service
-            $service = new GoogleDirectory($client);
-            // Check if user is a member of the api_annual_reports group
-
-            try {
-                $service->members->get($groupEmail, $email);
-                return true;
-            } catch (Exception $e) {
-                Log::error('Error checking Google group membership for user ' . $email . ': ' . $e->getMessage());
-                return false;
-            }
-        } catch (Exception $e) {
-            Log::error('Error initializing Google API client: ' . $e->getMessage());
-            return false;
-        }
-    }
-
     /**
      * Get user mailing groups from Google Directory API
      */

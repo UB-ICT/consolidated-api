@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('currencies', function (Blueprint $table) {
+        if (Schema::connection($this->connection)->hasTable('currencies')) {
+            return;
+        }
+
+        Schema::connection($this->connection)->create('currencies', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('symbol');
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('currencies');
+        Schema::connection($this->connection)->dropIfExists('currencies');
     }
 };

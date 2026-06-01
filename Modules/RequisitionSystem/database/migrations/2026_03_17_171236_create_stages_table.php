@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stages', function (Blueprint $table) {
+        if (Schema::connection($this->connection)->hasTable('stages')) {
+            return;
+        }
+
+        Schema::connection($this->connection)->create('stages', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->foreignId('pipeline_id')->constrained('pipelines');
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stages');
+        Schema::connection($this->connection)->dropIfExists('stages');
     }
 };
