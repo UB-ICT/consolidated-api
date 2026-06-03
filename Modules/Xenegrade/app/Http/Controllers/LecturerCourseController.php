@@ -198,7 +198,17 @@ class LecturerCourseController extends Controller
                     }
                 }
 
-                $courses = $sqlCourses->filter(function ($course) use ($allowed) {
+                // Sheet is source of truth for role-scoped courses (SQL may be empty or out of sync).
+                $sheetCourses = collect(GoogleSheetService::getLecturerCoursesForInstructor(
+                    $spreadsheetId,
+                    $range,
+                    $semester,
+                    $personEmail,
+                    $lecturer->staFName ?? null,
+                    $lecturer->staLName ?? null
+                ));
+
+                $courses = $sheetCourses->filter(function ($course) use ($allowed) {
                     $code = strtolower(trim((string) ($course->CourseCode ?? '')));
                     $courseId = strtolower(trim((string) ($course->CourseID ?? '')));
                     $sec = strtolower(trim((string) ($course->SectionID ?? '')));
@@ -212,6 +222,36 @@ class LecturerCourseController extends Controller
 
                     return $matchesCode || $matchesId;
                 })->values();
+
+                if ($sqlCourses->isNotEmpty()) {
+                    $sqlByKey = [];
+                    foreach ($sqlCourses as $sqlCourse) {
+                        $code = strtolower(trim((string) ($sqlCourse->CourseCode ?? '')));
+                        $courseId = strtolower(trim((string) ($sqlCourse->CourseID ?? '')));
+                        $sec = strtolower(trim((string) ($sqlCourse->SectionID ?? '')));
+                        if ($sec === '') {
+                            continue;
+                        }
+                        if ($code !== '') {
+                            $sqlByKey[$code . '|' . $sec] = $sqlCourse;
+                        }
+                        if ($courseId !== '') {
+                            $sqlByKey[$courseId . '|' . $sec] = $sqlCourse;
+                        }
+                    }
+
+                    $courses = $courses->map(function ($course) use ($sqlByKey) {
+                        $code = strtolower(trim((string) ($course->CourseCode ?? '')));
+                        $courseId = strtolower(trim((string) ($course->CourseID ?? '')));
+                        $sec = strtolower(trim((string) ($course->SectionID ?? '')));
+                        $sql = $sqlByKey[$code . '|' . $sec] ?? $sqlByKey[$courseId . '|' . $sec] ?? null;
+                        if ($sql && ! empty($sql->CourseTitle)) {
+                            $course->CourseTitle = $sql->CourseTitle;
+                        }
+
+                        return $course;
+                    })->values();
+                }
             }
         }
 
