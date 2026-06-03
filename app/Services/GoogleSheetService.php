@@ -908,7 +908,7 @@ class GoogleSheetService
                 case 'courseCoordinator':
                     $cc = self::sheetCellGet($row, ['CourseCoordinator', 'courseCoordinator', 'Course Coordinator']);
                     $inst = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
-                    if (self::emailsEqual($cc, $actorEmail) && $inst !== null && strtolower(trim($inst)) === $personNorm) {
+                    if (self::emailsEqual($cc, $actorEmail) && self::emailsEqual($inst, $personEmail)) {
                         $addKey($courseCode, $courseSection);
                     }
                     break;
@@ -918,14 +918,8 @@ class GoogleSheetService
                     if (! self::emailsEqual($pc, $actorEmail)) {
                         break;
                     }
-                    $ccVal = self::sheetCellGet($row, ['CourseCoordinator', 'courseCoordinator', 'Course Coordinator']);
                     $inst = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
-                    $ccEmpty = $ccVal === null || $ccVal === '';
-                    if ($ccEmpty) {
-                        if ($inst !== null && strtolower(trim($inst)) === $personNorm) {
-                            $addKey($courseCode, $courseSection);
-                        }
-                    } elseif (self::emailsEqual($ccVal, $personEmail)) {
+                    if (self::emailsEqual($inst, $personEmail)) {
                         $addKey($courseCode, $courseSection);
                     }
                     break;
@@ -1025,15 +1019,10 @@ class GoogleSheetService
                     if (!self::emailsEqual($pc, $actorEmail)) {
                         continue;
                     }
-                    $ccVal = self::sheetCellGet($row, ['CourseCoordinator', 'courseCoordinator', 'Course Coordinator']);
-                    if ($ccVal !== null && $ccVal !== '') {
-                        $push($candidates, $ccVal, self::resolvePersonName($ccVal, $emailToName));
-                    } else {
-                        $instEmail = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
-                        $instName = self::sheetCellGet($row, ['InstructorName', 'instructorName', 'Instructor Name']);
-                        if ($instEmail) {
-                            $push($candidates, $instEmail, $instName ?: self::resolvePersonName($instEmail, $emailToName));
-                        }
+                    $instEmail = self::sheetCellGet($row, ['InstructorEmail', 'instructorEmail', 'Instructor Email']);
+                    $instName = self::sheetCellGet($row, ['InstructorName', 'instructorName', 'Instructor Name']);
+                    if ($instEmail) {
+                        $push($candidates, $instEmail, $instName ?: self::resolvePersonName($instEmail, $emailToName));
                     }
                 }
                 break;
