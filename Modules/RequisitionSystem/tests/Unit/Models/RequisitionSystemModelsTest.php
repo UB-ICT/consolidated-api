@@ -17,7 +17,7 @@ use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Models\SupplierBank;
-use Modules\RequisitionSystem\Models\User;
+use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\UserStage;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\AssertsModelConfiguration;
