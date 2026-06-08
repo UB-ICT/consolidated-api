@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     protected $connection = 'porsql';
+
     /**
      * Run the migrations.
      */
@@ -21,9 +22,18 @@ return new class extends Migration
             $table->string('file_name');
             $table->string('file_path');
             $table->timestamp('uploaded_at')->useCurrent();
-            $table->foreignId('uploaded_by')->constrained('por_users');
+
+            // 1. Define uploaded_by as a UUID column to match your users table ID
+            $table->uuid('uploaded_by');
+
             $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
             $table->foreignId('supplier_id')->constrained('suppliers');
+
+            // 2. Map the cross-schema constraint to public.users
+            $table->foreign('uploaded_by')
+                ->references('id')
+                ->on('public.users')
+                ->onDelete('restrict'); // Protects attachments from disappearing if a user is deleted
         });
     }
 
