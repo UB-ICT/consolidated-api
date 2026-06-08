@@ -27,7 +27,6 @@ class PublicSafetyAuthController extends Controller
         // Construct redirect URI dynamically to ensure it matches the actual callback URL
         // This ensures it works across different environments (local, staging, production)
         $redirectUri = config('services.google_public_safety.redirect_uri');
-        // Log::info('Redirect URI11: ' . $redirectUri);
 
         // If not set in config, construct absolute URL from request
         if (!$redirectUri) {
@@ -36,11 +35,9 @@ class PublicSafetyAuthController extends Controller
             if ($baseUrl === 'http://localhost:3031') {
                 $baseUrl = $request->getSchemeAndHttpHost();
             }
-            Log::info('Redirect URI: ' . $baseUrl . '/auth/google/public-safety-callback');
             $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
         }
 
-        // Log::info('Redirect URI: ' . $redirectUri);
 
         return Socialite::driver('google')
             ->stateless()
@@ -66,8 +63,6 @@ class PublicSafetyAuthController extends Controller
             // If not set in config, construct absolute URL from request
             if (!$redirectUri) {
                 $baseUrl = rtrim(config('app.url'), '/');
-                Log::info('Redirect URI: ' . $baseUrl . '/auth/google/public-safety-callback');
-                Log::info('Base URL: ' . $baseUrl);
                 // Fallback to request URL if APP_URL is not set
                 if ($baseUrl === 'http://localhost') {
                     $baseUrl = $request->getSchemeAndHttpHost();
@@ -90,11 +85,6 @@ class PublicSafetyAuthController extends Controller
                     'email_verified_at' => now(),
                 ]
             );
-
-            // Safely pass the objects as context array elements to prevent conversion errors
-            Log::info("Google authenticated user retrieved", ['google_user' => $googleUser]);
-            Log::info("Postgres local user record fetched/updated", ['local_user' => $user->toArray()]);
-
             // 3. Ensure user was successfully created/retrieved
             if (!$user || !$user->id) {
                 Log::error('User ID is null after creation/retrieval', ['email' => $googleUser->email ?? null]);
@@ -109,7 +99,6 @@ class PublicSafetyAuthController extends Controller
                 if ($defaultRole) {
                     // This inserts the row into your 'user_roles' pivot table automatically
                     $user->roles()->attach($defaultRole->id);
-                    Log::info("Assigned default Officer role to new user", ['user_id' => $user->id]);
                 } else {
                     Log::error("Failed to assign default role: 'api_public_safety_Officer@ub.edu.bz' not found in database. Did you run the Seeder?");
                 }
@@ -126,7 +115,6 @@ class PublicSafetyAuthController extends Controller
 
             // 6. Create Sanctum token
             $token = $user->createToken('public-safety-token', ['access-public-safety'])->plainTextToken;
-            Log::info("Token successfully created", ['user_id' => $user->id]);
 
             // 7. Redirect with token directly to the frontend application
             $frontendUrl = rtrim(config('app.public_safety_frontend'), '/');
