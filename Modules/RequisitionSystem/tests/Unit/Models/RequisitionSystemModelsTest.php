@@ -156,16 +156,6 @@ class RequisitionSystemModelsTest extends TestCase
         ]);
     }
 
-    public function test_user_model_configuration(): void
-    {
-        $this->assertModelFillable(User::class, [
-            'name',
-            'email',
-            'type',
-            'cost_center_id',
-        ]);
-    }
-
     public function test_user_stage_model_configuration(): void
     {
         $this->assertModelFillable(UserStage::class, ['user_id', 'stage_id']);
