@@ -68,6 +68,11 @@ return new class extends Migration
             }
 
             if (Schema::hasTable('personal_access_tokens') && Schema::hasColumn('personal_access_tokens', 'tokenable_id')) {
+                $tokenableColumnType = Schema::getColumnType('personal_access_tokens', 'tokenable_id');
+                if (!in_array($tokenableColumnType, ['string', 'varchar', 'text'], true)) {
+                    DB::statement('ALTER TABLE personal_access_tokens ALTER COLUMN tokenable_id TYPE varchar(255) USING tokenable_id::text');
+                }
+
                 DB::statement("
                     UPDATE personal_access_tokens pat
                     SET tokenable_id = u.id_uuid::text
