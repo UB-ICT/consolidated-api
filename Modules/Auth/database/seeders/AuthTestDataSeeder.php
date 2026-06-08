@@ -5,6 +5,7 @@ namespace Modules\Auth\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Permission;
 use Modules\Auth\Models\Role;
@@ -18,6 +19,9 @@ class AuthTestDataSeeder extends Seeder
     public function run(): void
     {
         DB::connection('pgsql')->transaction(function (): void {
+            // =========================================================================
+            // 1. ORIGINAL TEST ROLES
+            // =========================================================================
             $superAdminRole = Role::query()->updateOrCreate(
                 ['role_name' => 'Super Admin'],
                 ['description' => 'Full access role for testing']
@@ -28,6 +32,36 @@ class AuthTestDataSeeder extends Seeder
                 ['description' => 'General staff role for testing']
             );
 
+            // =========================================================================
+            // 2. NEW REAL APPLICATION ROLES
+            // =========================================================================
+            $appRoles = [
+                // Public Safety Roles
+                'api_public_safety_Admin@ub.edu.bz'    => 'Chief Public Safety Officer and System Administrators',
+                'api_public_safety_Security@ub.edu.bz' => 'Shift Supervisors',
+                'api_public_safety_Officer@ub.edu.bz'  => 'Public Safety Officers',
+
+                // Annual Report Roles
+                'api_annual_report_Developers@ub.edu.bz' => 'Annual Report Developers',
+                'api_annual_report_HR@ub.edu.bz'        => 'Annual Report HR Personnel',
+                'api_annual_report_Finance@ub.edu.bz'   => 'Annual Report Finance Personnel',
+                'api_annual_report_Records@ub.edu.bz'   => 'Annual Report Records Personnel',
+                'api_annual_report_Directors@ub.edu.bz' => 'Annual Report Directors',
+                'api_annual_report_Admin@ub.edu.bz'     => 'Annual Report Administrators',
+                'api_annual_report_Deans@ub.edu.bz'     => 'Annual Report Deans',
+            ];
+
+            $createdAppRoles = [];
+            foreach ($appRoles as $name => $description) {
+                $createdAppRoles[$name] = Role::query()->updateOrCreate(
+                    ['role_name' => $name],
+                    ['description' => $description]
+                );
+            }
+
+            // =========================================================================
+            // 3. ORIGINAL PERMISSIONS CONFIGURATION
+            // =========================================================================
             $permissions = collect([
                 ['category' => 'users', 'action_name' => 'users_view'],
                 ['category' => 'users', 'action_name' => 'users_create'],
@@ -43,7 +77,9 @@ class AuthTestDataSeeder extends Seeder
             $superAdminRole->permissions()->syncWithoutDetaching($permissions->pluck('id')->all());
             $staffRole->permissions()->syncWithoutDetaching([$permissions->firstWhere('action_name', 'users_view')->id]);
 
-
+            // =========================================================================
+            // 4. USERS CREATION & ASSIGNMENT
+            // =========================================================================
             $adminUser = User::query()->updateOrCreate(
                 ['email' => 'mock.user@example.com'],
                 [
@@ -69,9 +105,34 @@ class AuthTestDataSeeder extends Seeder
             );
 
             $adminUser->roles()->syncWithoutDetaching([$superAdminRole->id]);
-
             $staffUser->roles()->syncWithoutDetaching([$staffRole->id]);
 
+            // =========================================================================
+            // 5. REAL ACCOUNT BOOTSTRAPPING
+            // =========================================================================
+
+            // Assign Luis Herrera his roles
+            $luisEmail = 'luis.herrera@ub.edu.bz';
+            $luisUser = User::query()->where('email', $luisEmail)->first();
+            if ($luisUser) {
+                $luisUser->roles()->syncWithoutDetaching([
+                    $createdAppRoles['api_public_safety_Admin@ub.edu.bz']->id,
+                    $createdAppRoles['api_annual_report_Admin@ub.edu.bz']->id,
+                ]);
+            }
+
+            // Assign James Faber his public safety admin role
+            $jamesEmail = 'james.faber@ub.edu.bz';
+            $jamesUser = User::query()->where('email', $jamesEmail)->first();
+            if ($jamesUser) {
+                $jamesUser->roles()->syncWithoutDetaching([
+                    $createdAppRoles['api_public_safety_Admin@ub.edu.bz']->id,
+                ]);
+            }
+
+            // =========================================================================
+            // 6. ORIGINAL MENUS GENERATION
+            // =========================================================================
             Menu::query()->updateOrCreate(
                 ['path' => '/dashboard'],
                 [

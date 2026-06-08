@@ -38,6 +38,16 @@ class Role extends Model
         return $this->belongsToMany(Permission::class, 'role_permissions');
     }
 
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_roles', // Table name
+            'user_id',    // Foreign key on user_roles matching User
+            'role_id'     // Foreign key on user_roles matching Role
+        );
+    }
+
     /**
      * Applications this role applies to.
      *

@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Google\Client as GoogleClient;
-use Google\Service\Directory as GoogleDirectory;
 use Exception;
 use App\Services\FirestoreService;
 use Laravel\Sanctum\Sanctum;
@@ -42,7 +41,6 @@ class GoogleAuthController extends Controller
             'domain' => $callerDomain
         ]);
 
-        Log::info('State: ' . $state);
         return Socialite::driver('google')
             ->with(['state' => base64_encode($state)])
             ->redirect();
@@ -106,7 +104,6 @@ class GoogleAuthController extends Controller
         $token = $_user->createToken('google-login', ['*'])->plainTextToken;
 
         $this->instantiateCourseMonitoring($_user->email);
-        // Log::info('Token created: ' . $token . ' for user: ' . $_user->email . ' and system: ' . $system);
 
         $query = http_build_query([
             'token' => $token,
@@ -116,59 +113,24 @@ class GoogleAuthController extends Controller
         ]);
         $separator = str_contains($callerDomain, '?') ? '&' : '?';
 
-        return redirect($callerDomain.$separator.$query);
+        return redirect($callerDomain . $separator . $query);
     }
+
+    // Replace your old getUserMailingGroups method with this one:
+    private function getUserMailingGroups($user)
+    {
+        if (!$user) {
+            return [];
+        }
+
+        // Plucks the text-based names matching your Firebase configurations
+        return $user->roles()->pluck('role_name')->toArray();
+    }
+
 
     /**
      * Get user mailing groups from Google Directory API
      */
-    private function getUserMailingGroups($email)
-    {
-        try {
-            // Initialize Google Client with service account credentials
-            $client = new GoogleClient();
-            $client->setAuthConfig(config('google.service_account_key_path'));
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.group.readonly');
-            $client->addScope('https://www.googleapis.com/auth/admin.directory.user.readonly');
-            $client->setSubject('luis.herrera@ub.edu.bz');
-
-
-            // Create Directory service
-            $service = new GoogleDirectory($client);
-
-            // Define relevant groups to check (you can expand this list)
-            $relevantGroups = [
-                'api_annual_report_Developers@ub.edu.bz',
-                'api_annual_report_HR@ub.edu.bz',
-                'api_annual_report_Finance@ub.edu.bz',
-                'api_annual_report_Records@ub.edu.bz',
-                'api_annual_report_Directors@ub.edu.bz',
-                'api_annual_report_Admin@ub.edu.bz',
-                'api_annual_report_Deans@ub.edu.bz',
-                'api_public_safety_Admin@ub.edu.bz', //Chief Public Safety Officer, and Supervisor
-                'api_public_safety_Security@ub.edu.bz', //Shift Supervisors
-                'api_public_safety_Officer@ub.edu.bz',  //public Safety officers
-            ];
-
-
-            $userGroups = [];
-
-            // Check if user is a member of any relevant group
-            foreach ($relevantGroups as $groupEmail) {
-                try {
-                    $service->members->get($groupEmail, $email);
-                    $userGroups[] = $groupEmail;
-                } catch (Exception $e) {
-                    // User is not a member of this group, continue
-                    continue;
-                }
-            }
-            return $userGroups;
-        } catch (Exception $e) {
-            Log::error('Error getting user mailing groups for ' . $email . ': ' . $e->getMessage());
-            return [];
-        }
-    }
 
     /**
      * Get menus from Firebase based on user mailing groups
@@ -245,7 +207,6 @@ class GoogleAuthController extends Controller
         try {
             $allForms = FirestoreService::getPublicSafetyFormItems('publicSafety_forms');
 
-            Log::info('All Forms fetched: ' . json_encode($allForms));
 
             $userForms = [];
             $skippedBySystem = 0;
@@ -366,7 +327,6 @@ class GoogleAuthController extends Controller
         $mailingGroups = $this->getUserMailingGroups($user->email);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
-        Log::info('Annual Report User Info accessed for ' . $user->email . ' with groups: ' . json_encode($mailingGroups));
 
         return response()->json([
             'user' => $this->formatUserResponse($user, mailingGroups: $mailingGroups, menus: $menus, forms: [], tables: []),
@@ -479,7 +439,7 @@ class GoogleAuthController extends Controller
 
         [$id, $secret] = explode('|', $raw, 2);
 
-        return trim((string) $id).'|'.trim((string) $secret);
+        return trim((string) $id) . '|' . trim((string) $secret);
     }
 
     /**
@@ -548,7 +508,7 @@ class GoogleAuthController extends Controller
         }
 
         $allowedDomain = config('services.google.domain');
-        if (is_string($allowedDomain) && $allowedDomain !== '' && ! str_ends_with(strtolower($email), '@'.strtolower($allowedDomain))) {
+        if (is_string($allowedDomain) && $allowedDomain !== '' && ! str_ends_with(strtolower($email), '@' . strtolower($allowedDomain))) {
             return response()->json([
                 'message' => 'This Google account is not allowed for this application.',
             ], 403);
@@ -576,7 +536,7 @@ class GoogleAuthController extends Controller
     private function verifyGoogleIdToken(string $idToken): array|false
     {
         $clientIds = array_values(array_unique(array_filter(array_map(
-            static fn ($v) => is_string($v) ? trim($v) : '',
+            static fn($v) => is_string($v) ? trim($v) : '',
             [
                 config('services.google.client_id'),
                 config('services.google_annual_report.client_id'),
@@ -601,7 +561,7 @@ class GoogleAuthController extends Controller
 
                 return is_array($payload) ? $payload : json_decode(json_encode($payload), true);
             } catch (\Throwable $e) {
-                Log::debug('Google ID token verification failed for client '.$clientId.': '.$e->getMessage());
+                Log::debug('Google ID token verification failed for client ' . $clientId . ': ' . $e->getMessage());
             }
         }
 
