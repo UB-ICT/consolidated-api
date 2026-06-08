@@ -35,15 +35,6 @@ use Modules\PublicSafety\Http\Controllers\IncidentLogController;
  *
  */
 
-
-// This will be the only unprotected route because this is used for authentication
-Route::prefix('')->group(function () {
-
-    // Google OAuth
-    // Route::get('/auth/google/public-safety-redirect', [PublicSafetyAuthController::class, 'redirect']);
-    // Route::get('/auth/google/public-safety-callback', [PublicSafetyAuthController::class, 'callback']);
-});
-
 Route::group([
     'prefix' => 'v1/publicSafety',
     'namespace' => 'Modules\PublicSafety\Http\Controllers',

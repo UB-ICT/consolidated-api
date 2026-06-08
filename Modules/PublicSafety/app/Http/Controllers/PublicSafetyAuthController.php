@@ -27,7 +27,7 @@ class PublicSafetyAuthController extends Controller
         // Construct redirect URI dynamically to ensure it matches the actual callback URL
         // This ensures it works across different environments (local, staging, production)
         $redirectUri = config('services.google_public_safety.redirect_uri');
-        Log::info('Redirect URI11: ' . $redirectUri);
+        // Log::info('Redirect URI11: ' . $redirectUri);
 
         // If not set in config, construct absolute URL from request
         if (!$redirectUri) {
@@ -36,10 +36,11 @@ class PublicSafetyAuthController extends Controller
             if ($baseUrl === 'http://localhost:3031') {
                 $baseUrl = $request->getSchemeAndHttpHost();
             }
+            Log::info('Redirect URI: ' . $baseUrl . '/auth/google/public-safety-callback');
             $redirectUri = $baseUrl . '/auth/google/public-safety-callback';
         }
 
-        Log::info('Redirect URI: ' . $redirectUri);
+        // Log::info('Redirect URI: ' . $redirectUri);
 
         return Socialite::driver('google')
             ->stateless()
@@ -65,6 +66,8 @@ class PublicSafetyAuthController extends Controller
             // If not set in config, construct absolute URL from request
             if (!$redirectUri) {
                 $baseUrl = rtrim(config('app.url'), '/');
+                Log::info('Redirect URI: ' . $baseUrl . '/auth/google/public-safety-callback');
+                Log::info('Base URL: ' . $baseUrl);
                 // Fallback to request URL if APP_URL is not set
                 if ($baseUrl === 'http://localhost') {
                     $baseUrl = $request->getSchemeAndHttpHost();
@@ -117,6 +120,7 @@ class PublicSafetyAuthController extends Controller
                 return redirect(config('app.public_safety_frontend') . '?error=unauthorized');
             }
 
+
             // 5. Log in user
             Auth::login($user);
 
@@ -143,8 +147,8 @@ class PublicSafetyAuthController extends Controller
      * Protected endpoint to return the authenticated user's info.
      *
      * Requires:
-     *  - auth:sanctum middleware
-     *  - token with "public-safety" ability
+     * - auth:sanctum middleware
+     * - token with "access-public-safety" ability
      */
     public function me(Request $request)
     {
@@ -155,25 +159,24 @@ class PublicSafetyAuthController extends Controller
         $token = $user->currentAccessToken();
 
         /**
-         * Ensure token belongs to the Public Safety system.
-         * Prevents token reuse across apps.
+         * Match ability naming convention to prevent 403 blocks
          */
-        if (!$token || !in_array('public-safety', $token->abilities)) {
+        if (!$token || !$token->can('access-public-safety')) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
-        // Return minimal user profile
+        // Return flat structure that satisfies: userData.id && userData.name && userData.email
         return response()->json([
-            'id' => $user->id,
+            'id'    => $user->id,
             'email' => $user->email,
-            'name' => $user->name,
-            'roles' => $user->roles()->pluck('role_name') // Useful addition for frontend UI states
+            'name'  => $user->name,
+            'roles' => $user->roles()->pluck('role_name')
         ]);
     }
 
     /**
      * GET api/v1/publicSafety/user
-     * Added endpoint to satisfy frontend query loops
+     * Aligned with frontend profile properties expectations
      */
     public function user(Request $request)
     {
@@ -184,10 +187,10 @@ class PublicSafetyAuthController extends Controller
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
-        // Returns profile along with timestamp monitoring metrics 
+        // Return with 'user' root key to satisfy: userData.user condition block
         return response()->json([
             'status' => 'success',
-            'data' => [
+            'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
                 'name' => $user->name,
