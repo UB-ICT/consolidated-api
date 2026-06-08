@@ -13,17 +13,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cache', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->mediumText('value');
-            $table->integer('expiration');
-        });
+        // Check if 'cache' table already exists before creating it
+        if (!Schema::connection($this->connection)->hasTable('cache')) {
+            Schema::connection($this->connection)->create('cache', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+        }
 
-        Schema::create('cache_locks', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->string('owner');
-            $table->integer('expiration');
-        });
+        // Check if 'cache_locks' table already exists before creating it
+        if (!Schema::connection($this->connection)->hasTable('cache_locks')) {
+            Schema::connection($this->connection)->create('cache_locks', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+        }
     }
 
     /**
@@ -31,7 +37,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cache');
-        Schema::dropIfExists('cache_locks');
+        Schema::connection($this->connection)->dropIfExists('cache');
+        Schema::connection($this->connection)->dropIfExists('cache_locks');
     }
 };

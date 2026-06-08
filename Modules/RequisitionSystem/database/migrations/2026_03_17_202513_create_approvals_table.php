@@ -18,10 +18,17 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create('approvals', function (Blueprint $table) {
             $table->id();
+            // 1. Create the user_id column as a UUID to match your users table
+            $table->uuid('user_id');
+
             $table->foreignId('requisition_id')->constrained('requisitions');
-            $table->foreignId('user_id')->constrained('por_users');
             $table->timestamp('signed_at')->useCurrent();
             $table->string('comments')->nullable();
+            // 3. Bind the cross-connection foreign key to public.users
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('public.users')
+                ->onDelete('cascade');
         });
     }
 

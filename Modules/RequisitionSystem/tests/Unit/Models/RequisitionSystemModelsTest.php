@@ -17,7 +17,7 @@ use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Models\SupplierBank;
-use Modules\RequisitionSystem\Models\User;
+use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\UserStage;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\AssertsModelConfiguration;
@@ -153,16 +153,6 @@ class RequisitionSystemModelsTest extends TestCase
             'account_number',
             'account_name',
             'address',
-        ]);
-    }
-
-    public function test_user_model_configuration(): void
-    {
-        $this->assertModelFillable(User::class, [
-            'name',
-            'email',
-            'type',
-            'cost_center_id',
         ]);
     }
 
