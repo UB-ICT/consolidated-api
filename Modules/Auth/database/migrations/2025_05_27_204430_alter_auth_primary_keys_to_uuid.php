@@ -143,6 +143,11 @@ return new class extends Migration
             return;
         }
 
+        $tokenableColumnType = Schema::getColumnType('personal_access_tokens', 'tokenable_id');
+        if (!in_array($tokenableColumnType, ['string', 'varchar', 'text'], true)) {
+            DB::statement('ALTER TABLE personal_access_tokens ALTER COLUMN tokenable_id TYPE varchar(255) USING tokenable_id::text');
+        }
+
         DB::statement("
             UPDATE personal_access_tokens pat
             SET tokenable_id = u.id_uuid::text
@@ -150,10 +155,5 @@ return new class extends Migration
             WHERE pat.tokenable_type LIKE '%User%'
               AND pat.tokenable_id = u.id::text
         ");
-
-        $tokenableColumnType = Schema::getColumnType('personal_access_tokens', 'tokenable_id');
-        if (!in_array($tokenableColumnType, ['string', 'varchar', 'text'], true)) {
-            DB::statement('ALTER TABLE personal_access_tokens ALTER COLUMN tokenable_id TYPE varchar(255) USING tokenable_id::text');
-        }
     }
 };
