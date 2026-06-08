@@ -6,6 +6,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Auth\Models\Menu;
+use Modules\Auth\Models\User;
+use Illuminate\Support\Str;
 
 /**
  * Handles CRUD operations for portal menu items.
@@ -15,6 +17,92 @@ use Modules\Auth\Models\Menu;
  */
 class MenuController extends Controller
 {
+
+    /**
+     * Display menu items available to the authenticated user.
+     *
+     * Includes public menu entries (no role_id) and items
+     * assigned to any role linked to the current user.
+     */
+    public function userMenus(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Gather role IDs assigned to the current user.
+        $roleIds = $user->roles()->pluck('roles.id');
+
+        // Reusable filter for role-scoped and public menus.
+        $applyRoleFilter = function ($query) use ($roleIds): void {
+            $query->where(function ($menuQuery) use ($roleIds): void {
+                $menuQuery->whereNull('role_id');
+
+                if ($roleIds->isNotEmpty()) {
+                    $menuQuery->orWhereIn('role_id', $roleIds);
+                }
+            });
+        };
+
+        $menus = Menu::query()
+            ->whereNull('parent_id')
+            ->where($applyRoleFilter)
+            ->with([
+                'role',
+                'children' => function ($query) use ($applyRoleFilter): void {
+                    $query->where($applyRoleFilter)->orderBy('sort_order');
+                },
+            ])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($menus);
+    }
+
+    /**
+     * Display menu items available to a specific user.
+     *
+     * Useful for admin screens that need to inspect menu visibility
+     * for users other than the currently authenticated user.
+     */
+    public function userMenusByUser(Request $request): JsonResponse
+    {
+        $targetUser = $request->user();
+
+        if (!$targetUser) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // Gather role IDs assigned to the target user.
+        $roleIds = $targetUser->roles()->pluck('roles.id');
+
+        // Reusable filter for role-scoped and public menus.
+        $applyRoleFilter = function ($query) use ($roleIds): void {
+            $query->where(function ($menuQuery) use ($roleIds): void {
+                $menuQuery->whereNull('role_id');
+
+                if ($roleIds->isNotEmpty()) {
+                    $menuQuery->orWhereIn('role_id', $roleIds);
+                }
+            });
+        };
+
+        $menus = Menu::query()
+            ->whereNull('parent_id')
+            ->where($applyRoleFilter)
+            ->with([
+                'role',
+                'children' => function ($query) use ($applyRoleFilter): void {
+                    $query->where($applyRoleFilter)->orderBy('sort_order');
+                },
+            ])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($menus);
+    }
+
+
     /**
      * Display top-level menu items with nested children.
      *

@@ -2,7 +2,7 @@
   "info": {
     "name": "Consolidated API - Auth Module",
     "_postman_id": "d6c15411-5ef8-4f28-9b72-7600d76cf201",
-    "description": "Auth module endpoints with token auto-capture and chained IDs for one-click collection runs.",
+    "description": "Auth module API endpoints with bearer token auth, token capture, and helper variables for Postman testing.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -36,18 +36,7 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{mockEmail}}\",\n  \"password\": \"{{mockPassword}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/mockGoogleLogin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "v1",
-                "auth",
-                "mockGoogleLogin"
-              ]
-            },
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/auth/mockGoogleLogin",
             "description": "Uses mockGoogleLogin and stores the returned Sanctum token into variables."
           },
           "event": [
@@ -73,68 +62,8 @@
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "v1",
-                "auth",
-                "logout"
-              ]
-            }
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/auth/logout"
           }
-        },
-        {
-          "name": "Mock Google Login (Re-issue Token)",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{mockEmail}}\",\n  \"password\": \"{{mockPassword}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/v1/auth/mockGoogleLogin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "v1",
-                "auth",
-                "mockGoogleLogin"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "let json = {};",
-                  "try { json = pm.response.json(); } catch (e) {}",
-                  "const token = json?.data?.token || json?.token || null;",
-                  "if (token) {",
-                  "  pm.collectionVariables.set('token', token);",
-                  "  pm.environment.set('token', token);",
-                  "}"
-                ]
-              }
-            }
-          ]
         }
       ]
     },
@@ -145,37 +74,14 @@
           "name": "Get Annual Report User",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/v1/user",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "v1",
-                "user"
-              ]
-            }
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/user"
           }
         },
         {
           "name": "Get Public Safety User",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/v1/publicSafety/user",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "v1",
-                "publicSafety",
-                "user"
-              ]
-            }
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/publicSafety/user"
           }
         },
         {
@@ -189,17 +95,7 @@
                 "type": "text"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/user",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "user"
-              ]
-            },
-            "description": "Accepts Sanctum token (or Google OIDC token depending on controller logic)."
+            "url": "{{baseUrl}}{{apiPrefix}}/user"
           }
         }
       ]
@@ -274,80 +170,6 @@
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}{{apiPrefix}}/v1/users/{{userId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Groups",
-      "item": [
-        {
-          "name": "List Groups",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups"
-          }
-        },
-        {
-          "name": "Create Group",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"group_name\": \"Postman Group {{$timestamp}}\",\n  \"description\": \"Created by Postman runner\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "let json = {};",
-                  "try { json = pm.response.json(); } catch (e) {}",
-                  "const id = json?.id || json?.data?.id || null;",
-                  "if (id) { pm.environment.set('groupId', id); pm.collectionVariables.set('groupId', id); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get Group",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
-          }
-        },
-        {
-          "name": "Update Group",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"description\": \"Updated by Postman {{$timestamp}}\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
-          }
-        },
-        {
-          "name": "Delete Group",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/groups/{{groupId}}"
           }
         }
       ]
@@ -542,17 +364,31 @@
       ]
     },
     {
-      "name": "Menu Items",
+      "name": "Menus",
       "item": [
         {
-          "name": "List Menu Items",
+          "name": "My Menus",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items"
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/my-menus"
           }
         },
         {
-          "name": "Create Menu Item",
+          "name": "My Menus (users/me/menus)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/users/me/menus"
+          }
+        },
+        {
+          "name": "List Menus",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menus"
+          }
+        },
+        {
+          "name": "Create Menu",
           "request": {
             "method": "POST",
             "header": [
@@ -565,7 +401,7 @@
               "mode": "raw",
               "raw": "{\n  \"label\": \"Postman Menu {{$timestamp}}\",\n  \"path\": \"/postman/{{$timestamp}}\",\n  \"icon\": \"mdi-test-tube\",\n  \"sort_order\": 99\n}"
             },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items"
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menus"
           },
           "event": [
             {
@@ -576,21 +412,21 @@
                   "let json = {};",
                   "try { json = pm.response.json(); } catch (e) {}",
                   "const id = json?.id || json?.data?.id || null;",
-                  "if (id) { pm.environment.set('menuItemId', id); pm.collectionVariables.set('menuItemId', id); }"
+                  "if (id) { pm.environment.set('menuId', id); pm.collectionVariables.set('menuId', id); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get Menu Item",
+          "name": "Get Menu",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menus/{{menuId}}"
           }
         },
         {
-          "name": "Update Menu Item",
+          "name": "Update Menu",
           "request": {
             "method": "PATCH",
             "header": [
@@ -603,87 +439,20 @@
               "mode": "raw",
               "raw": "{\n  \"label\": \"Updated Menu {{$timestamp}}\"\n}"
             },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menus/{{menuId}}"
           }
         },
         {
-          "name": "Delete Menu Item",
+          "name": "Delete Menu",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/menu-items/{{menuItemId}}"
+            "url": "{{baseUrl}}{{apiPrefix}}/v1/menus/{{menuId}}"
           }
         }
       ]
     },
     {
-      "name": "User Groups (Pivot)",
-      "item": [
-        {
-          "name": "List User Groups",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups"
-          }
-        },
-        {
-          "name": "Create User Group",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"group_id\": \"{{groupId}}\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups"
-          }
-        },
-        {
-          "name": "Get User Groups By User",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}"
-          }
-        },
-        {
-          "name": "Get Specific User Group",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
-          }
-        },
-        {
-          "name": "Update User Group",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"new_group_id\": \"{{groupId}}\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
-          }
-        },
-        {
-          "name": "Delete User Group",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/user-groups/{{userId}}/{{groupId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "User Roles (Pivot)",
+      "name": "User Roles",
       "item": [
         {
           "name": "List User Roles",
@@ -750,74 +519,7 @@
       ]
     },
     {
-      "name": "Group Roles (Pivot)",
-      "item": [
-        {
-          "name": "List Group Roles",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles"
-          }
-        },
-        {
-          "name": "Create Group Role",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"group_id\": \"{{groupId}}\",\n  \"role_id\": \"{{roleId}}\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles"
-          }
-        },
-        {
-          "name": "Get Group Roles By Group",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}"
-          }
-        },
-        {
-          "name": "Get Specific Group Role",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
-          }
-        },
-        {
-          "name": "Update Group Role",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"new_role_id\": \"{{roleId}}\"\n}"
-            },
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
-          }
-        },
-        {
-          "name": "Delete Group Role",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}{{apiPrefix}}/v1/group-roles/{{groupId}}/{{roleId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Role Permissions (Pivot)",
+      "name": "Role Permissions",
       "item": [
         {
           "name": "List Role Permissions",
