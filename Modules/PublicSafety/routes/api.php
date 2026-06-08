@@ -50,6 +50,9 @@ Route::group([
     'middleware' => 'auth:sanctum',
 ], function () {
 
+    Route::get('/user', [PublicSafetyAuthController::class, 'user']);
+    Route::get('/me', [PublicSafetyAuthController::class, 'me']);
+
     Route::get('users', [UserController::class, 'index']);
     Route::post('users', [UserController::class, 'store']);
     Route::get('users/{userID}', [UserController::class, 'show']);
