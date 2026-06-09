@@ -59,14 +59,17 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']); // Delete a permission.
 
     // Menu item CRUD endpoints.
-    Route::get('/my-menus', [MenuController::class, 'userMenus']); // List menus available to the authenticated user.
-    Route::get('/users/me/menus', [MenuController::class, 'userMenusByUser']); // List menus available to the authenticated user.
+   Route::get('/menus/applications', [MenuController::class, 'applications']);
+    Route::get('/menus/my-applications', [MenuController::class, 'myApplications']);
+    Route::get('/user-menus', [MenuController::class, 'userMenus']);
+    Route::get('/user-menus-by-user', [MenuController::class, 'userMenusByUser']);
     Route::get('/menus', [MenuController::class, 'index']); // List top-level menu items with children.
     Route::post('/menus', [MenuController::class, 'store']); // Create a menu item.
     Route::get('/menus/{menu}', [MenuController::class, 'show']); // Get one menu item with role/children.
     Route::put('/menus/{menu}', [MenuController::class, 'update']); // Replace/update menu item.
     Route::patch('/menus/{menu}', [MenuController::class, 'update']); // Partially update menu item.
     Route::delete('/menus/{menu}', [MenuController::class, 'destroy']); // Delete a menu item.
+   
 
     // User-role pivot CRUD endpoints (composite key: userId + roleId).
     Route::get('/user-roles', [UserRoleController::class, 'index']); // List all user-role assignments.
