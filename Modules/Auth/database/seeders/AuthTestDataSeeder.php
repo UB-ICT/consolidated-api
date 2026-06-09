@@ -16,8 +16,9 @@ class AuthTestDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. All roles needed across your variations
+        // 1. Add 'super-admin' to your role core list
         $targetRoleNames = [
+            'super-admin', // 👈 Added this right at the top
             'budget-officer',
             'president',
             'vice-president',
@@ -42,35 +43,34 @@ class AuthTestDataSeeder extends Seeder
             $roleMap[$name] = $role->id;
         }
 
-        // 2. Define the Level 1 Applications as root menus (parent_id = null)
+        // 2. Define the Level 1 Applications as root menus (parent_id = null, type = 'application')
         $apps = [
             'requisition' => [
-                'label' => 'RequisitionSystem',
+                'label' => 'Requisition System',
                 'path'  => '/requisitions',
                 'icon'  => 'briefcase',
             ],
             'public_safety' => [
-                'label' => 'Publicsafety',
+                'label' => 'Public Safety',
                 'path'  => '/public-safety',
                 'icon'  => 'shield-check',
             ],
             'ub_forms' => [
-                'label' => 'UBForms',
-                'path'  => '/ub-forms',
+                'label' => 'UB Annual Reports',
+                'path'  => '/ub-annual-reports',
                 'icon'  => 'clipboard-document-list',
             ],
         ];
 
         $appIds = [];
         foreach ($apps as $key => $appData) {
-            // Note: We don't link a role_id to the top app root here, 
-            // allowing users to see their available app options on the landing deck.
             $menuApp = Menu::updateOrCreate(
                 ['path' => $appData['path'], 'parent_id' => null],
                 [
                     'id'         => Str::uuid()->toString(),
                     'label'      => $appData['label'],
                     'icon'       => $appData['icon'],
+                    'type'       => 'application', // 👈 Explicit type mapping
                     'sort_order' => 1,
                 ]
             );
@@ -109,7 +109,8 @@ class AuthTestDataSeeder extends Seeder
                         'id'         => Str::uuid()->toString(),
                         'label'      => $item['label'],
                         'icon'       => $item['icon'],
-                        'parent_id'  => $appIds['requisition'], // 👈 Points to RequisitionSystem app row
+                        'type'       => 'submenu', // Submenu identifier block
+                        'parent_id'  => $appIds['requisition'],
                         'sort_order' => $item['sort_order'],
                     ]
                 );
@@ -128,20 +129,64 @@ class AuthTestDataSeeder extends Seeder
                     'id'         => Str::uuid()->toString(),
                     'label'      => $item['label'],
                     'icon'       => $item['icon'],
-                    'parent_id'  => $appIds['requisition'], // 👈 Points to RequisitionSystem app row
+                    'type'       => 'submenu',
+                    'parent_id'  => $appIds['requisition'],
                     'sort_order' => $item['sort_order'],
                 ]
             );
         }
 
-        // 7. Define testing users and their target role assignments
-        $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'developer'],
-            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'developer'],
-            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'director/dean'],
+        // 7. Seed Profile Dropdown Cards (type = 'user-menu')
+        $profileDropdownItems = [
+            ['label' => 'View profile', 'path' => '/profile', 'icon' => 'user', 'role_id' => null, 'sort_order' => 1],
+            ['label' => 'Settings', 'path' => '/settings', 'icon' => 'cog', 'role_id' => null, 'sort_order' => 2],
+            ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
+            ['label' => 'Admin tools', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
         ];
 
-        // 8. Handle user instantiation and pivot syncs
+        foreach ($profileDropdownItems as $item) {
+            Menu::updateOrCreate(
+                ['path' => $item['path'], 'type' => 'user-menu'],
+                [
+                    'id'         => Str::uuid()->toString(),
+                    'label'      => $item['label'],
+                    'icon'       => $item['icon'],
+                    'role_id'    => $item['role_id'],
+                    'parent_id'  => null,
+                    'sort_order' => $item['sort_order'],
+                ]
+            );
+        }
+
+        // 8. Seed Horizontal External Link Footers (type = 'external-link')
+        $externalLinks = [
+            ['label' => 'External Tools', 'path' => '/external-tools', 'icon' => 'wrench', 'sort_order' => 5],
+            ['label' => 'Library Docs', 'path' => '/docs', 'icon' => 'book-open', 'sort_order' => 6],
+            ['label' => 'University Website', 'path' => 'https://www.ub.edu.bz', 'icon' => 'globe-alt', 'sort_order' => 7],
+        ];
+
+        foreach ($externalLinks as $link) {
+            Menu::updateOrCreate(
+                ['path' => $link['path'], 'type' => 'external-link'],
+                [
+                    'id'         => Str::uuid()->toString(),
+                    'label'      => $link['label'],
+                    'icon'       => $link['icon'],
+                    'role_id'    => null,
+                    'parent_id'  => null,
+                    'sort_order' => $link['sort_order'],
+                ]
+            );
+        }
+
+        // 9. Define testing users
+        $testUsers = [
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],     // 👑 Super Admin
+            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'super-admin'],       // 👑 Super Admin
+            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],   // 👑 Super Admin
+        ];
+
+        // 10. Handle user instantiation and pivot syncs
         foreach ($testUsers as $userData) {
             $user = User::firstOrCreate(
                 ['email' => $userData['email']],
@@ -159,6 +204,6 @@ class AuthTestDataSeeder extends Seeder
             }
         }
 
-        $this->command->info('Successfully seeded top-level apps and child sub-menus into the single database table!');
+        $this->command->info('Successfully seeded everything including user-menus and external layout links!');
     }
 }

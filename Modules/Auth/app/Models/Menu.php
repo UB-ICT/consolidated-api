@@ -28,6 +28,7 @@ class Menu extends Model
         'label',
         'path',
         'icon',
+        'type',
         'role_id',
         'parent_id',
         'sort_order'

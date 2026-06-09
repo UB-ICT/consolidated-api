@@ -15,6 +15,47 @@ use Modules\Auth\Models\Menu;
  */
 class MenuController extends Controller
 {
+
+
+    /**
+     * GET /api/menus/profile
+     * Build the user profile dropdown layout dynamically based on roles.
+     */
+    public function profileMenu(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $roleIds = $user->roles()->pluck('roles.id')->toArray();
+
+        // Query links marked for user-menu or external-link types
+        $menuItems = Menu::query()
+            ->whereIn('type', ['user-menu', 'external-link'])
+            ->where(function ($query) use ($roleIds) {
+                // If role_id is null, it's public to all logged-in users
+                $query->whereNull('role_id');
+
+                // If it has a role restriction, the user must possess that role ID
+                if (!empty($roleIds)) {
+                    $query->orWhereIn('role_id', $roleIds);
+                }
+            })
+            ->orderBy('sort_order')
+            ->get();
+
+        // Split items by type for clean frontend consumption
+        $links = $menuItems->where('type', 'user-menu')->values();
+        $externals = $menuItems->where('type', 'external-link')->values();
+
+        return response()->json([
+            'user' => [
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'initials' => collect(explode(' ', $user->name))->map(fn($n) => mb_substr($n, 0, 1))->join(''),
+            ],
+            'navigation'     => $links,
+            'external_links' => $externals
+        ]);
+    }
+
     /**
      * GET /api/menus/applications
      * Fetch ALL top-level application modules globally.
@@ -35,11 +76,25 @@ class MenuController extends Controller
      */
     public function myApplications(Request $request): JsonResponse
     {
-        // 1. Get an array of all role UUIDs assigned to the current authenticated user
-        $roleIds = $request->user()->roles()->pluck('roles.id')->toArray();
+        $user = $request->user();
+        $roles = $user->roles;
+        $roleIds = $roles->pluck('id')->toArray();
 
-        // 2. Query only root rows that have nested children matching those roles
-        $myApps = Menu::whereNull('parent_id')
+        // 👑 SUPER ADMIN BYPASS: Give access to all applications immediately
+        if ($roles->contains('role_name', 'super-admin')) {
+            $allApps = Menu::whereNull('parent_id')
+                ->where('type', 'application') // 👈 CRITICAL: Must be an application type!
+                ->select('id', 'label', 'path', 'icon', 'sort_order')
+                ->orderBy('sort_order')
+                ->get();
+
+            return response()->json($allApps);
+        }
+
+        // Standard user role filtering logic
+        $myApps = Menu::query()
+            ->whereNull('parent_id')
+            ->where('type', 'application') // 👈 CRITICAL: Excludes 'user-menu' items with null parents!
             ->whereHas('children', function ($query) use ($roleIds) {
                 if (!empty($roleIds)) {
                     $query->whereIn('role_id', $roleIds);
@@ -63,27 +118,36 @@ class MenuController extends Controller
         ]);
 
         $user = $request->user();
-        $roleIds = $user->roles()->pluck('roles.id');
+        $roles = $user->roles;
+        $roleIds = $roles->pluck('id');
 
-        // Reusable filter for role-scoped and public menus
+        // 👑 SUPER ADMIN BYPASS: Pull all child menus under this app without filtering by role
+        if ($roles->contains('role_name', 'super-admin')) {
+            $menus = Menu::query()
+                ->where('parent_id', $request->query('application_id'))
+                ->with(['role', 'children.children']) // Deep structural load
+                ->orderBy('sort_order')
+                ->get();
+
+            return response()->json($menus);
+        }
+
+        // Standard dynamic role filtering for regular employees
         $applyRoleFilter = function ($query) use ($roleIds): void {
             $query->where(function ($menuQuery) use ($roleIds): void {
                 $menuQuery->whereNull('role_id');
-
                 if ($roleIds->isNotEmpty()) {
                     $menuQuery->orWhereIn('role_id', $roleIds);
                 }
             });
         };
 
-        // Fetch sub-menus whose parent is the selected Application ID
         $menus = Menu::query()
             ->where('parent_id', $request->query('application_id'))
             ->where($applyRoleFilter)
             ->with([
                 'role',
                 'children' => function ($query) use ($applyRoleFilter): void {
-                    // This handles potential 3rd level sub-menus gracefully
                     $query->where($applyRoleFilter)->orderBy('sort_order');
                 },
             ])
