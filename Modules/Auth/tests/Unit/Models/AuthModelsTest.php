@@ -56,6 +56,7 @@ class AuthModelsTest extends TestCase
             'label',
             'path',
             'icon',
+            'type',
             'role_id',
             'parent_id',
             'sort_order',
