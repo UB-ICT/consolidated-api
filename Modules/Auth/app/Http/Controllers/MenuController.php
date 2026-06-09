@@ -6,8 +6,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Auth\Models\Menu;
-use Modules\Auth\Models\User;
-use Illuminate\Support\Str;
 
 /**
  * Handles CRUD operations for portal menu items.
