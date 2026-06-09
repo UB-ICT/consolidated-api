@@ -14,9 +14,4 @@ class ConversionRate extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = ['rate', 'currency_id'];
-
-    // protected static function newFactory(): ConversionRateFactory
-    // {
-    //     // return ConversionRateFactory::new();
-    // }
 }

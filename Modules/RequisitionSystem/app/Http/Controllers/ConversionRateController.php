@@ -3,64 +3,74 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\ConversionRate;
+use Modules\RequisitionSystem\Http\Requests\ConversionRateStoreRequest;
 
 class ConversionRateController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of conversion rates.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return view('requisitionsystem::index');
+        $rates = ConversionRate::all();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $rates
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created conversion rate in storage.
      */
-    public function create()
+    public function store(ConversionRateStoreRequest $request): JsonResponse
     {
-        return view('requisitionsystem::create');
+        $rate = ConversionRate::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversion rate added successfully.',
+            'data'    => $rate
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified conversion rate.
      */
-    public function store(Request $request)
+    public function show(ConversionRate $conversionRate): JsonResponse
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data'    => $conversionRate
+        ], 200);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified conversion rate in storage.
      */
-    public function show($id)
+    public function update(ConversionRateStoreRequest $request, ConversionRate $conversionRate): JsonResponse
     {
-        return view('requisitionsystem::show');
+        $conversionRate->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversion rate updated successfully.',
+            'data'    => $conversionRate
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified conversion rate from storage.
      */
-    public function edit($id)
+    public function destroy(ConversionRate $conversionRate): JsonResponse
     {
-        return view('requisitionsystem::edit');
-    }
+        $conversionRate->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversion rate removed successfully.'
+        ], 200);
     }
 }
