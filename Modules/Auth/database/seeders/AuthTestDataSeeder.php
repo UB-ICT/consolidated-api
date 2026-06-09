@@ -4,8 +4,10 @@ namespace Modules\Auth\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Role;
+use Modules\Auth\Models\User;
 
 class AuthTestDataSeeder extends Seeder
 {
@@ -14,7 +16,7 @@ class AuthTestDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. All roles needed across your requisition system variations
+        // 1. All roles needed across your variations
         $targetRoleNames = [
             'budget-officer',
             'president',
@@ -23,13 +25,13 @@ class AuthTestDataSeeder extends Seeder
             'accounts-payable',
             'senior-account',
             'director/dean',
-            'cost-center' // 👈 Added the cost-center role
+            'cost-center',
+            'developer',
         ];
 
-        // 2. Guarantee roles exist and capture their database UUIDs safely
+        // Guarantee roles exist and capture their database UUIDs safely
         $roleMap = [];
         foreach ($targetRoleNames as $name) {
-            // Find the role by name, or instantiate a new one with a fresh UUID
             $role = Role::firstOrCreate(
                 ['role_name' => $name],
                 [
@@ -37,10 +39,45 @@ class AuthTestDataSeeder extends Seeder
                     'description' => "System access role for " . ucfirst($name),
                 ]
             );
-            $roleMap[$name] = $role->id; // Map key names directly to their stable UUID
+            $roleMap[$name] = $role->id;
         }
 
-        // 3. Define the menu items shared by the 7 management/approval roles
+        // 2. Define the Level 1 Applications as root menus (parent_id = null)
+        $apps = [
+            'requisition' => [
+                'label' => 'RequisitionSystem',
+                'path'  => '/requisitions',
+                'icon'  => 'briefcase',
+            ],
+            'public_safety' => [
+                'label' => 'Publicsafety',
+                'path'  => '/public-safety',
+                'icon'  => 'shield-check',
+            ],
+            'ub_forms' => [
+                'label' => 'UBForms',
+                'path'  => '/ub-forms',
+                'icon'  => 'clipboard-document-list',
+            ],
+        ];
+
+        $appIds = [];
+        foreach ($apps as $key => $appData) {
+            // Note: We don't link a role_id to the top app root here, 
+            // allowing users to see their available app options on the landing deck.
+            $menuApp = Menu::updateOrCreate(
+                ['path' => $appData['path'], 'parent_id' => null],
+                [
+                    'id'         => Str::uuid()->toString(),
+                    'label'      => $appData['label'],
+                    'icon'       => $appData['icon'],
+                    'sort_order' => 1,
+                ]
+            );
+            $appIds[$key] = $menuApp->id;
+        }
+
+        // 3. Define the Level 2 menu items shared by the management/approval roles
         $managementMenuItems = [
             ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Approval inbox', 'path' => '/requisitions/approval-inbox', 'icon' => 'inbox', 'sort_order' => 2],
@@ -49,7 +86,7 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
         ];
 
-        // 4. Define the menu items specific to your 'cost-center' role layout
+        // 4. Define the Level 2 menu items specific to your 'cost-center' role layout
         $costCenterMenuItems = [
             ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'New requisition', 'path' => '/requisitions/create', 'icon' => 'document-plus', 'sort_order' => 2],
@@ -58,39 +95,70 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
         ];
 
-        // 5. Seed the 7 management roles
+        // 5. Seed management layouts nested under the RequisitionSystem app item
         $managementRoles = array_diff($targetRoleNames, ['cost-center']);
         foreach ($managementRoles as $roleName) {
             $roleId = $roleMap[$roleName];
             foreach ($managementMenuItems as $item) {
                 Menu::updateOrCreate(
-                    ['path' => $item['path'], 'role_id' => $roleId],
+                    [
+                        'path'    => $item['path'],
+                        'role_id' => $roleId
+                    ],
                     [
                         'id'         => Str::uuid()->toString(),
                         'label'      => $item['label'],
                         'icon'       => $item['icon'],
-                        'parent_id'  => null,
+                        'parent_id'  => $appIds['requisition'], // 👈 Points to RequisitionSystem app row
                         'sort_order' => $item['sort_order'],
                     ]
                 );
             }
         }
 
-        // 6. Seed the cost-center role explicitly using its unique layout array
+        // 6. Seed cost-center layout nested under the RequisitionSystem app item
         $costCenterId = $roleMap['cost-center'];
         foreach ($costCenterMenuItems as $item) {
             Menu::updateOrCreate(
-                ['path' => $item['path'], 'role_id' => $costCenterId],
+                [
+                    'path'    => $item['path'],
+                    'role_id' => $costCenterId
+                ],
                 [
                     'id'         => Str::uuid()->toString(),
                     'label'      => $item['label'],
                     'icon'       => $item['icon'],
-                    'parent_id'  => null,
+                    'parent_id'  => $appIds['requisition'], // 👈 Points to RequisitionSystem app row
                     'sort_order' => $item['sort_order'],
                 ]
             );
         }
 
-        $this->command->info('Successfully seeded all modular role sidebar menus!');
+        // 7. Define testing users and their target role assignments
+        $testUsers = [
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'developer'],
+            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'developer'],
+            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'director/dean'],
+        ];
+
+        // 8. Handle user instantiation and pivot syncs
+        foreach ($testUsers as $userData) {
+            $user = User::firstOrCreate(
+                ['email' => $userData['email']],
+                [
+                    'id'       => Str::uuid()->toString(),
+                    'name'     => $userData['name'],
+                    'password' => Hash::make('password'),
+                ]
+            );
+
+            $roleId = $roleMap[$userData['role']];
+
+            if (method_exists($user, 'roles')) {
+                $user->roles()->syncWithoutDetaching([$roleId]);
+            }
+        }
+
+        $this->command->info('Successfully seeded top-level apps and child sub-menus into the single database table!');
     }
 }
