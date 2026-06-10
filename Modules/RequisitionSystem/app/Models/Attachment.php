@@ -18,9 +18,4 @@ class Attachment extends Model
     protected $casts = [
         'uploaded_at' => 'datetime:M d, Y',
     ];
-
-    // protected static function newFactory(): AttachmentFactory
-    // {
-    //     // return AttachmentFactory::new();
-    // }
 }

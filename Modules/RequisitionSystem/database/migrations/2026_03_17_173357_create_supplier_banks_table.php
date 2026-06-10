@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('account_number');
             $table->string('account_name');
             $table->string('address');
+            $table->timestamps();
         });
     }
 

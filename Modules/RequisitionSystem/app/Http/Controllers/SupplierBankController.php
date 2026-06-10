@@ -3,64 +3,71 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\SupplierBank;
+use Modules\RequisitionSystem\Http\Requests\SupplierBankStoreRequest;
 
 class SupplierBankController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all supplier bank records
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => SupplierBank::with(['supplier', 'bank'])->get(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store supplier bank details
      */
-    public function create()
+    public function store(SupplierBankStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $bank = SupplierBank::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier bank details created successfully.',
+            'data' => $bank,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show single record
      */
-    public function store(Request $request)
+    public function show(SupplierBank $supplierBank)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $supplierBank->load(['supplier', 'bank']),
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update record
      */
-    public function show($id)
+    public function update(SupplierBankStoreRequest $request, SupplierBank $supplierBank)
     {
-        return view('requisitionsystem::show');
+        $supplierBank->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier bank updated successfully.',
+            'data' => $supplierBank,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete record
      */
-    public function edit($id)
+    public function destroy(SupplierBank $supplierBank)
     {
-        return view('requisitionsystem::edit');
-    }
+        $supplierBank->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier bank deleted successfully.',
+        ]);
     }
 }

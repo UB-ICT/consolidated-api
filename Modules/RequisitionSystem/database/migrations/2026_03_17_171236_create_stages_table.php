@@ -20,6 +20,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->foreignId('pipeline_id')->constrained('pipelines');
+            $table->timestamps();
         });
     }
 

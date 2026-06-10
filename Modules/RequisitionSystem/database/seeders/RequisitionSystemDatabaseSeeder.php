@@ -4,6 +4,7 @@ namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
+
 class RequisitionSystemDatabaseSeeder extends Seeder
 {
     /**
@@ -29,6 +30,7 @@ class RequisitionSystemDatabaseSeeder extends Seeder
             ItemSeeder::class,
             AttachmentSeeder::class,
             ApprovalSeeder::class,
+            FullRequisitionFlowSeeder::class,
         ]);
     }
 }

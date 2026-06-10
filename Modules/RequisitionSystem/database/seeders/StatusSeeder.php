@@ -4,13 +4,18 @@ namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
+use Modules\RequisitionSystem\Models\Status;
+
 class StatusSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // $this->call([]);
+        Status::insert([
+            ['name' => 'Draft'],
+            ['name' => 'Pending'],
+            ['name' => 'Approved'],
+            ['name' => 'Rejected'],
+            ['name' => 'Under Review'],
+        ]);
     }
 }

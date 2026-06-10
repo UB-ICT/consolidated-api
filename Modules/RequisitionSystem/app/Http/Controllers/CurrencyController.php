@@ -3,64 +3,74 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\Currency;
+use Modules\RequisitionSystem\Http\Requests\CurrencyStoreRequest;
 
 class CurrencyController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of currencies.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return view('requisitionsystem::index');
+        $currencies = Currency::all();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $currencies
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created currency in storage.
      */
-    public function create()
+    public function store(CurrencyStoreRequest $request): JsonResponse
     {
-        return view('requisitionsystem::create');
+        $currency = Currency::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Currency created successfully.',
+            'data'    => $currency
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified currency.
      */
-    public function store(Request $request)
+    public function show(Currency $currency): JsonResponse
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data'    => $currency
+        ], 200);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified currency in storage.
      */
-    public function show($id)
+    public function update(CurrencyStoreRequest $request, Currency $currency): JsonResponse
     {
-        return view('requisitionsystem::show');
+        $currency->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Currency updated successfully.',
+            'data'    => $currency
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified currency from storage.
      */
-    public function edit($id)
+    public function destroy(Currency $currency): JsonResponse
     {
-        return view('requisitionsystem::edit');
-    }
+        $currency->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Currency deleted successfully.'
+        ], 200);
     }
 }

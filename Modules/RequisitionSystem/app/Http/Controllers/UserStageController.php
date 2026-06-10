@@ -3,64 +3,71 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\UserStage;
+use Modules\RequisitionSystem\Http\Requests\UserStageStoreRequest;
 
 class UserStageController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all user-stage assignments
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => UserStage::with(['user', 'stage'])->get(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Assign user to stage
      */
-    public function create()
+    public function store(UserStageStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $userStage = UserStage::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User assigned to stage successfully.',
+            'data' => $userStage,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show assignment
      */
-    public function store(Request $request)
+    public function show(UserStage $userStage)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $userStage->load(['user', 'stage']),
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update assignment
      */
-    public function show($id)
+    public function update(UserStageStoreRequest $request, UserStage $userStage)
     {
-        return view('requisitionsystem::show');
+        $userStage->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User-stage updated successfully.',
+            'data' => $userStage,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete assignment
      */
-    public function edit($id)
+    public function destroy(UserStage $userStage)
     {
-        return view('requisitionsystem::edit');
-    }
+        $userStage->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'User removed from stage successfully.',
+        ]);
     }
 }

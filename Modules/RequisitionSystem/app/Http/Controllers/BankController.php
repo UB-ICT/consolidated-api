@@ -3,64 +3,74 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\Bank;
+use Modules\RequisitionSystem\Http\Requests\BankStoreRequest;
 
 class BankController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the banks.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return view('requisitionsystem::index');
+        $banks = Bank::all();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $banks
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created bank in storage.
      */
-    public function create()
+    public function store(BankStoreRequest $request): JsonResponse
     {
-        return view('requisitionsystem::create');
+        $bank = Bank::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bank created successfully.',
+            'data'    => $bank
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified bank.
      */
-    public function store(Request $request)
+    public function show(Bank $bank): JsonResponse
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data'    => $bank
+        ], 200);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified bank in storage.
      */
-    public function show($id)
+    public function update(BankStoreRequest $request, Bank $bank): JsonResponse
     {
-        return view('requisitionsystem::show');
+        $bank->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bank updated successfully.',
+            'data'    => $bank
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified bank from storage.
      */
-    public function edit($id)
+    public function destroy(Bank $bank): JsonResponse
     {
-        return view('requisitionsystem::edit');
-    }
+        $bank->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Bank deleted successfully.'
+        ], 200);
     }
 }

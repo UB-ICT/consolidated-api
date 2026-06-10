@@ -25,6 +25,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2);
             $table->string('comments')->nullable();
             $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 

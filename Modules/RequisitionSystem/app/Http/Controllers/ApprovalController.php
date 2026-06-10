@@ -3,64 +3,78 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\Approval;
+use Modules\RequisitionSystem\Http\Requests\ApprovalStoreRequest;
 
 class ApprovalController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of approvals.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return view('requisitionsystem::index');
+        $approvals = Approval::all();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $approvals
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created approval in storage.
      */
-    public function create()
+    public function store(ApprovalStoreRequest $request): JsonResponse
     {
-        return view('requisitionsystem::create');
+        // Automatically merges validated data; can include a timestamp for your casted 'signed_at'
+        $data = $request->validated();
+        $data['signed_at'] = now();
+
+        $approval = Approval::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Approval recorded successfully.',
+            'data'    => $approval
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified approval.
      */
-    public function store(Request $request)
+    public function show(Approval $approval): JsonResponse
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data'    => $approval
+        ], 200);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified approval in storage.
      */
-    public function show($id)
+    public function update(ApprovalStoreRequest $request, Approval $approval): JsonResponse
     {
-        return view('requisitionsystem::show');
+        $approval->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Approval updated successfully.',
+            'data'    => $approval
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified approval from storage.
      */
-    public function edit($id)
+    public function destroy(Approval $approval): JsonResponse
     {
-        return view('requisitionsystem::edit');
-    }
+        $approval->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Approval deleted successfully.'
+        ], 200);
     }
 }

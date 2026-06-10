@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('contact_person');
             $table->string('phone_number');
             $table->string('email')->unique();
-            $table->integer('TIN')->unique();
+            $table->string('TIN');
+            $table->timestamps();
         });
     }
 

@@ -29,6 +29,9 @@ return new class extends Migration
                 ->references('id')
                 ->on('public.users')
                 ->onDelete('cascade');
+            $table->timestamps();
+            $table->foreignId('stage_id')->nullable()->constrained('stages');
+            $table->string('status')->default('pending');
         });
     }
 

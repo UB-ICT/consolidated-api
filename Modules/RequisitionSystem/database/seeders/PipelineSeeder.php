@@ -3,14 +3,15 @@
 namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\RequisitionSystem\Models\Pipeline;
 
 class PipelineSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // $this->call([]);
+        Pipeline::insert([
+            ['name' => 'academic'],
+            ['name' => 'operations'],
+        ]);
     }
 }

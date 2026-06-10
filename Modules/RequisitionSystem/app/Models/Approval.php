@@ -4,7 +4,6 @@ namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Modules\RequisitionSystem\Database\Factories\ApprovalFactory;
 
 class Approval extends Model
 {
@@ -13,14 +12,9 @@ class Approval extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['requisition_id', 'user_id', 'comments'];
+    protected $fillable = ['requisition_id', 'user_id', 'comments', 'stage_id', 'status'];
 
     protected $casts = [
         'signed_at' => 'datetime:M d, Y',
     ];
-
-    // protected static function newFactory(): ApprovalFactory
-    // {
-    //     // return ApprovalFactory::new();
-    // }
 }

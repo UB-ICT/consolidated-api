@@ -3,73 +3,74 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\CostCenter;
+use Modules\RequisitionSystem\Http\Requests\CostCenterStoreRequest;
 
 class CostCenterController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of cost centers.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        // return view('requisitionsystem::index');
         $costCenters = CostCenter::all();
-        return response()->json($costCenters);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $costCenters
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created cost center in storage.
      */
-    public function create()
+    public function store(CostCenterStoreRequest $request): JsonResponse
     {
-        return view('requisitionsystem::create');
+        $costCenter = CostCenter::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cost center created successfully.',
+            'data'    => $costCenter
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified cost center.
      */
-    public function store(Request $request)
+    public function show(CostCenter $costCenter): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|max:255',
-        ]);
-
-        $costCenter = CostCenter::create($validated);
-
-        return response()->json($costCenter, 201);
+        return response()->json([
+            'success' => true,
+            'data'    => $costCenter
+        ], 200);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified cost center in storage.
      */
-    public function show($id)
+    public function update(CostCenterStoreRequest $request, CostCenter $costCenter): JsonResponse
     {
-        return view('requisitionsystem::show');
+        $costCenter->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cost center updated successfully.',
+            'data'    => $costCenter
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified cost center from storage.
      */
-    public function edit($id)
+    public function destroy(CostCenter $costCenter): JsonResponse
     {
-        return view('requisitionsystem::edit');
-    }
+        $costCenter->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Cost center deleted successfully.'
+        ], 200);
     }
 }

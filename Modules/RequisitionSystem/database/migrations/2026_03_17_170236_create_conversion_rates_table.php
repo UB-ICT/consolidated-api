@@ -20,6 +20,7 @@ return new class extends Migration
             $table->id();
             $table->decimal('rate', 10, 2);
             $table->foreignId('currency_id')->constrained('currencies');
+            $table->timestamps();
         });
     }
 

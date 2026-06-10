@@ -3,64 +3,74 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Requisition;
+use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 
 class RequisitionController extends Controller
 {
+
+   
+
     /**
-     * Display a listing of the resource.
+     * List all requisitions
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => Requisition::all(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Create requisition
      */
-    public function create()
+    public function store(RequisitionStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $requisition = Requisition::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition created successfully.',
+            'data' => $requisition,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show requisition
      */
-    public function store(Request $request)
+    public function show(Requisition $requisition)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $requisition,
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update requisition
      */
-    public function show($id)
+    public function update(RequisitionStoreRequest $request, Requisition $requisition)
     {
-        return view('requisitionsystem::show');
+        $requisition->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition updated successfully.',
+            'data' => $requisition,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete requisition
      */
-    public function edit($id)
+    public function destroy(Requisition $requisition)
     {
-        return view('requisitionsystem::edit');
-    }
+        $requisition->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition deleted successfully.',
+        ]);
     }
 }

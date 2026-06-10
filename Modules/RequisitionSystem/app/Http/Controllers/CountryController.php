@@ -3,64 +3,72 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Country;
+use Modules\RequisitionSystem\Http\Requests\CountryStoreRequest;
+use Illuminate\Http\Request;
 
 class CountryController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of countries.
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => Country::all(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created country.
      */
-    public function create()
+    public function store(CountryStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $country = Country::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Country created successfully.',
+            'data' => $country,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the specified country.
      */
-    public function store(Request $request)
+    public function show(Country $country)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $country,
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update the specified country.
      */
-    public function show($id)
+    public function update(CountryStoreRequest $request, Country $country)
     {
-        return view('requisitionsystem::show');
+        $country->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Country updated successfully.',
+            'data' => $country,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified country.
      */
-    public function edit($id)
+    public function destroy(Country $country)
     {
-        return view('requisitionsystem::edit');
-    }
+        $country->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Country deleted successfully.',
+        ]);
     }
 }
