@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('district');
             $table->string('postal_code')->nullable();
             $table->foreignId('country_id')->constrained('countries');
+            $table->timestamps();
         });
     }
 

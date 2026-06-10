@@ -14,9 +14,4 @@ class Item extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = ['description', 'quantity', 'line_item_number', 'unit_cost', 'total', 'comments', 'requisition_id'];
-
-    // protected static function newFactory(): ItemFactory
-    // {
-    //     // return ItemFactory::new();
-    // }
 }

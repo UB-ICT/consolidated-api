@@ -18,15 +18,16 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create('requisitions', function (Blueprint $table) {
             $table->id();
-            $table->integer('number');
+            $table->string('number')->unique();
             $table->foreignId('cost_center_id')->constrained('cost_centers');
             $table->foreignId('supplier_id')->constrained('suppliers');
             $table->timestamp('date_prepared')->useCurrent();
             $table->foreignId('status_id')->constrained('statuses');
             $table->foreignId('currency_id')->constrained('currencies');
-            $table->foreignId('conversion_rate')->constrained('conversion_rates');
+            $table->foreignId('conversion_rate_id')->constrained('conversion_rates');
             $table->decimal('total', 15, 2);
             $table->foreignId('stage_id')->constrained('stages');
+            $table->timestamps();
         });
     }
 

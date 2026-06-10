@@ -3,6 +3,7 @@
 namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\RequisitionSystem\Models\Currency;
 
 class CurrencySeeder extends Seeder
 {
@@ -11,6 +12,11 @@ class CurrencySeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        Currency::insert([
+            ['name' => 'Belize Dollar', 'symbol' => 'BZ$'],
+            ['name' => 'US Dollar', 'symbol' => '$'],
+            ['name' => 'Euro', 'symbol' => '€'],
+            ['name' => 'British Pound', 'symbol' => '£'],
+        ]);
     }
 }

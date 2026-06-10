@@ -34,6 +34,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('public.users')
                 ->onDelete('restrict'); // Protects attachments from disappearing if a user is deleted
+            $table->timestamps();
         });
     }
 

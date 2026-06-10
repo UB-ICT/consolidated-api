@@ -3,64 +3,71 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Stage;
+use Modules\RequisitionSystem\Http\Requests\StageStoreRequest;
 
 class StageController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all stages
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => Stage::with('pipeline')->get(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Create stage
      */
-    public function create()
+    public function store(StageStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $stage = Stage::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stage created successfully.',
+            'data' => $stage,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show stage
      */
-    public function store(Request $request)
+    public function show(Stage $stage)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $stage->load('pipeline'),
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update stage
      */
-    public function show($id)
+    public function update(StageStoreRequest $request, Stage $stage)
     {
-        return view('requisitionsystem::show');
+        $stage->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stage updated successfully.',
+            'data' => $stage,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete stage
      */
-    public function edit($id)
+    public function destroy(Stage $stage)
     {
-        return view('requisitionsystem::edit');
-    }
+        $stage->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Stage deleted successfully.',
+        ]);
     }
 }

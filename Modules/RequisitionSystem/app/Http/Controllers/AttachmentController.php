@@ -9,9 +9,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Modules\RequisitionSystem\Models\Attachment;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class FileUploadController extends Controller
+class AttachmentController extends Controller
 {
     /**
      * Upload photos or documents associated with a requisition or supplier.
@@ -138,7 +137,7 @@ class FileUploadController extends Controller
     /**
      * Download secure files via file path strings.
      */
-    public function downloadRequisitionSystemFile(Request $request, string $fileType, string $fileName)
+    public function downloadRequisitionSystemFile(string $fileType, string $fileName)
     {
         try {
             // Reconstructs target string matching your store layouts safely

@@ -3,64 +3,71 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Status;
+use Modules\RequisitionSystem\Http\Requests\StatusStoreRequest;
 
 class StatusController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all statuses
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => Status::all(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Create status
      */
-    public function create()
+    public function store(StatusStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $status = Status::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status created successfully.',
+            'data' => $status,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show status
      */
-    public function store(Request $request)
+    public function show(Status $status)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $status,
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update status
      */
-    public function show($id)
+    public function update(StatusStoreRequest $request, Status $status)
     {
-        return view('requisitionsystem::show');
+        $status->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status updated successfully.',
+            'data' => $status,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete status
      */
-    public function edit($id)
+    public function destroy(Status $status)
     {
-        return view('requisitionsystem::edit');
-    }
+        $status->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Status deleted successfully.',
+        ]);
     }
 }

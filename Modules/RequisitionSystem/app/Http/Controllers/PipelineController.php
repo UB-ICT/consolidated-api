@@ -3,64 +3,72 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Pipeline;
+use Modules\RequisitionSystem\Http\Requests\PipelineStoreRequest;
+use Illuminate\Http\Request;
 
 class PipelineController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display all pipelines
      */
     public function index()
     {
-        return view('requisitionsystem::index');
+        return response()->json([
+            'success' => true,
+            'data' => Pipeline::all(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a new pipeline
      */
-    public function create()
+    public function store(PipelineStoreRequest $request)
     {
-        return view('requisitionsystem::create');
+        $pipeline = Pipeline::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pipeline created successfully.',
+            'data' => $pipeline,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show single pipeline
      */
-    public function store(Request $request)
+    public function show(Pipeline $pipeline)
     {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $pipeline,
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Update pipeline
      */
-    public function show($id)
+    public function update(PipelineStoreRequest $request, Pipeline $pipeline)
     {
-        return view('requisitionsystem::show');
+        $pipeline->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pipeline updated successfully.',
+            'data' => $pipeline,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Delete pipeline
      */
-    public function edit($id)
+    public function destroy(Pipeline $pipeline)
     {
-        return view('requisitionsystem::edit');
-    }
+        $pipeline->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Pipeline deleted successfully.',
+        ]);
     }
 }
