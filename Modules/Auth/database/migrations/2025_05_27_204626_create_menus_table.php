@@ -21,6 +21,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('label');
             $table->string('path');
+            $table->string('type')->default('application'); // e.g., 'application', 'user-menu'
             $table->string('icon')->nullable();
 
             // Optional role-based visibility for the menu item.

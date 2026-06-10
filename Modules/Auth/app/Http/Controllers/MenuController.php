@@ -10,30 +10,132 @@ use Modules\Auth\Models\Menu;
 /**
  * Handles CRUD operations for portal menu items.
  *
- * Menu items can be nested through parent/child relationships
- * to build hierarchical navigation structures.
+ * Menu items are nested through parent/child relationships
+ * where root items act as Application modules.
  */
 class MenuController extends Controller
 {
 
+
     /**
-     * Display menu items available to the authenticated user.
-     *
-     * Includes public menu entries (no role_id) and items
-     * assigned to any role linked to the current user.
+     * GET /api/menus/profile
+     * Build the user profile dropdown layout dynamically based on roles.
+     */
+    public function profileMenu(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $roleIds = $user->roles()->pluck('roles.id')->toArray();
+
+        // Query links marked for user-menu or external-link types
+        $menuItems = Menu::query()
+            ->whereIn('type', ['user-menu', 'external-link'])
+            ->where(function ($query) use ($roleIds) {
+                // If role_id is null, it's public to all logged-in users
+                $query->whereNull('role_id');
+
+                // If it has a role restriction, the user must possess that role ID
+                if (!empty($roleIds)) {
+                    $query->orWhereIn('role_id', $roleIds);
+                }
+            })
+            ->orderBy('sort_order')
+            ->get();
+
+        // Split items by type for clean frontend consumption
+        $links = $menuItems->where('type', 'user-menu')->values();
+        $externals = $menuItems->where('type', 'external-link')->values();
+
+        return response()->json([
+            'user' => [
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'initials' => collect(explode(' ', $user->name))->map(fn($n) => mb_substr($n, 0, 1))->join(''),
+            ],
+            'navigation'     => $links,
+            'external_links' => $externals
+        ]);
+    }
+
+    /**
+     * GET /api/menus/applications
+     * Fetch ALL top-level application modules globally.
+     */
+    public function applications(): JsonResponse
+    {
+        $allApps = Menu::whereNull('parent_id')
+            ->select('id', 'label', 'path', 'icon', 'sort_order')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($allApps);
+    }
+
+    /**
+     * GET /api/menus/my-applications
+     * Fetch ONLY the top-level application modules accessible by the logged-in user's roles.
+     */
+    public function myApplications(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $roles = $user->roles;
+        $roleIds = $roles->pluck('id')->toArray();
+
+        // 👑 SUPER ADMIN BYPASS: Give access to all applications immediately
+        if ($roles->contains('role_name', 'super-admin')) {
+            $allApps = Menu::whereNull('parent_id')
+                ->where('type', 'application') // 👈 CRITICAL: Must be an application type!
+                ->select('id', 'label', 'path', 'icon', 'sort_order')
+                ->orderBy('sort_order')
+                ->get();
+
+            return response()->json($allApps);
+        }
+
+        // Standard user role filtering logic
+        $myApps = Menu::query()
+            ->whereNull('parent_id')
+            ->where('type', 'application') // 👈 CRITICAL: Excludes 'user-menu' items with null parents!
+            ->whereHas('children', function ($query) use ($roleIds) {
+                if (!empty($roleIds)) {
+                    $query->whereIn('role_id', $roleIds);
+                }
+            })
+            ->select('id', 'label', 'path', 'icon', 'sort_order')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($myApps);
+    }
+
+    /**
+     * Display menu items available to the authenticated user for a SPECIFIC application.
+     * * Expects an application ID via query string: GET /api/user-menus?application_id=UUID
      */
     public function userMenus(Request $request): JsonResponse
     {
+        $request->validate([
+            'application_id' => 'required|uuid|exists:pgsql.menus,id'
+        ]);
+
         $user = $request->user();
+        $roles = $user->roles;
+        $roleIds = $roles->pluck('id');
 
-        // Gather role IDs assigned to the current user.
-        $roleIds = $user->roles()->pluck('roles.id');
+        // 👑 SUPER ADMIN BYPASS: Pull all child menus under this app without filtering by role
+        if ($roles->contains('role_name', 'super-admin')) {
+            $menus = Menu::query()
+                ->where('parent_id', $request->query('application_id'))
+                ->with(['role', 'children.children']) // Deep structural load
+                ->orderBy('sort_order')
+                ->get();
 
-        // Reusable filter for role-scoped and public menus.
+            return response()->json($menus);
+        }
+
+        // Standard dynamic role filtering for regular employees
         $applyRoleFilter = function ($query) use ($roleIds): void {
             $query->where(function ($menuQuery) use ($roleIds): void {
                 $menuQuery->whereNull('role_id');
-
                 if ($roleIds->isNotEmpty()) {
                     $menuQuery->orWhereIn('role_id', $roleIds);
                 }
@@ -41,7 +143,7 @@ class MenuController extends Controller
         };
 
         $menus = Menu::query()
-            ->whereNull('parent_id')
+            ->where('parent_id', $request->query('application_id'))
             ->where($applyRoleFilter)
             ->with([
                 'role',
@@ -56,25 +158,24 @@ class MenuController extends Controller
     }
 
     /**
-     * Display menu items available to a specific user.
-     *
-     * Useful for admin screens that need to inspect menu visibility
-     * for users other than the currently authenticated user.
+     * Display menu items available to a specific target user for a SPECIFIC application.
+     * * Expects: GET /api/user-menus-by-user?user_id=UUID&application_id=UUID
      */
     public function userMenusByUser(Request $request): JsonResponse
     {
+        // Adjust the target user discovery strategy to match your Admin Panel implementation
         $targetUser = $request->user();
 
         if (!$targetUser) {
-            return response()->json([
-                'message' => 'Unauthenticated.',
-            ], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Gather role IDs assigned to the target user.
+        $request->validate([
+            'application_id' => 'required|uuid|exists:pgsql.menus,id'
+        ]);
+
         $roleIds = $targetUser->roles()->pluck('roles.id');
 
-        // Reusable filter for role-scoped and public menus.
         $applyRoleFilter = function ($query) use ($roleIds): void {
             $query->where(function ($menuQuery) use ($roleIds): void {
                 $menuQuery->whereNull('role_id');
@@ -86,7 +187,7 @@ class MenuController extends Controller
         };
 
         $menus = Menu::query()
-            ->whereNull('parent_id')
+            ->where('parent_id', $request->query('application_id'))
             ->where($applyRoleFilter)
             ->with([
                 'role',
@@ -100,19 +201,14 @@ class MenuController extends Controller
         return response()->json($menus);
     }
 
-
     /**
-     * Display top-level menu items with nested children.
-     *
-     * Root items are loaded first, and each item includes
-     * its role and child menu items.
+     * Display all top-level menu items (Applications) with recursively nested layouts.
+     * Useful for global administrative schema management screens.
      */
     public function index(): JsonResponse
     {
-        // Load only root items to avoid duplicating child nodes in the top-level list.
         $menus = Menu::whereNull('parent_id')
-            // Include assigned role and recursively loaded descendants.
-            ->with(['role', 'children'])
+            ->with(['role', 'children.children']) // Deep loading structural setups
             ->orderBy('sort_order')
             ->get();
 
@@ -121,9 +217,6 @@ class MenuController extends Controller
 
     /**
      * Store a newly created menu item.
-     *
-     * Supports optional nesting, role assignment,
-     * and custom sort ordering.
      */
     public function store(Request $request): JsonResponse
     {
@@ -136,7 +229,6 @@ class MenuController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
-        // Persist the menu item record.
         $menu = Menu::create($data);
 
         return response()->json($menu, 201);
@@ -147,20 +239,16 @@ class MenuController extends Controller
      */
     public function show(Menu $menu): JsonResponse
     {
-        // Include role and nested children for detail views/edit screens.
         return response()->json($menu->load(['role', 'children']));
     }
 
     /**
      * Update an existing menu item.
-     *
-     * Uses partial validation so clients can send only changed fields.
      */
     public function update(Request $request, Menu $menu): JsonResponse
     {
         $payload = $request->all();
 
-        // Fallback for clients that send raw JSON with incorrect headers.
         if (empty($payload)) {
             $decoded = json_decode($request->getContent(), true);
             if (is_array($decoded)) {
@@ -177,7 +265,6 @@ class MenuController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ])->validate();
 
-        // Apply validated updates.
         $menu->update($data);
 
         return response()->json($menu->fresh());
@@ -185,13 +272,9 @@ class MenuController extends Controller
 
     /**
      * Delete a menu item.
-     *
-     * Child items are removed automatically when cascade delete
-     * is configured on the parent relation.
      */
     public function destroy(Menu $menu): JsonResponse
     {
-        // Delete the selected menu item.
         $menu->delete();
 
         return response()->json(['message' => 'Menu item deleted successfully']);
