@@ -13,10 +13,11 @@ class Supplier extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'name', // or whatever your initial fields are
+        'name',
+        'contact_person',
         'phone_number',
         'email',
         'TIN',
-        'status_id', // Make sure this line exists
+        'status_id',
     ];
 }
