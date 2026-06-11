@@ -116,15 +116,13 @@ class GoogleAuthController extends Controller
         return redirect($callerDomain . $separator . $query);
     }
 
-    // Replace your old getUserMailingGroups method with this one:
-    private function getUserMailingGroups($user)
+    private function getUserMailingGroups(?User $user): array
     {
         if (!$user) {
             return [];
         }
 
-        // Plucks the text-based names matching your Firebase configurations
-        return $user->roles()->pluck('role_name')->toArray();
+        return $user->roles()->pluck('role_name')->all();
     }
 
 
@@ -324,7 +322,7 @@ class GoogleAuthController extends Controller
         // Check if token was created for annual reports system
         $token = $user->currentAccessToken();
 
-        $mailingGroups = $this->getUserMailingGroups($user->email);
+        $mailingGroups = $this->getUserMailingGroups($user);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'annual-reports');
 
 
@@ -346,7 +344,9 @@ class GoogleAuthController extends Controller
         // Check Sanctum token abilities instead of token name
         $token = $user->currentAccessToken();
 
-        $mailingGroups = $this->getUserMailingGroups($user->email);
+        Log::info('User info:::: ' . json_encode($user));
+
+        $mailingGroups = $this->getUserMailingGroups($user);
         $menus = $this->getMenusByMailingGroups($mailingGroups, 'public-safety');
         $forms = $this->getFormsByMailingGroups($mailingGroups, 'public-safety');
         $tables = $this->getTablesByMailingGroups($mailingGroups, 'public-safety');
