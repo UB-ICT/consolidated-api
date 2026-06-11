@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']); // Delete a permission.
 
     // Menu item CRUD endpoints.
+    Route::get('/menus/applicationMenu', [MenuController::class, 'getActiveApplicationMenu']); // Fetch the complete, nested menu tree for a SPECIFIC application filtered dynamically by the logged-in user's roles.
     Route::get('/menus/profile', [MenuController::class, 'profileMenu']); // Hydrates user info cards, user links, and external links footer.
     Route::get('/menus/applications', [MenuController::class, 'applications']); // Global dashboard grid listing every registered root app module.
     Route::get('/menus/my-applications', [MenuController::class, 'myApplications']); // Filtered landing deck displaying only apps accessible to the user's roles (with Super Admin bypass).
