@@ -279,4 +279,120 @@ class MenuController extends Controller
 
         return response()->json(['message' => 'Menu item deleted successfully']);
     }
+
+    /**
+     * GET /api/menus/tree
+     * Fetch the complete, nested menu tree for a SPECIFIC application 
+     * filtered dynamically by the logged-in user's roles.
+     */
+    // public function applicationMenuTree(Request $request): JsonResponse
+    // {
+    //     $request->validate([
+    //         'application_id' => 'required|uuid|exists:pgsql.menus,id'
+    //     ]);
+
+    //     $user = $request->user();
+    //     $roles = $user->roles;
+    //     $roleIds = $roles->pluck('id')->toArray();
+    //     $isSuperAdmin = $roles->contains('role_name', 'super-admin');
+
+    //     // 1. Fetch only the top-level children directly under this specific application
+    //     $topLevelMenus = Menu::query()
+    //         ->where('parent_id', $request->query('application_id'))
+    //         ->orderBy('sort_order')
+    //         ->get();
+
+    //     // 2. Filter and recursively load children based on roles
+    //     $menuTree = $topLevelMenus->map(function ($menu) use ($roleIds, $isSuperAdmin) {
+    //         return $this->buildFilteredTree($menu, $roleIds, $isSuperAdmin);
+    //     })->filter()->values(); // filter() removes null items (hidden branches)
+
+    //     return response()->json($menuTree);
+    // }
+
+    // /**
+    //  * Helper function to recursively filter and load child menus.
+    //  */
+    // private function buildFilteredTree(Menu $menu, array $roleIds, bool $isSuperAdmin): ?Menu
+    // {
+    //     // If not a super-admin, check if the menu item is restricted by role
+    //     if (!$isSuperAdmin && !is_null($menu->role_id) && !in_array($menu->role_id, $roleIds)) {
+    //         return null; // User doesn't have access to this item, discard it
+    //     }
+
+    //     // Fetch immediate children of this menu item
+    //     $children = Menu::query()
+    //         ->where('parent_id', $menu->id)
+    //         ->orderBy('sort_order')
+    //         ->get();
+
+    //     // Recursively build the tree for children
+    //     $filteredChildren = $children->map(function ($child) use ($roleIds, $isSuperAdmin) {
+    //         return $this->buildFilteredTree($child, $roleIds, $isSuperAdmin);
+    //     })->filter()->values();
+
+    //     // Attach the filtered collection back to the menu object
+    //     $menu->setRelation('children', $filteredChildren);
+
+    //     return $menu;
+    //}
+
+    /**
+     * GET /api/menus/active-context
+     * Returns the clicked application containing ONLY its role-authorized submenus.
+     * Expects query string: ?application_id=0edc0bf2-6a39-4cf9-900a-018523db86cb
+     */
+    /**
+     * GET /api/menus/active-context
+     * Returns the clicked application containing ONLY its role-authorized submenus.
+     */
+    /**
+     * GET /api/menus/active-context
+     * Expects URL parameter: ?application_id=0edc0bf2-6a39-4cf9-900a-018523db86cb
+     */
+    public function getActiveApplicationMenu(Request $request): JsonResponse
+    {
+        $applicationId = $request->query('application_id');
+
+        if (!$applicationId) {
+            return response()->json(['message' => 'The application_id parameter is required.'], 400);
+        }
+
+        $user = $request->user();
+        $roles = $user->roles;
+        $roleIds = $roles->pluck('id')->toArray();
+        $isSuperAdmin = $roles->contains('role_name', 'super-admin');
+
+        // Force explicit postgres model instantiation to honor model database connections
+        $applicationMenu = Menu::on('pgsql')
+            ->where('id', $applicationId)
+            ->with(['children' => function ($query) use ($roleIds, $isSuperAdmin) {
+                // Fetch the nested sidebar submenus and sort them
+                $query->where('type', 'submenu')->orderBy('sort_order');
+
+                // If user isn't a super admin, narrow down by explicit role permissions
+                if (!$isSuperAdmin) {
+                    $query->where(function ($subQuery) use ($roleIds) {
+                        $subQuery->whereNull('role_id');
+                        if (!empty($roleIds)) {
+                            $subQuery->orWhereIn('role_id', $roleIds);
+                        }
+                    });
+                }
+            }])
+            ->first();
+
+        if (!$applicationMenu) {
+            return response()->json(['message' => 'Application layout could not be found.'], 404);
+        }
+
+        return response()->json([
+            'id'         => $applicationMenu->id,
+            'label'      => $applicationMenu->label,
+            'path'       => $applicationMenu->path,
+            'icon'       => $applicationMenu->icon,
+            'sort_order' => $applicationMenu->sort_order,
+            'children'   => $applicationMenu->children->values()
+        ]);
+    }
 }
