@@ -14,14 +14,17 @@ class RequisitionStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'number'           => 'required|string|max:255|unique:requisitions,number',
-            'cost_center_id'   => 'required|integer|exists:cost_centers,id',
-            'supplier_id'      => 'required|integer|exists:suppliers,id',
-            'status_id'        => 'required|integer|exists:statuses,id',
-            'currency_id'      => 'required|integer|exists:currencies,id',
-            'conversion_rate'  => 'nullable|numeric|min:0',
-            'total'            => 'nullable|numeric|min:0',
-            'stage_id'         => 'nullable|integer|exists:stages,id',
+            'number'             => 'required|string',
+            'cost_center_id'     => 'required|integer',
+            'supplier_id'        => 'required|integer',
+            'status_id'          => 'required|integer',
+            'currency_id'        => 'required|integer',
+            'stage_id'           => 'required|integer',
+            'total'              => 'required|numeric',
+            'date_prepared'      => 'required|date',
+
+            // 1. ADD THIS LINE SO LARAVEL DOESN'T STRIP IT OUT FROM THE PAYLOAD
+            'conversion_rate_id' => 'nullable|integer',
         ];
     }
 }

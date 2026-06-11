@@ -3,12 +3,13 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Modules\RequisitionSystem\Database\Factories\ConversionRateFactory;
 
 class ConversionRate extends Model
 {
-    use HasFactory;
+
+    protected $connection = 'porsql';
+
+    // protected $table = 'purchase_order_requisition.conversion_rates';
 
     /**
      * The attributes that are mass assignable.
