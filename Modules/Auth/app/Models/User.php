@@ -49,22 +49,29 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if the user has a specific role by its name/slug.
+     * Check if the user has a specific role by its exact name.
      */
     public function hasRole(string $roleName): bool
     {
-        // Checks if any of the loaded roles match the requested name
-        return $this->roles->contains('name', $roleName);
-    }
+        // Safe check: If roles aren't eager loaded yet, query using 'role_name'
+        if (!$this->relationLoaded('roles')) {
+            return $this->roles()->where('role_name', $roleName)->exists(); // Fix here
+        }
 
+        // If they are loaded, scan the collection using 'role_name'
+        return $this->roles->contains('role_name', $roleName); // Fix here
+    }
     /**
-     * Get the cost centers this user is allowed to manage based on their assigned stages.
-     * (Derived from your Seeder mapping: User -> UserStage -> Stage -> Pipeline)
+     * Get the cost centers assigned to this user.
      */
-    public function costCenters()
+    public function costCenters(): BelongsToMany
     {
-        // If your user has a direct department_id column instead, swap this logic out.
-        // This helper assumes a user manages cost centers attached to their approval assignments.
-        return $this->hasMany(\Modules\RequisitionSystem\Models\UserStage::class, 'user_id');
+        // Point it to your CostCenter model, passing the pivot table name
+        return $this->belongsToMany(
+            \Modules\RequisitionSystem\Models\CostCenter::class,
+            'user_cost_center',
+            'user_id',
+            'cost_center_id'
+        )->withTimestamps();
     }
 }

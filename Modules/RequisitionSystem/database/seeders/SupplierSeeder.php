@@ -16,7 +16,8 @@ class SupplierSeeder extends Seeder
                 'contact_person' => 'John Doe',
                 'phone_number' => '+5016000001',
                 'email' => 'abc@supplier.com',
-                'TIN' => 'TIN-001'
+                'TIN' => 'TIN-001',
+                'status_id' => 2
             ],
         ]);
     }

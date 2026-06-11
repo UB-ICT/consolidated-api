@@ -5,6 +5,7 @@ namespace Modules\Auth\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Role;
 use Modules\Auth\Models\User;
@@ -16,9 +17,9 @@ class AuthTestDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Add 'super-admin' to your role core list
+        // 1. Roles core list
         $targetRoleNames = [
-            'super-admin', // 👈 Added this right at the top
+            'super-admin',
             'budget-officer',
             'president',
             'vice-president',
@@ -26,11 +27,10 @@ class AuthTestDataSeeder extends Seeder
             'accounts-payable',
             'senior-account',
             'director/dean',
-            'cost-center',
+            'requester',
             'developer',
         ];
 
-        // Guarantee roles exist and capture their database UUIDs safely
         $roleMap = [];
         foreach ($targetRoleNames as $name) {
             $role = Role::firstOrCreate(
@@ -43,7 +43,7 @@ class AuthTestDataSeeder extends Seeder
             $roleMap[$name] = $role->id;
         }
 
-        // 2. Define the Level 1 Applications as root menus (parent_id = null, type = 'application')
+        // 2. Define Level 1 Applications
         $apps = [
             'requisition' => [
                 'label' => 'Requisition System',
@@ -70,14 +70,14 @@ class AuthTestDataSeeder extends Seeder
                     'id'         => Str::uuid()->toString(),
                     'label'      => $appData['label'],
                     'icon'       => $appData['icon'],
-                    'type'       => 'application', // 👈 Explicit type mapping
+                    'type'       => 'application',
                     'sort_order' => 1,
                 ]
             );
             $appIds[$key] = $menuApp->id;
         }
 
-        // 3. Define the Level 2 menu items shared by the management/approval roles
+        // 3. Define Level 2 shared management items
         $managementMenuItems = [
             ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Approval inbox', 'path' => '/requisitions/approval-inbox', 'icon' => 'inbox', 'sort_order' => 2],
@@ -86,7 +86,7 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
         ];
 
-        // 4. Define the Level 2 menu items specific to your 'cost-center' role layout
+        // 4. Define Level 2 Requester items
         $costCenterMenuItems = [
             ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'New requisition', 'path' => '/requisitions/create', 'icon' => 'document-plus', 'sort_order' => 2],
@@ -95,8 +95,8 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
         ];
 
-        // 5. Seed management layouts nested under the RequisitionSystem app item
-        $managementRoles = array_diff($targetRoleNames, ['cost-center']);
+        // 5. Seed management layouts
+        $managementRoles = array_diff($targetRoleNames, ['requester']);
         foreach ($managementRoles as $roleName) {
             $roleId = $roleMap[$roleName];
             foreach ($managementMenuItems as $item) {
@@ -109,7 +109,7 @@ class AuthTestDataSeeder extends Seeder
                         'id'         => Str::uuid()->toString(),
                         'label'      => $item['label'],
                         'icon'       => $item['icon'],
-                        'type'       => 'submenu', // Submenu identifier block
+                        'type'       => 'submenu',
                         'parent_id'  => $appIds['requisition'],
                         'sort_order' => $item['sort_order'],
                     ]
@@ -117,8 +117,8 @@ class AuthTestDataSeeder extends Seeder
             }
         }
 
-        // 6. Seed cost-center layout nested under the RequisitionSystem app item
-        $costCenterId = $roleMap['cost-center'];
+        // 6. Seed requester layout
+        $costCenterId = $roleMap['requester'];
         foreach ($costCenterMenuItems as $item) {
             Menu::updateOrCreate(
                 [
@@ -136,7 +136,7 @@ class AuthTestDataSeeder extends Seeder
             );
         }
 
-        // 7. Seed Profile Dropdown Cards (type = 'user-menu')
+        // 7. Seed Profile Dropdown Cards
         $profileDropdownItems = [
             ['label' => 'View profile', 'path' => '/profile', 'icon' => 'user', 'role_id' => null, 'sort_order' => 1],
             ['label' => 'Settings', 'path' => '/settings', 'icon' => 'cog', 'role_id' => null, 'sort_order' => 2],
@@ -146,19 +146,22 @@ class AuthTestDataSeeder extends Seeder
 
         foreach ($profileDropdownItems as $item) {
             Menu::updateOrCreate(
-                ['path' => $item['path'], 'type' => 'user-menu'],
+                [
+                    'path'    => $item['path'],
+                    'type'    => 'user-menu',
+                    'role_id' => $item['role_id']
+                ],
                 [
                     'id'         => Str::uuid()->toString(),
                     'label'      => $item['label'],
                     'icon'       => $item['icon'],
-                    'role_id'    => $item['role_id'],
                     'parent_id'  => null,
                     'sort_order' => $item['sort_order'],
                 ]
             );
         }
 
-        // 8. Seed Horizontal External Link Footers (type = 'external-link')
+        // 8. Seed External links
         $externalLinks = [
             ['label' => 'External Tools', 'path' => '/external-tools', 'icon' => 'wrench', 'sort_order' => 5],
             ['label' => 'Library Docs', 'path' => '/docs', 'icon' => 'book-open', 'sort_order' => 6],
@@ -179,14 +182,14 @@ class AuthTestDataSeeder extends Seeder
             );
         }
 
-        // 9. Define testing users
+        // 9. Define testing users distributed by role
         $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],     // 👑 Super Admin
-            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'super-admin'],       // 👑 Super Admin
-            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],   // 👑 Super Admin
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'director/dean', 'cost_center_id' => 2], // 🔑 Director
+            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'requester', 'cost_center_id' => 2],     // 📝 Requester
+            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin', 'cost_center_id' => 2], // 👑 Super Admin
         ];
 
-        // 10. Handle user instantiation and pivot syncs
+        // 10. User instantiation and layout matching
         foreach ($testUsers as $userData) {
             $user = User::firstOrCreate(
                 ['email' => $userData['email']],
@@ -194,6 +197,18 @@ class AuthTestDataSeeder extends Seeder
                     'id'       => Str::uuid()->toString(),
                     'name'     => $userData['name'],
                     'password' => Hash::make('password'),
+                ]
+            );
+
+            // 💡 Explicitly populating user_cost_center pivot relationship table for metrics scoping
+            DB::table('user_cost_center')->updateOrInsert(
+                [
+                    'user_id'        => $user->id,
+                    'cost_center_id' => $userData['cost_center_id']
+                ],
+                [
+                    'created_at'     => now(),
+                    'updated_at'     => now()
                 ]
             );
 

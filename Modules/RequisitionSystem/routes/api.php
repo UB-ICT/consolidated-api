@@ -38,10 +38,13 @@ Route::group([
 ], function () {
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('currencies', CurrencyController::class);
+
     Route::apiResource('costCenters', CostCenterController::class);
+    Route::post('/cost-centers/assign-user', [CostCenterController::class, 'assignUserToCostCenter']);
+
     Route::apiResource('items', ItemController::class);
     Route::apiResource('pipelines', PipelineController::class);
-    
+
     Route::apiResource('requisitions', RequisitionController::class);
     Route::get('/dashboard/metrics', [RequisitionController::class, 'dashboardMetrics']);
 

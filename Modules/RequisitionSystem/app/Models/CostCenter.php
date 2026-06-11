@@ -3,11 +3,12 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CostCenter extends Model
 {
-    use HasFactory;
+    protected $connection = 'porsql';
+    // 💡 Fix: Change this to match your migration table name precisely!
+    protected $table = 'cost_centers';
 
     /**
      * The attributes that are mass assignable.

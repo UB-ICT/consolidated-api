@@ -19,6 +19,7 @@ class SupplierStoreRequest extends FormRequest
             'phone_number'   => 'nullable|string|max:50',
             'email'          => 'nullable|email|max:255',
             'TIN'           => 'nullable|string|max:100',
+            'status_id'      => 'required|integer|exists:statuses,id',
         ];
     }
 }
