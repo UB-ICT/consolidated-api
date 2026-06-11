@@ -49,4 +49,12 @@ class Menu extends Model
     {
         return $this->hasMany(Menu::class, 'parent_id')->orderBy('sort_order');
     }
+
+    /**
+     * Parent menu item this entry belongs to.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class, 'parent_id');
+    }
 }
