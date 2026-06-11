@@ -108,100 +108,6 @@ class MenuController extends Controller
     }
 
     /**
-     * Display menu items available to the authenticated user for a SPECIFIC application.
-     * * Expects an application ID via query string: GET /api/user-menus?application_id=UUID
-     */
-    public function userMenus(Request $request): JsonResponse
-    {
-        $request->validate([
-            'application_id' => 'required|uuid|exists:pgsql.menus,id'
-        ]);
-
-        $user = $request->user();
-        $roles = $user->roles;
-        $roleIds = $roles->pluck('id');
-
-        // 👑 SUPER ADMIN BYPASS: Pull all child menus under this app without filtering by role
-        if ($roles->contains('role_name', 'super-admin')) {
-            $menus = Menu::query()
-                ->where('parent_id', $request->query('application_id'))
-                ->with(['role', 'children.children']) // Deep structural load
-                ->orderBy('sort_order')
-                ->get();
-
-            return response()->json($menus);
-        }
-
-        // Standard dynamic role filtering for regular employees
-        $applyRoleFilter = function ($query) use ($roleIds): void {
-            $query->where(function ($menuQuery) use ($roleIds): void {
-                $menuQuery->whereNull('role_id');
-                if ($roleIds->isNotEmpty()) {
-                    $menuQuery->orWhereIn('role_id', $roleIds);
-                }
-            });
-        };
-
-        $menus = Menu::query()
-            ->where('parent_id', $request->query('application_id'))
-            ->where($applyRoleFilter)
-            ->with([
-                'role',
-                'children' => function ($query) use ($applyRoleFilter): void {
-                    $query->where($applyRoleFilter)->orderBy('sort_order');
-                },
-            ])
-            ->orderBy('sort_order')
-            ->get();
-
-        return response()->json($menus);
-    }
-
-    /**
-     * Display menu items available to a specific target user for a SPECIFIC application.
-     * * Expects: GET /api/user-menus-by-user?user_id=UUID&application_id=UUID
-     */
-    public function userMenusByUser(Request $request): JsonResponse
-    {
-        // Adjust the target user discovery strategy to match your Admin Panel implementation
-        $targetUser = $request->user();
-
-        if (!$targetUser) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        $request->validate([
-            'application_id' => 'required|uuid|exists:pgsql.menus,id'
-        ]);
-
-        $roleIds = $targetUser->roles()->pluck('roles.id');
-
-        $applyRoleFilter = function ($query) use ($roleIds): void {
-            $query->where(function ($menuQuery) use ($roleIds): void {
-                $menuQuery->whereNull('role_id');
-
-                if ($roleIds->isNotEmpty()) {
-                    $menuQuery->orWhereIn('role_id', $roleIds);
-                }
-            });
-        };
-
-        $menus = Menu::query()
-            ->where('parent_id', $request->query('application_id'))
-            ->where($applyRoleFilter)
-            ->with([
-                'role',
-                'children' => function ($query) use ($applyRoleFilter): void {
-                    $query->where($applyRoleFilter)->orderBy('sort_order');
-                },
-            ])
-            ->orderBy('sort_order')
-            ->get();
-
-        return response()->json($menus);
-    }
-
-    /**
      * Display all top-level menu items (Applications) with recursively nested layouts.
      * Useful for global administrative schema management screens.
      */
@@ -280,10 +186,6 @@ class MenuController extends Controller
         return response()->json(['message' => 'Menu item deleted successfully']);
     }
 
-    /**
-     * GET /api/menus/active-context
-     * Expects URL parameter: ?application_id=0edc0bf2-6a39-4cf9-900a-018523db86cb
-     */
     public function getActiveApplicationMenu(Request $request): JsonResponse
     {
         $applicationId = $request->query('application_id');
@@ -301,10 +203,8 @@ class MenuController extends Controller
         $applicationMenu = Menu::on('pgsql')
             ->where('id', $applicationId)
             ->with(['children' => function ($query) use ($roleIds, $isSuperAdmin) {
-                // Fetch the nested sidebar submenus and sort them
                 $query->where('type', 'submenu')->orderBy('sort_order');
 
-                // If user isn't a super admin, narrow down by explicit role permissions
                 if (!$isSuperAdmin) {
                     $query->where(function ($subQuery) use ($roleIds) {
                         $subQuery->whereNull('role_id');
@@ -320,13 +220,19 @@ class MenuController extends Controller
             return response()->json(['message' => 'Application layout could not be found.'], 404);
         }
 
+        // --- FIX DETECTED HERE ---
+        // Filter the children array to keep only unique paths, resetting array indices cleanly
+        $uniqueChildren = $applicationMenu->children
+            ->unique('path')
+            ->values();
+
         return response()->json([
             'id'         => $applicationMenu->id,
             'label'      => $applicationMenu->label,
             'path'       => $applicationMenu->path,
             'icon'       => $applicationMenu->icon,
             'sort_order' => $applicationMenu->sort_order,
-            'children'   => $applicationMenu->children->values()
+            'children'   => $uniqueChildren
         ]);
     }
 }
