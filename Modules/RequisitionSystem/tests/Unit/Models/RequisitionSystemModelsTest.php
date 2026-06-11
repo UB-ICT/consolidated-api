@@ -114,12 +114,12 @@ class RequisitionSystemModelsTest extends TestCase
             'number',
             'cost_center_id',
             'supplier_id',
+            'date_prepared',       // Moved here
             'status_id',
             'currency_id',
-            'conversion_rate',
+            'conversion_rate_id',  // Updated from 'conversion_rate'
             'total',
             'stage_id',
-            'date_prepared',
         ]);
         $this->assertModelCastsInclude(Requisition::class, [
             'date_prepared' => 'datetime:M d, Y',
