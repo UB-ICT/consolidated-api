@@ -1,21 +1,36 @@
 <?php
 
-namespace Modules\RequisitionSystem\Models;
+namespace Modules\RequisitionSystem\app\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+// 👇 Fixed these paths to include '\app'
+use Modules\RequisitionSystem\Models\Pipeline;
+use Modules\RequisitionSystem\app\Models\Logs;
 
 class Stage extends Model
 {
-    use HasFactory;
+    protected $connection = 'porsql';
+
+    public $timestamps = false;
+
+    protected $fillable = ['name'];
 
     /**
-     * The attributes that are mass assignable.
+     * Pipelines that utilize this specific stage.
      */
-    protected $fillable = ['name', 'pipeline_id'];
-
-    public function pipeline()
+    public function pipelines(): BelongsToMany
     {
-        return $this->belongsTo(Pipeline::class);
+        return $this->belongsToMany(Pipeline::class, 'pipeline_stages', 'stage_id', 'pipeline_id');
+    }
+
+    /**
+     * Logs tied to this stage.
+     */
+    public function logs(): HasMany
+    {
+        return $this->hasMany(Logs::class, 'stage_id');
     }
 }
