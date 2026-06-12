@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             \Modules\Auth\Database\Seeders\AuthDatabaseSeeder::class,
             \Modules\PublicSafety\Database\Seeders\RoleAndAdminSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\FullRequisitionFlowSeeder::class,
         ]);
     }
 }
