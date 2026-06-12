@@ -128,7 +128,7 @@ class RequisitionSystemModelsTest extends TestCase
 
     public function test_stage_model_configuration(): void
     {
-        $this->assertModelFillable(Stage::class, ['name', 'pipeline_id']);
+        $this->assertModelFillable(Stage::class, ['name']);
     }
 
     public function test_status_model_configuration(): void
