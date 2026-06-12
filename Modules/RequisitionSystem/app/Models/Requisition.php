@@ -12,7 +12,17 @@ class Requisition extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['number', 'cost_center_id', 'supplier_id', 'status_id', 'currency_id', 'conversion_rate', 'total', 'stage_id', 'date_prepared'];
+    protected $fillable = [
+        'number',
+        'cost_center_id',
+        'supplier_id',
+        'date_prepared',
+        'status_id',
+        'currency_id',
+        'conversion_rate_id', // Note the _id suffix change
+        'total',
+        'stage_id',
+    ];
 
     protected $casts = [
         'date_prepared' => 'datetime:M d, Y',

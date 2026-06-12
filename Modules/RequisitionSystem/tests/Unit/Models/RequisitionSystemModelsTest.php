@@ -17,7 +17,6 @@ use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Models\SupplierBank;
-use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\UserStage;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\AssertsModelConfiguration;
@@ -115,12 +114,12 @@ class RequisitionSystemModelsTest extends TestCase
             'number',
             'cost_center_id',
             'supplier_id',
+            'date_prepared',       // Moved here
             'status_id',
             'currency_id',
-            'conversion_rate',
+            'conversion_rate_id',  // Updated from 'conversion_rate'
             'total',
             'stage_id',
-            'date_prepared',
         ]);
         $this->assertModelCastsInclude(Requisition::class, [
             'date_prepared' => 'datetime:M d, Y',
@@ -145,6 +144,7 @@ class RequisitionSystemModelsTest extends TestCase
             'phone_number',
             'email',
             'TIN',
+            'status_id'
         ]);
     }
 
