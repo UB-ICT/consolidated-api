@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\RequisitionSystem\app\Models;
+namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

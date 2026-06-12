@@ -6,24 +6,36 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    protected $connection = 'porsql';
+
     public function up(): void
     {
-        Schema::create('logs', function (Blueprint $table) {
-            $table->id();
-            
-            
-            $table->timestamps();
+        Schema::connection($this->connection)->create('logs', function (Blueprint $table) {
+            $table->id(); // integer primary key
+
+            // Matching types perfectly to your schema definitions
+            $table->uuid('requisition_id');
+            $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+            $table->uuid('user_id');
+
+            $table->string('comments')->nullable();
+            $table->timestamps(); // Keeps track of when log events occur
+
+            // Foreign key constraints referencing target structures
+            $table->foreign('requisition_id')
+                ->references('id')
+                ->on('requisitions')
+                ->onDelete('cascade');
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('public.users')
+                ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('logs');
+        Schema::connection($this->connection)->dropIfExists('logs');
     }
 };

@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\RequisitionSystem\app\Models;
+namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 // 👇 Fixed these paths to include '\app'
 use Modules\RequisitionSystem\Models\Pipeline;
-use Modules\RequisitionSystem\app\Models\Logs;
+use Modules\RequisitionSystem\Models\Logs;
 
 class Stage extends Model
 {

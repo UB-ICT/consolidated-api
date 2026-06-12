@@ -6,23 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    protected $connection = 'porsql';
+
     public function up(): void
     {
-        Schema::create('pipeline_stages', function (Blueprint $table) {
-            $table->id();
-            
-            $table->timestamps();
+        Schema::connection($this->connection)->create('pipeline_stages', function (Blueprint $table) {
+            $table->foreignId('pipeline_id')->constrained('pipelines')->onDelete('cascade');
+            $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+
+            // Setting a composite primary key for the pivot relationship consistency
+            $table->primary(['pipeline_id', 'stage_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('pipeline_stages');
+        Schema::connection($this->connection)->dropIfExists('pipeline_stages');
     }
 };
