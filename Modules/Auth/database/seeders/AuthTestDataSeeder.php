@@ -18,7 +18,7 @@ class AuthTestDataSeeder extends Seeder
     {
         // 1. Add 'super-admin' to your role core list
         $targetRoleNames = [
-            'super-admin', // 👈 Added this right at the top
+            'super-admin',
             'budget-officer',
             'president',
             'vice-president',
@@ -64,35 +64,35 @@ class AuthTestDataSeeder extends Seeder
 
         $appIds = [];
         foreach ($apps as $key => $appData) {
-            $menuApp = Menu::updateOrCreate(
-                ['path' => $appData['path'], 'parent_id' => null],
-                [
-                    'id'         => Str::uuid()->toString(),
-                    'label'      => $appData['label'],
-                    'icon'       => $appData['icon'],
-                    'type'       => 'application', // 👈 Explicit type mapping
-                    'sort_order' => 1,
-                ]
-            );
+            // Use firstOrNew to prevent overriding the 'id' during updates
+            $menuApp = Menu::firstOrNew(['path' => $appData['path'], 'parent_id' => null]);
+
+            if (!$menuApp->exists) {
+                $menuApp->id = Str::uuid()->toString();
+            }
+
+            $menuApp->fill([
+                'label'      => $appData['label'],
+                'icon'       => $appData['icon'],
+                'type'       => 'application',
+                'sort_order' => 1,
+            ])->save();
+
             $appIds[$key] = $menuApp->id;
         }
 
         // 3. Define the Level 2 menu items shared by the management/approval roles
         $managementMenuItems = [
-            ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
-            ['label' => 'Approval inbox', 'path' => '/requisitions/approval-inbox', 'icon' => 'inbox', 'sort_order' => 2],
-            ['label' => 'All forms', 'path' => '/requisitions/all-forms', 'icon' => 'clipboard-document-list', 'sort_order' => 3],
-            ['label' => 'Budgets', 'path' => '/budgets', 'icon' => 'chart-bar', 'sort_order' => 4],
-            ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
+            ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
+            ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
+            ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
         ];
 
         // 4. Define the Level 2 menu items specific to your 'cost-center' role layout
         $costCenterMenuItems = [
-            ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'squares-2x2', 'sort_order' => 1],
-            ['label' => 'New requisition', 'path' => '/requisitions/create', 'icon' => 'document-plus', 'sort_order' => 2],
-            ['label' => 'My forms', 'path' => '/requisitions/my-forms', 'icon' => 'clipboard-document-list', 'sort_order' => 3],
-            ['label' => 'My budget', 'path' => '/my-budget', 'icon' => 'chart-bar', 'sort_order' => 4],
-            ['label' => 'Suppliers', 'path' => '/suppliers', 'icon' => 'building-office', 'sort_order' => 5],
+            ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
+            ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
+            ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
         ];
 
         // 5. Seed management layouts nested under the RequisitionSystem app item
@@ -100,40 +100,44 @@ class AuthTestDataSeeder extends Seeder
         foreach ($managementRoles as $roleName) {
             $roleId = $roleMap[$roleName];
             foreach ($managementMenuItems as $item) {
-                Menu::updateOrCreate(
-                    [
-                        'path'    => $item['path'],
-                        'role_id' => $roleId
-                    ],
-                    [
-                        'id'         => Str::uuid()->toString(),
-                        'label'      => $item['label'],
-                        'icon'       => $item['icon'],
-                        'type'       => 'submenu', // Submenu identifier block
-                        'parent_id'  => $appIds['requisition'],
-                        'sort_order' => $item['sort_order'],
-                    ]
-                );
+                $subMenu = Menu::firstOrNew([
+                    'path'    => $item['path'],
+                    'role_id' => $roleId
+                ]);
+
+                if (!$subMenu->exists) {
+                    $subMenu->id = Str::uuid()->toString();
+                }
+
+                $subMenu->fill([
+                    'label'      => $item['label'],
+                    'icon'       => $item['icon'],
+                    'type'       => 'submenu',
+                    'parent_id'  => $appIds['requisition'],
+                    'sort_order' => $item['sort_order'],
+                ])->save();
             }
         }
 
         // 6. Seed cost-center layout nested under the RequisitionSystem app item
         $costCenterId = $roleMap['cost-center'];
         foreach ($costCenterMenuItems as $item) {
-            Menu::updateOrCreate(
-                [
-                    'path'    => $item['path'],
-                    'role_id' => $costCenterId
-                ],
-                [
-                    'id'         => Str::uuid()->toString(),
-                    'label'      => $item['label'],
-                    'icon'       => $item['icon'],
-                    'type'       => 'submenu',
-                    'parent_id'  => $appIds['requisition'],
-                    'sort_order' => $item['sort_order'],
-                ]
-            );
+            $subMenu = Menu::firstOrNew([
+                'path'    => $item['path'],
+                'role_id' => $costCenterId
+            ]);
+
+            if (!$subMenu->exists) {
+                $subMenu->id = Str::uuid()->toString();
+            }
+
+            $subMenu->fill([
+                'label'      => $item['label'],
+                'icon'       => $item['icon'],
+                'type'       => 'submenu',
+                'parent_id'  => $appIds['requisition'],
+                'sort_order' => $item['sort_order'],
+            ])->save();
         }
 
         // 7. Seed Profile Dropdown Cards (type = 'user-menu')
@@ -145,17 +149,22 @@ class AuthTestDataSeeder extends Seeder
         ];
 
         foreach ($profileDropdownItems as $item) {
-            Menu::updateOrCreate(
-                ['path' => $item['path'], 'type' => 'user-menu'],
-                [
-                    'id'         => Str::uuid()->toString(),
-                    'label'      => $item['label'],
-                    'icon'       => $item['icon'],
-                    'role_id'    => $item['role_id'],
-                    'parent_id'  => null,
-                    'sort_order' => $item['sort_order'],
-                ]
-            );
+            $userMenu = Menu::firstOrNew([
+                'path' => $item['path'],
+                'type' => 'user-menu'
+            ]);
+
+            if (!$userMenu->exists) {
+                $userMenu->id = Str::uuid()->toString();
+            }
+
+            $userMenu->fill([
+                'label'      => $item['label'],
+                'icon'       => $item['icon'],
+                'role_id'    => $item['role_id'],
+                'parent_id'  => null,
+                'sort_order' => $item['sort_order'],
+            ])->save();
         }
 
         // 8. Seed Horizontal External Link Footers (type = 'external-link')
@@ -166,24 +175,29 @@ class AuthTestDataSeeder extends Seeder
         ];
 
         foreach ($externalLinks as $link) {
-            Menu::updateOrCreate(
-                ['path' => $link['path'], 'type' => 'external-link'],
-                [
-                    'id'         => Str::uuid()->toString(),
-                    'label'      => $link['label'],
-                    'icon'       => $link['icon'],
-                    'role_id'    => null,
-                    'parent_id'  => null,
-                    'sort_order' => $link['sort_order'],
-                ]
-            );
+            $extLink = Menu::firstOrNew([
+                'path' => $link['path'],
+                'type' => 'external-link'
+            ]);
+
+            if (!$extLink->exists) {
+                $extLink->id = Str::uuid()->toString();
+            }
+
+            $extLink->fill([
+                'label'      => $link['label'],
+                'icon'       => $link['icon'],
+                'role_id'    => null,
+                'parent_id'  => null,
+                'sort_order' => $link['sort_order'],
+            ])->save();
         }
 
         // 9. Define testing users
         $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],     // 👑 Super Admin
-            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'super-admin'],       // 👑 Super Admin
-            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],   // 👑 Super Admin
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
+            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'super-admin'],
+            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
         ];
 
         // 10. Handle user instantiation and pivot syncs
