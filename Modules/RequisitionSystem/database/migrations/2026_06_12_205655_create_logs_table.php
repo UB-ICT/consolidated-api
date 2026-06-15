@@ -13,7 +13,6 @@ return new class extends Migration
         Schema::connection($this->connection)->create('logs', function (Blueprint $table) {
             $table->id(); // integer primary key (bigint)
 
-            // 🔥 FIX: Changed from uuid() to foreignId() to match your requisitions id
             $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
 

@@ -22,8 +22,14 @@ class Requisition extends Model
     ];
 
     /**
-     * 🔥 FIX: Define the relationship to line items
-     * A requisition can have many requested items.
+     * 🔥 FIX: Add the missing attribute casts expected by your Unit Test
+     */
+    protected $casts = [
+        'date_prepared' => 'datetime:M d, Y',
+    ];
+
+    /**
+     * Define the relationship to line items
      */
     public function items(): HasMany
     {
