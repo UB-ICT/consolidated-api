@@ -3,20 +3,20 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Modules\RequisitionSystem\Database\Factories\BankFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Bank extends Model
 {
-    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
+    protected $connection = 'porsql';
+
     protected $fillable = ['name'];
 
-    // protected static function newFactory(): BankFactory
-    // {
-    //     // return BankFactory::new();
-    // }
+    /**
+     * Get all banking records tied to this bank.
+     */
+    public function supplierBanks(): HasMany
+    {
+        return $this->hasMany(SupplierBank::class, 'bank_id');
+    }
 }

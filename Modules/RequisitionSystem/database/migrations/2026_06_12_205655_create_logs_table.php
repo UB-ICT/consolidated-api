@@ -11,17 +11,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::connection($this->connection)->create('logs', function (Blueprint $table) {
-            $table->id(); // integer primary key
+            $table->id();
 
-            // Matching types perfectly to your schema definitions
-            $table->uuid('requisition_id');
+            // 1. Changed from uuid to unsignedBigInteger to perfectly match requisitions.id
+            $table->unsignedBigInteger('requisition_id');
+
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+
+            // 2. Keep this as uuid ONLY if your public.users table uses UUIDs as its primary key!
             $table->uuid('user_id');
 
             $table->string('comments')->nullable();
-            $table->timestamps(); // Keeps track of when log events occur
+            $table->timestamps();
 
-            // Foreign key constraints referencing target structures
+            // Foreign key constraints
             $table->foreign('requisition_id')
                 ->references('id')
                 ->on('requisitions')

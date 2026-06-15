@@ -7,16 +7,17 @@ use Modules\RequisitionSystem\Models\Bank;
 
 class BankSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Bank::insert([
-            ['name' => 'The Belize Bank'],
-            ['name' => 'Atlantic Bank'],
-            ['name' => 'Heritage Bank'],
-            ['name' => 'Holy Redeemer Credit Union'],
-        ]);
+        $banks = [
+            ['name' => 'Atlantic Bank Limited'],
+            ['name' => 'The Belize Bank Limited'],
+            ['name' => 'Heritage Bank Limited'],
+            ['name' => 'National Bank of Belize'],
+        ];
+
+        foreach ($banks as $bank) {
+            Bank::updateOrCreate(['name' => $bank['name']], $bank);
+        }
     }
 }

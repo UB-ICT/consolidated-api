@@ -18,11 +18,14 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create('supplier_banks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->constrained('suppliers');
-            $table->foreignId('bank_id')->constrained('banks');
-            $table->integer('account_number');
+            $table->foreignId('supplier_id')->constrained('suppliers')->onDelete('cascade');
+            $table->foreignId('bank_id')->constrained('banks')->onDelete('cascade');
+
+            // 🔥 Make sure this is a string, NOT an integer!
+            $table->string('account_number');
+
             $table->string('account_name');
-            $table->string('address');
+            $table->string('address')->nullable();
             $table->timestamps();
         });
     }
