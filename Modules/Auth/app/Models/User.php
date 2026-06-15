@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\RequisitionSystem\Models\Supplier;
+use Illuminate\Database\Eloquent\Relations\hasOne;
+
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -45,5 +48,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');
+    }
+
+    public function suppliers(): hasOne
+    {
+        return $this->hasOne(Supplier::class, 'approved_by_user_id');
     }
 }

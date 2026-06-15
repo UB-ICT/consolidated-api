@@ -30,6 +30,11 @@ return new class extends Migration
                 ->default(1)
                 ->constrained('statuses')
                 ->onDelete('restrict');
+
+            $table->foreignUuid('approved_by_user_id')
+                ->nullable()
+                ->constrained('public.users')
+                ->onDelete('set null');
         });
     }
 
