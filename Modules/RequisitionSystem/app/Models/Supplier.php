@@ -3,15 +3,12 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Supplier extends Model
 {
-    use HasFactory;
+    protected $connection = 'porsql';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'name',
         'contact_person',
@@ -20,4 +17,13 @@ class Supplier extends Model
         'TIN',
         'status_id',
     ];
+
+    /**
+     * Get the banking details for the supplier.
+     * (Matches the single bank details block in your image_926da6.png UI)
+     */
+    public function bankAccount(): HasOne
+    {
+        return $this->hasOne(SupplierBank::class, 'supplier_id');
+    }
 }

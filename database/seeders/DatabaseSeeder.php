@@ -13,7 +13,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             \Modules\Auth\Database\Seeders\AuthDatabaseSeeder::class,
-            \Modules\PublicSafety\Database\Seeders\RoleAndAdminSeeder::class,
+            // \Modules\PublicSafety\Database\Seeders\RoleAndAdminSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\BankSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\SupplierSeeder::class,
+
         ]);
     }
 }

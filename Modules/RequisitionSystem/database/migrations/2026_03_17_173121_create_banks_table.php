@@ -18,7 +18,7 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create('banks', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->timestamps();
         });
     }

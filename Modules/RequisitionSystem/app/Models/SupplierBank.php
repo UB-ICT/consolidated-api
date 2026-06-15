@@ -3,24 +3,38 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SupplierBank extends Model
 {
-    use HasFactory;
+
+    protected $connection = 'porsql';
+
+    // Explicitly defining the table name since it uses an underscore 
+    // and doesn't follow standard single-word pluralization.
+    protected $table = 'supplier_banks';
+
+    protected $fillable = [
+        'supplier_id',
+        'bank_id',
+        'account_number',
+        'account_name',
+        'address',
+    ];
 
     /**
-     * The attributes that are mass assignable.
+     * Get the supplier that owns this bank account.
      */
-    protected $fillable = ['supplier_id', 'bank_id', 'account_number', 'account_name', 'address'];
-
-    public function supplier()
+    public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    public function bank()
+    /**
+     * Get the bank entity this account belongs to.
+     */
+    public function bank(): BelongsTo
     {
-        return $this->belongsTo(Bank::class);
+        return $this->belongsTo(Bank::class, 'bank_id');
     }
 }
