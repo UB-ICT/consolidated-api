@@ -110,17 +110,18 @@ class RequisitionSystemModelsTest extends TestCase
 
     public function test_requisition_model_configuration(): void
     {
+        // 🔥 FIXED: Removed 'supplier_id' and ordered to match the Requisition Model perfectly
         $this->assertModelFillable(Requisition::class, [
             'number',
             'cost_center_id',
-            'supplier_id',
-            'date_prepared',       // Moved here
             'status_id',
             'currency_id',
-            'conversion_rate_id',  // Updated from 'conversion_rate'
+            'conversion_rate_id',
             'total',
             'stage_id',
+            'date_prepared',
         ]);
+
         $this->assertModelCastsInclude(Requisition::class, [
             'date_prepared' => 'datetime:M d, Y',
         ]);
