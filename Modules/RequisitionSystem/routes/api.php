@@ -41,7 +41,10 @@ Route::group([
     Route::apiResource('costCenters', CostCenterController::class);
     Route::apiResource('items', ItemController::class);
     Route::apiResource('pipelines', PipelineController::class);
+
     Route::apiResource('requisitions', RequisitionController::class);
+    Route::get('/cost-center', [RequisitionController::class, 'byCostCenter']);
+
     Route::apiResource('stages', StageController::class);
     Route::apiResource('statuses', StatusController::class);
     
