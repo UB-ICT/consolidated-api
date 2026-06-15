@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('contact_person');
             $table->string('phone_number');
             $table->string('email')->unique();
-            $table->string('TIN');
+            $table->string('TIN')->unique();
+            $table->integer('status_id');
             $table->timestamps();
 
             // Foreign key constraint for your users table

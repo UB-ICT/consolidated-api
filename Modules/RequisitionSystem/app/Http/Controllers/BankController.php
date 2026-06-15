@@ -3,74 +3,79 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
 use Modules\RequisitionSystem\Models\Bank;
 use Modules\RequisitionSystem\Http\Requests\BankStoreRequest;
 
 class BankController extends Controller
 {
     /**
-     * Display a listing of the banks.
+     * List all banks (Great for loading your UI dropdown selectors)
      */
-    public function index(): JsonResponse
+    public function index()
     {
-        $banks = Bank::all();
-
         return response()->json([
             'success' => true,
-            'data'    => $banks
-        ], 200);
+            'data' => Bank::orderBy('name', 'asc')->get(),
+        ]);
     }
 
     /**
-     * Store a newly created bank in storage.
+     * Store a new bank option
      */
-    public function store(BankStoreRequest $request): JsonResponse
+    public function store(BankStoreRequest $request)
     {
         $bank = Bank::create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Bank created successfully.',
-            'data'    => $bank
+            'data' => $bank,
         ], 201);
     }
 
     /**
-     * Display the specified bank.
+     * Show an individual bank along with its associated supplier accounts
      */
-    public function show(Bank $bank): JsonResponse
+    public function show(Bank $bank)
     {
         return response()->json([
             'success' => true,
-            'data'    => $bank
-        ], 200);
+            'data' => $bank->load('supplierBanks.supplier'),
+        ]);
     }
 
     /**
-     * Update the specified bank in storage.
+     * Update a bank's name safely
      */
-    public function update(BankStoreRequest $request, Bank $bank): JsonResponse
+    public function update(BankStoreRequest $request, Bank $bank)
     {
         $bank->update($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Bank updated successfully.',
-            'data'    => $bank
-        ], 200);
+            'data' => $bank,
+        ]);
     }
 
     /**
-     * Remove the specified bank from storage.
+     * Delete a bank record
      */
-    public function destroy(Bank $bank): JsonResponse
+    public function destroy(Bank $bank)
     {
+        // Optional Check: Prevent deleting a bank if suppliers are actively linked to it
+        if ($bank->supplierBanks()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete this bank because it is currently linked to active supplier accounts.',
+            ], 422);
+        }
+
         $bank->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Bank deleted successfully.'
-        ], 200);
+            'message' => 'Bank deleted successfully.',
+        ]);
     }
 }

@@ -47,11 +47,13 @@ Route::group([
 
     Route::apiResource('stages', StageController::class);
     Route::apiResource('statuses', StatusController::class);
+    
+    Route::get('suppliers/status-counts', [SupplierController::class, 'getStatusCounts']);
     Route::apiResource('suppliers', SupplierController::class);
+
     Route::apiResource('userStages', UserStageController::class);
     Route::apiResource('banks', BankController::class);
     Route::apiResource('addresses', AddressController::class);
-    Route::apiResource('supplierBanks', SupplierBankController::class);
     Route::apiResource('approvals', ApprovalController::class);
     Route::apiResource('conversionRates', ConversionRateController::class);
 
