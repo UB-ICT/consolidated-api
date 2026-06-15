@@ -20,7 +20,6 @@ return new class extends Migration
             $table->id();
             $table->string('number')->unique();
             $table->foreignId('cost_center_id')->constrained('cost_centers');
-            $table->foreignId('supplier_id')->constrained('suppliers');
             $table->timestamp('date_prepared')->useCurrent();
             $table->foreignId('status_id')->constrained('statuses');
             $table->foreignId('currency_id')->constrained('currencies');

@@ -59,7 +59,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'updated_at' => now()
                 ]
             );
-            
+
             // =========================
             // 3. COUNTRY
             // =========================
@@ -68,9 +68,9 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // =========================
-            // 4. SUPPLIER
+            // 4. SUPPLIERS
             // =========================
-            $supplier = Supplier::firstOrCreate(
+            $supplierABC = Supplier::firstOrCreate(
                 ['email' => 'abc@supplier.com'],
                 [
                     'name' => 'ABC Supplies Ltd',
@@ -80,12 +80,22 @@ class FullRequisitionFlowSeeder extends Seeder
                 ]
             );
 
+            $supplierXYZ = Supplier::firstOrCreate(
+                ['email' => 'info@xyzdiagnostics.bz'],
+                [
+                    'name' => 'XYZ Diagnostics & Tools',
+                    'contact_person' => 'Jane Smith',
+                    'phone_number' => '+5016159988',
+                    'TIN' => 'TIN-042'
+                ]
+            );
+
             // =========================
             // 5. ADDRESS
             // =========================
-            $address = Address::firstOrCreate(
+            Address::firstOrCreate(
                 [
-                    'supplier_id' => $supplier->id,
+                    'supplier_id' => $supplierABC->id,
                     'street' => '22 Trio Street'
                 ],
                 [
@@ -122,31 +132,21 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // =========================
-            // 9. STAGES
+            // 9. STAGES (Updated for Many-to-Many Pivot Mapping Layout)
             // =========================
-            $submitted = Stage::firstOrCreate([
-                'name' => 'Submitted',
-                'pipeline_id' => $pipeline->id
-            ]);
+            $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
+            $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
+            $budgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
+            $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
+            $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
 
-            $directorApproval = Stage::firstOrCreate([
-                'name' => "Director's Approval",
-                'pipeline_id' => $pipeline->id
-            ]);
-
-            $budgetOfficer = Stage::firstOrCreate([
-                'name' => 'Budget Officer',
-                'pipeline_id' => $pipeline->id
-            ]);
-
-            $vpApproval = Stage::firstOrCreate([
-                'name' => 'VP Approval',
-                'pipeline_id' => $pipeline->id
-            ]);
-
-            $financeApproval = Stage::firstOrCreate([
-                'name' => 'Finance Approval',
-                'pipeline_id' => $pipeline->id
+            // Sync structural links to the pipeline record seamlessly 
+            $pipeline->stages()->syncWithoutDetaching([
+                $submitted->id,
+                $directorApproval->id,
+                $budgetOfficer->id,
+                $vpApproval->id,
+                $financeApproval->id
             ]);
 
             // =========================
@@ -164,7 +164,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             SupplierBank::firstOrCreate([
-                'supplier_id' => $supplier->id,
+                'supplier_id' => $supplierABC->id,
                 'bank_id' => $bank->id,
             ], [
                 'account_number' => '1234567890',
@@ -173,14 +173,13 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // =========================
-            // 12. REQUISITIONS (3 Distinct Records for Testing)
+            // 12. REQUISITIONS
             // =========================
 
-            // Requisition 1: Office Supplies (The original one)
+            // Requisition 1: Office Supplies
             $requisition1 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0001',
                 'cost_center_id' => $costCenter->id,
-                'supplier_id' => $supplier->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
@@ -192,8 +191,7 @@ class FullRequisitionFlowSeeder extends Seeder
             // Requisition 2: Developer Hardware Assets
             $requisition2 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0002',
-                'cost_center_id' => $costCenter->id, // Bound to your cost center
-                'supplier_id' => $supplier->id,
+                'cost_center_id' => $costCenter->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
@@ -205,14 +203,30 @@ class FullRequisitionFlowSeeder extends Seeder
             // Requisition 3: Cloud Infrastructure Maintenance
             $requisition3 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0003',
-                'cost_center_id' => $costCenter->id, // Bound to your cost center
-                'supplier_id' => $supplier->id,
+                'cost_center_id' => $costCenter->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
                 'total' => 0,
                 'stage_id' => $submitted->id,
                 'date_prepared' => now()->subDays(5),
+            ]);
+
+            // ==============================================================
+            // 12b. SOURCING MATRIX BINDING (Populating the Pivot Table)
+            // ==============================================================
+            $requisition1->suppliers()->sync([
+                $supplierABC->id => ['is_recommended' => true, 'quoted_total' => 300.00],
+                $supplierXYZ->id => ['is_recommended' => false, 'quoted_total' => 350.00]
+            ]);
+
+            $requisition2->suppliers()->sync([
+                $supplierABC->id => ['is_recommended' => false, 'quoted_total' => 1600.00],
+                $supplierXYZ->id => ['is_recommended' => true, 'quoted_total' => 1500.00]
+            ]);
+
+            $requisition3->suppliers()->sync([
+                $supplierABC->id => ['is_recommended' => true, 'quoted_total' => 1200.00]
             ]);
 
             // =========================
@@ -235,7 +249,7 @@ class FullRequisitionFlowSeeder extends Seeder
             });
             $requisition1->update(['total' => $items1->sum('total')]);
 
-            // Items for Requisition 2 (Test Case: Higher budget asset items)
+            // Items for Requisition 2
             $items2 = collect([
                 ['description' => '27-inch 4K Monitors', 'quantity' => 3, 'unit_cost' => 350],
                 ['description' => 'Mechanical Keyboards', 'quantity' => 5, 'unit_cost' => 90],
@@ -251,7 +265,7 @@ class FullRequisitionFlowSeeder extends Seeder
             });
             $requisition2->update(['total' => $items2->sum('total')]);
 
-            // Items for Requisition 3 (Test Case: Singular abstract service item)
+            // Items for Requisition 3
             $items3 = collect([
                 ['description' => 'Annual Server Hosting & SSL renewal', 'quantity' => 1, 'unit_cost' => 1200],
             ])->map(function ($item, $index) use ($requisition3) {

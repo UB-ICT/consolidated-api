@@ -3,35 +3,40 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Requisition extends Model
 {
-    use HasFactory;
+    protected $connection = 'porsql';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'number',
         'cost_center_id',
-        'supplier_id',
-        'date_prepared',
         'status_id',
         'currency_id',
-        'conversion_rate_id', // Note the _id suffix change
+        'conversion_rate_id',
         'total',
         'stage_id',
+        'date_prepared'
     ];
 
-    protected $casts = [
-        'date_prepared' => 'datetime:M d, Y',
-    ];
-
-    protected static function booted()
+    /**
+     * 🔥 FIX: Define the relationship to line items
+     * A requisition can have many requested items.
+     */
+    public function items(): HasMany
     {
-        static::creating(function ($requisition) {
-            $requisition->date_prepared = now();
-        });
+        return $this->hasMany(Item::class, 'requisition_id');
+    }
+
+    /**
+     * Define the relationship to your multi-vendor sourcing matrix
+     */
+    public function suppliers(): BelongsToMany
+    {
+        return $this->belongsToMany(Supplier::class, 'requisition_suppliers', 'requisition_id', 'supplier_id')
+            ->withPivot('is_recommended', 'quoted_total', 'quote_reference_number')
+            ->withTimestamps();
     }
 }

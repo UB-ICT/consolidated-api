@@ -13,4 +13,12 @@ class Pipeline extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = ['name'];
+
+    /**
+     * Stages assigned to this pipeline.
+     */
+    public function stages(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Stage::class, 'pipeline_stages', 'pipeline_id', 'stage_id');
+    }
 }
