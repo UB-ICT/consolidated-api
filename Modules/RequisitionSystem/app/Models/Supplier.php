@@ -3,15 +3,14 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Supplier extends Model
 {
-    use HasFactory;
+    protected $connection = 'porsql';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'name',
         'contact_person',
@@ -20,4 +19,24 @@ class Supplier extends Model
         'TIN',
         'status_id',
     ];
+
+    /**
+     * Get the banking details for the supplier.
+     */
+    public function bankAccount(): HasOne
+    {
+        return $this->hasOne(SupplierBank::class, 'supplier_id');
+    }
+
+    public function status(): BelongsTo
+    {
+        return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    public function requisitions(): BelongsToMany
+    {
+        return $this->belongsToMany(Requisition::class, 'requisition_suppliers', 'supplier_id', 'requisition_id')
+            ->withPivot('is_recommended', 'quoted_total', 'quote_reference_number')
+            ->withTimestamps();
+    }
 }

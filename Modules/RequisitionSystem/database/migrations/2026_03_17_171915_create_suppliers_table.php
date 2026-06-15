@@ -24,6 +24,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('TIN');
             $table->timestamps();
+
+            // Foreign key constraint for your users table
+            $table->foreignId('status_id')
+                ->default(1)
+                ->constrained('statuses')
+                ->onDelete('restrict');
         });
     }
 

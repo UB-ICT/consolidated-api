@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
             $table->timestamps();
 
-            // Optional: Prevent linking the exact same stage to the exact same pipeline twice
             $table->unique(['pipeline_id', 'stage_id']);
         });
     }
