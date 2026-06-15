@@ -32,6 +32,9 @@ class RequisitionStoreRequest extends FormRequest
             'total'              => 'nullable|numeric|min:0',
             'stage_id'           => 'nullable|integer|exists:stages,id',
 
+            'priority'               => 'required|string|in:low,medium,high',
+            'expected_delivery_date' => 'nullable|date|after_or_equal:today',
+
             // Multi-Vendor Sourcing Validation Rules
             'suppliers'                  => 'required|array|min:1', // Must have at least 1 supplier option
             'suppliers.*.supplier_id'    => 'required|integer|exists:suppliers,id', // Must be a valid vendor id

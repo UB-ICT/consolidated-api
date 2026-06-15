@@ -26,6 +26,8 @@ return new class extends Migration
             $table->foreignId('conversion_rate_id')->constrained('conversion_rates');
             $table->decimal('total', 15, 2);
             $table->foreignId('stage_id')->constrained('stages');
+            $table->string('priority')->default('low');
+            $table->date('expected_delivery_date');
             $table->timestamps();
         });
     }

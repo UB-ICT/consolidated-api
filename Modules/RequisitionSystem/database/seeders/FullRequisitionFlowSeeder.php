@@ -132,7 +132,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // =========================
-            // 9. STAGES (Updated for Many-to-Many Pivot Mapping Layout)
+            // 9. STAGES (Using Many-to-Many Pivot Mapping Layout)
             // =========================
             $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
             $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
@@ -173,7 +173,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // =========================
-            // 12. REQUISITIONS
+            // 12. REQUISITIONS (Updated with Priority and Delivery Targets)
             // =========================
 
             // Requisition 1: Office Supplies
@@ -184,6 +184,8 @@ class FullRequisitionFlowSeeder extends Seeder
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
                 'total' => 0,
+                'priority' => 'medium', // 🔥 Added priority
+                'expected_delivery_date' => now()->addWeeks(2)->format('Y-m-d'), // 🔥 Added delivery target
                 'stage_id' => $submitted->id,
                 'date_prepared' => now(),
             ]);
@@ -196,6 +198,8 @@ class FullRequisitionFlowSeeder extends Seeder
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
                 'total' => 0,
+                'priority' => 'high', // 🔥 Added priority
+                'expected_delivery_date' => now()->addDays(5)->format('Y-m-d'), // 🔥 Added delivery target
                 'stage_id' => $submitted->id,
                 'date_prepared' => now()->subDays(2),
             ]);
@@ -208,12 +212,14 @@ class FullRequisitionFlowSeeder extends Seeder
                 'currency_id' => $currency->id,
                 'conversion_rate_id' => $rate->id,
                 'total' => 0,
+                'priority' => 'low', // 🔥 Added priority
+                'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'), // 🔥 Added delivery target
                 'stage_id' => $submitted->id,
                 'date_prepared' => now()->subDays(5),
             ]);
 
             // ==============================================================
-            // 12b. SOURCING MATRIX BINDING (Populating the Pivot Table)
+            // 12b. SOURCING MATRIX BINDING (Populating Multi-Vendor Matrix)
             // ==============================================================
             $requisition1->suppliers()->sync([
                 $supplierABC->id => ['is_recommended' => true, 'quoted_total' => 300.00],

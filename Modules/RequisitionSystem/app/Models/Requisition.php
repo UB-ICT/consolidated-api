@@ -17,28 +17,22 @@ class Requisition extends Model
         'currency_id',
         'conversion_rate_id',
         'total',
+        'priority',
+        'expected_delivery_date',
         'stage_id',
         'date_prepared'
     ];
 
-    /**
-     * 🔥 FIX: Add the missing attribute casts expected by your Unit Test
-     */
     protected $casts = [
-        'date_prepared' => 'datetime:M d, Y',
+        'date_prepared'          => 'datetime:M d, Y',
+        'expected_delivery_date' => 'date:Y-m-d',
     ];
 
-    /**
-     * Define the relationship to line items
-     */
     public function items(): HasMany
     {
         return $this->hasMany(Item::class, 'requisition_id');
     }
 
-    /**
-     * Define the relationship to your multi-vendor sourcing matrix
-     */
     public function suppliers(): BelongsToMany
     {
         return $this->belongsToMany(Supplier::class, 'requisition_suppliers', 'requisition_id', 'supplier_id')
