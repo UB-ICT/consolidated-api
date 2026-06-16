@@ -175,20 +175,21 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 9. STAGES
+            // 9. STAGES (Sequenced for the Pivot Table Tracker)
             // ==============================================================
-            $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
-            $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
+            $submitted          = Stage::firstOrCreate(['name' => 'Submitted']);
+            $directorApproval   = Stage::firstOrCreate(['name' => "Director's Approval"]);
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
-            $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
-            $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
+            $vpApproval         = Stage::firstOrCreate(['name' => 'VP Approval']);
+            $financeApproval    = Stage::firstOrCreate(['name' => 'Finance Approval']);
 
+            // 🔥 Sync structural links to the pivot table with explicit sequence orders mapping your UI layout
             $pipeline->stages()->syncWithoutDetaching([
-                $submitted->id,
-                $directorApproval->id,
-                $stageBudgetOfficer->id,
-                $vpApproval->id,
-                $financeApproval->id
+                $submitted->id          => ['sequence' => 1],
+                $directorApproval->id   => ['sequence' => 2],
+                $stageBudgetOfficer->id => ['sequence' => 3],
+                $vpApproval->id         => ['sequence' => 4],
+                $financeApproval->id    => ['sequence' => 5]
             ]);
 
             // ==============================================================
@@ -215,10 +216,10 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 12. REQUISITIONS (Distributed Across Explicit Cost Centers)
+            // 12. REQUISITIONS (Distributed Across Explicit Stages)
             // ==============================================================
 
-            // Requisition 1: Standard Single-Purchase Item (Non-Recurring)
+            // Requisition 1: Sitting at Stage 2 (Director's Approval)
             $requisition1 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0001',
                 'cost_center_id' => $ictCC->id,
@@ -228,14 +229,14 @@ class FullRequisitionFlowSeeder extends Seeder
                 'total' => 0,
                 'priority' => 'high',
                 'expected_delivery_date' => now()->addDays(10)->format('Y-m-d'),
-                'stage_id' => $submitted->id,
+                'stage_id' => $directorApproval->id, // 📍 Advanced
                 'date_prepared' => now(),
                 'is_recurring' => false,
                 'reminder_date' => null,
                 'expiration_date' => null,
             ]);
 
-            // Requisition 2: Active Recurring Contract (Upcoming Alert Triggered in 5 Days)
+            // Requisition 2: Sitting at Stage 3 (Budget Officer)
             $requisition2 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0002',
                 'cost_center_id' => $fstCC->id,
@@ -245,14 +246,14 @@ class FullRequisitionFlowSeeder extends Seeder
                 'total' => 0,
                 'priority' => 'medium',
                 'expected_delivery_date' => now()->addWeeks(3)->format('Y-m-d'),
-                'stage_id' => $submitted->id,
+                'stage_id' => $stageBudgetOfficer->id, // 📍 Advanced
                 'date_prepared' => now()->subDays(3),
                 'is_recurring' => true,
-                'reminder_date' => now()->addDays(5)->format('Y-m-d'), // 🔥 Fits inside console alert scanning window
+                'reminder_date' => now()->addDays(5)->format('Y-m-d'),
                 'expiration_date' => now()->addDays(35)->format('Y-m-d'),
             ]);
 
-            // Requisition 3: Active Recurring Contract (Alert Triggered Today)
+            // Requisition 3: Sitting at Stage 4 (VP Approval)
             $requisition3 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0003',
                 'cost_center_id' => $medCC->id,
@@ -262,14 +263,14 @@ class FullRequisitionFlowSeeder extends Seeder
                 'total' => 0,
                 'priority' => 'low',
                 'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'),
-                'stage_id' => $submitted->id,
+                'stage_id' => $vpApproval->id, // 📍 Advanced
                 'date_prepared' => now()->subDays(6),
                 'is_recurring' => true,
-                'reminder_date' => now()->format('Y-m-d'), // 🔥 Triggers alert loop instantly
+                'reminder_date' => now()->format('Y-m-d'),
                 'expiration_date' => now()->addDays(30)->format('Y-m-d'),
             ]);
 
-            // Requisition 4: Hidden/Standard Cost Center Item
+            // Requisition 4: Kept at Stage 1 (Submitted)
             $requisition4 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0004',
                 'cost_center_id' => $accCC->id,
@@ -279,7 +280,7 @@ class FullRequisitionFlowSeeder extends Seeder
                 'total' => 0,
                 'priority' => 'high',
                 'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
-                'stage_id' => $submitted->id,
+                'stage_id' => $submitted->id, // 📍 Kept initial
                 'date_prepared' => now(),
                 'is_recurring' => false,
                 'reminder_date' => null,
@@ -404,12 +405,32 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 15. APPROVAL
+            // 15. APPROVALS (Aligned with current active stages)
             // ==============================================================
+
+            // Requisition 1 is awaiting action at Director's Approval stage
             Approval::firstOrCreate([
                 'requisition_id' => $requisition1->id,
                 'user_id' => $approver->id,
                 'stage_id' => $directorApproval->id,
+            ], [
+                'status' => 'pending'
+            ]);
+
+            // Requisition 2 is awaiting action at Budget Officer stage
+            Approval::firstOrCreate([
+                'requisition_id' => $requisition2->id,
+                'user_id' => $approver->id,
+                'stage_id' => $stageBudgetOfficer->id,
+            ], [
+                'status' => 'pending'
+            ]);
+
+            // Requisition 3 is awaiting action at VP Approval stage
+            Approval::firstOrCreate([
+                'requisition_id' => $requisition3->id,
+                'user_id' => $approver->id,
+                'stage_id' => $vpApproval->id,
             ], [
                 'status' => 'pending'
             ]);
