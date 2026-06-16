@@ -45,9 +45,6 @@ class RequisitionController extends Controller
 
                 $query->whereIn('cost_center_id', $assignedCostCenterIds);
             }
-
-            // 🔥 GLOBAL ROLES BYPASS THE BLOCK ABOVE:
-            // This means their query is still wide open to all cost centers at this point.
         }
 
         // 2. TARGETED FILTERING (Works for Everyone, including Global Roles)
@@ -59,6 +56,17 @@ class RequisitionController extends Controller
         // 3. Generic filters
         if ($request->has('priority')) {
             $query->where('priority', $request->priority);
+        }
+
+
+        // 🔥 NEW FEATURE FILTERS: Recurring and Scheduling Dashboard Lookups
+        if ($request->has('is_recurring')) {
+            $query->where('is_recurring', $request->boolean('is_recurring'));
+        }
+
+        if ($request->get('filter_alerts') === 'upcoming') {
+            // Fetch everything hitting a tracking alert within the next 30 days
+            $query->scopeUpcomingReminders(30);
         }
 
         $requisitions = $query->latest()->get();
@@ -77,9 +85,8 @@ class RequisitionController extends Controller
     {
         $validated = $request->validated();
 
-        // Use our database transaction on the 'porsql' connection
         $requisition = DB::connection('porsql')->transaction(function () use ($validated, $request) {
-            // 1. Create the requisition header (ignoring the custom suppliers array)
+            // 1. Create the requisition header including our new field arrays
             $requisition = Requisition::create($request->except('suppliers'));
 
             // 2. Loop through and format the suppliers payload for the pivot mapping table
@@ -92,7 +99,6 @@ class RequisitionController extends Controller
                 ];
             }
 
-            // 3. Attach all vendors and their metadata into the pivot table in one execution block
             if (!empty($syncData)) {
                 $requisition->suppliers()->sync($syncData);
             }
@@ -126,10 +132,8 @@ class RequisitionController extends Controller
         $validated = $request->validated();
 
         DB::connection('porsql')->transaction(function () use ($requisition, $request) {
-            // 1. Update the main header table properties
             $requisition->update($request->except('suppliers'));
 
-            // 2. Format the updating suppliers data payload matrix
             $syncData = [];
             foreach ($request->input('suppliers', []) as $supplier) {
                 $syncData[$supplier['supplier_id']] = [
@@ -139,7 +143,6 @@ class RequisitionController extends Controller
                 ];
             }
 
-            // 3. Synchronize the database. Missing IDs from the payload will be unlinked safely
             $requisition->suppliers()->sync($syncData);
         });
 
@@ -155,7 +158,6 @@ class RequisitionController extends Controller
      */
     public function destroy(Requisition $requisition)
     {
-        // Because of cascading deletes on your migration, this auto-wipes entries in requisition_suppliers!
         $requisition->delete();
 
         return response()->json([

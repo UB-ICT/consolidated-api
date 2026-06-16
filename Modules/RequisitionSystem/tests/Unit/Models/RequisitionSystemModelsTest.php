@@ -118,10 +118,13 @@ class RequisitionSystemModelsTest extends TestCase
             'currency_id',
             'conversion_rate_id',
             'total',
-            'priority',               // 🔥 Include in test array
-            'expected_delivery_date', // 🔥 Include in test array
+            'priority',
+            'expected_delivery_date',
             'stage_id',
             'date_prepared',
+            'is_recurring',
+            'reminder_date',
+            'expiration_date',
         ]);
 
         $this->assertModelCastsInclude(Requisition::class, [

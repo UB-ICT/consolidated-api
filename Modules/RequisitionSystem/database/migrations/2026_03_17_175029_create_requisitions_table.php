@@ -28,6 +28,10 @@ return new class extends Migration
             $table->foreignId('stage_id')->constrained('stages');
             $table->string('priority')->default('low');
             $table->date('expected_delivery_date');
+
+            $table->boolean('is_recurring')->default(false);
+            $table->date('reminder_date')->nullable();
+            $table->date('expiration_date')->nullable();
             $table->timestamps();
         });
     }

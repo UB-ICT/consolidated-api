@@ -23,7 +23,6 @@ use Modules\RequisitionSystem\Models\{
     Item,
     Approval,
     UserStage,
-    // Ensure your Role model is imported here
 };
 
 class FullRequisitionFlowSeeder extends Seeder
@@ -69,9 +68,8 @@ class FullRequisitionFlowSeeder extends Seeder
             }
 
             // ==============================================================
-            // 2b. ROLES CREATION & ASSIGNMENT (🔥 NEW SECTION)
+            // 2b. ROLES CREATION & ASSIGNMENT
             // ==============================================================
-            // 1. Create the structural roles in your 'pgsql' authorization cluster
             $budgetOfficerRole = Role::firstOrCreate(
                 ['role_name' => 'Budget Officer'],
                 ['id' => (string) Str::uuid(), 'description' => 'Global Budget Oversight']
@@ -97,8 +95,7 @@ class FullRequisitionFlowSeeder extends Seeder
                 ['id' => (string) Str::uuid(), 'description' => 'Standard Departmental Requisitioner']
             );
 
-            // 2. By default, let's assign James Faber to the restricted "Requester" role
-            // To test his admin powers later, swap this ID out for $budgetOfficerRole->id or $financeDirectorRole->id!
+            // Assign James Faber to the restricted "Requester" role by default
             DB::connection('pgsql')->table('user_roles')->updateOrInsert(
                 [
                     'user_id' => $approver->id,
@@ -178,7 +175,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 9. STAGES (Using Many-to-Many Pivot Mapping Layout)
+            // 9. STAGES
             // ==============================================================
             $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
             $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
@@ -186,7 +183,6 @@ class FullRequisitionFlowSeeder extends Seeder
             $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
             $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
 
-            // Sync structural links to the pipeline record seamlessly 
             $pipeline->stages()->syncWithoutDetaching([
                 $submitted->id,
                 $directorApproval->id,
@@ -222,7 +218,7 @@ class FullRequisitionFlowSeeder extends Seeder
             // 12. REQUISITIONS (Distributed Across Explicit Cost Centers)
             // ==============================================================
 
-            // Requisition 1: ICT Infrastructure Expansion (ICT-001) - ACCESSIBLE
+            // Requisition 1: Standard Single-Purchase Item (Non-Recurring)
             $requisition1 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0001',
                 'cost_center_id' => $ictCC->id,
@@ -234,9 +230,12 @@ class FullRequisitionFlowSeeder extends Seeder
                 'expected_delivery_date' => now()->addDays(10)->format('Y-m-d'),
                 'stage_id' => $submitted->id,
                 'date_prepared' => now(),
+                'is_recurring' => false,
+                'reminder_date' => null,
+                'expiration_date' => null,
             ]);
 
-            // Requisition 2: Science Lab Consumables & Upgrades (FST-002) - ACCESSIBLE
+            // Requisition 2: Active Recurring Contract (Upcoming Alert Triggered in 5 Days)
             $requisition2 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0002',
                 'cost_center_id' => $fstCC->id,
@@ -248,9 +247,12 @@ class FullRequisitionFlowSeeder extends Seeder
                 'expected_delivery_date' => now()->addWeeks(3)->format('Y-m-d'),
                 'stage_id' => $submitted->id,
                 'date_prepared' => now()->subDays(3),
+                'is_recurring' => true,
+                'reminder_date' => now()->addDays(5)->format('Y-m-d'), // 🔥 Fits inside console alert scanning window
+                'expiration_date' => now()->addDays(35)->format('Y-m-d'),
             ]);
 
-            // Requisition 3: Clinic Emergency & Diagnostics Update (MED-005) - ACCESSIBLE
+            // Requisition 3: Active Recurring Contract (Alert Triggered Today)
             $requisition3 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0003',
                 'cost_center_id' => $medCC->id,
@@ -262,9 +264,12 @@ class FullRequisitionFlowSeeder extends Seeder
                 'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'),
                 'stage_id' => $submitted->id,
                 'date_prepared' => now()->subDays(6),
+                'is_recurring' => true,
+                'reminder_date' => now()->format('Y-m-d'), // 🔥 Triggers alert loop instantly
+                'expiration_date' => now()->addDays(30)->format('Y-m-d'),
             ]);
 
-            // Requisition 4: Business Administration Infrastructure (ACC-004) - UNAUTHORIZED / HIDDEN
+            // Requisition 4: Hidden/Standard Cost Center Item
             $requisition4 = Requisition::create([
                 'number' => 'REQ-' . now()->format('Y') . '-0004',
                 'cost_center_id' => $accCC->id,
@@ -276,6 +281,9 @@ class FullRequisitionFlowSeeder extends Seeder
                 'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
                 'stage_id' => $submitted->id,
                 'date_prepared' => now(),
+                'is_recurring' => false,
+                'reminder_date' => null,
+                'expiration_date' => null,
             ]);
 
             // ==============================================================

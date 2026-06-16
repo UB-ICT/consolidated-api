@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
 
 class Requisition extends Model
 {
@@ -21,7 +22,10 @@ class Requisition extends Model
         'priority',
         'expected_delivery_date',
         'stage_id',
-        'date_prepared'
+        'date_prepared',
+        'is_recurring',
+        'reminder_date',
+        'expiration_date',
     ];
 
     protected $casts = [
@@ -55,5 +59,14 @@ class Requisition extends Model
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class, 'stage_id');
+    }
+
+    /**
+     * Scope a query to only include upcoming scheduled or expiring recurring requisitions.
+     */
+    public function scopeScopeUpcomingReminders(Builder $query, int $daysAhead = 30): Builder
+    {
+        return $query->where('is_recurring', true)
+            ->whereBetween('reminder_date', [now()->toDateString(), now()->addDays($daysAhead)->toDateString()]);
     }
 }
