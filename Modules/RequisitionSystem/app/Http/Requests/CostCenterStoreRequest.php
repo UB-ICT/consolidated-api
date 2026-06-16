@@ -23,7 +23,6 @@ class CostCenterStoreRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255|unique:cost_centers,name,' . $costCenterId,
-            'type' => 'required|string|max:255', 
         ];
     }
 }

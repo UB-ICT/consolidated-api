@@ -18,7 +18,7 @@ class ItemStoreRequest extends FormRequest
             'quantity'         => 'required|numeric|min:1',
             'line_item_number' => 'required|integer|min:1',
             'unit_cost'        => 'required|numeric|min:0',
-            'total'            => 'nullable|numeric|min:0',
+            'total'            => 'required|numeric|min:0', // Changed to required since we guarantee it in prepare
             'comments'         => 'nullable|string|max:1000',
             'requisition_id'   => 'required|integer|exists:requisitions,id',
         ];
@@ -26,10 +26,10 @@ class ItemStoreRequest extends FormRequest
 
     public function prepareForValidation(): void
     {
-        // Auto-calculate total if not provided
-        if (!$this->has('total') && $this->has(['quantity', 'unit_cost'])) {
+        // Force re-calculation on every single payload pass to stop spoofing
+        if ($this->has(['quantity', 'unit_cost'])) {
             $this->merge([
-                'total' => $this->quantity * $this->unit_cost,
+                'total' => (float)$this->quantity * (float)$this->unit_cost,
             ]);
         }
     }

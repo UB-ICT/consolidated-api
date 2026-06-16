@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\RequisitionSystem\Models\Supplier;
-use Illuminate\Database\Eloquent\Relations\hasOne;
-
+use Modules\RequisitionSystem\Models\CostCenter;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -45,12 +45,30 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
     ];
 
+    /**
+     * The roles belonging to the user.
+     */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        // Using 'user_roles' table as defined in your setup
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
-    public function suppliers(): hasOne
+    /**
+     * The cost centers assigned to the user.
+     */
+    public function costCenters(): BelongsToMany
+    {
+        // If your user_cost_center table resides on a different connection (like 'porsql'),
+        // we append the connection name directly to the table parameter string for isolation safety.
+        return $this->belongsToMany(CostCenter::class, 'user_cost_center', 'user_id', 'cost_center_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Suppliers approved by this user.
+     */
+    public function suppliers(): HasOne
     {
         return $this->hasOne(Supplier::class, 'approved_by_user_id');
     }

@@ -5,6 +5,7 @@ namespace Modules\RequisitionSystem\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Requisition extends Model
 {
@@ -38,5 +39,21 @@ class Requisition extends Model
         return $this->belongsToMany(Supplier::class, 'requisition_suppliers', 'requisition_id', 'supplier_id')
             ->withPivot('is_recommended', 'quoted_total', 'quote_reference_number')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the Cost Center that owns this requisition.
+     */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+
+    /**
+     * Get the current workflow Stage of this requisition.
+     */
+    public function stage(): BelongsTo
+    {
+        return $this->belongsTo(Stage::class, 'stage_id');
     }
 }

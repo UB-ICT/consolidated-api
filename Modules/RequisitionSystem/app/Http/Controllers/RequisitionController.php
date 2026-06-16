@@ -3,6 +3,7 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Illuminate\Support\Facades\Auth;
@@ -11,14 +12,61 @@ use Illuminate\Support\Facades\DB;
 class RequisitionController extends Controller
 {
     /**
-     * List all requisitions with their attached suppliers & line items
+     * List all requisitions with their attached suppliers & line items.
+     * * Supports: 
+     * - Sorting: Descending by default (latest)
+     * - Filtering: By priority (?priority=high)
+     * - Scoping: By authenticated user's cost centers (?scope=cost_center)
+     * * Budget Officer, VP, Director of Finance, and Payroll Officer bypass isolation.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $query = Requisition::with(['suppliers', 'items', 'costCenter', 'stage']);
+
+        // 1. Process Tenant Boundary Scoping
+        if ($request->get('scope') === 'cost_center') {
+            /** @var \Modules\Auth\Models\User $user */
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+            }
+
+            $globalRoles = ['Budget Officer', 'VP', 'Director of Finance', 'Payroll Officer'];
+            $hasGlobalAccess = $user->roles()->whereIn('roles.role_name', $globalRoles)->exists();
+
+            // Standard Users get automatically locked down here
+            if (!$hasGlobalAccess) {
+                $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+
+                if ($assignedCostCenterIds->isEmpty()) {
+                    return response()->json(['success' => false, 'message' => 'Unauthorized cost center access.'], 403);
+                }
+
+                $query->whereIn('cost_center_id', $assignedCostCenterIds);
+            }
+
+            // 🔥 GLOBAL ROLES BYPASS THE BLOCK ABOVE:
+            // This means their query is still wide open to all cost centers at this point.
+        }
+
+        // 2. TARGETED FILTERING (Works for Everyone, including Global Roles)
+        // If a Budget Officer passes ?cost_center_id=5, this block will filter the global list down to just that center!
+        if ($request->has('cost_center_id')) {
+            $query->where('cost_center_id', $request->get('cost_center_id'));
+        }
+
+        // 3. Generic filters
+        if ($request->has('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        $requisitions = $query->latest()->get();
+
         return response()->json([
             'success' => true,
-            // 🔥 Eager load suppliers and items to avoid N+1 database queries
-            'data' => Requisition::with(['suppliers', 'items'])->latest()->get(),
+            'count'   => $requisitions->count(),
+            'data'    => $requisitions,
         ]);
     }
 
@@ -66,7 +114,7 @@ class RequisitionController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $requisition->load(['suppliers', 'items']),
+            'data' => $requisition->load(['suppliers', 'items', 'costCenter', 'stage']),
         ]);
     }
 
@@ -113,44 +161,6 @@ class RequisitionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Requisition deleted successfully.',
-        ]);
-    }
-
-    /**
-     * Get all requisitions for the authenticated user's cost center(s) via pivot mapping
-     */
-    public function byCostCenter()
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
-        $assignedCostCenterIds = DB::connection('porsql')
-            ->table('user_cost_center')
-            ->where('user_id', $user->id)
-            ->pluck('cost_center_id');
-
-        if ($assignedCostCenterIds->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User is not assigned to any cost center.',
-            ], 403);
-        }
-
-        // 🔥 Added .with() here too so your cost-center dashboard listings display vendor information immediately
-        $requisitions = Requisition::with(['suppliers', 'items'])
-            ->whereIn('cost_center_id', $assignedCostCenterIds)
-            ->latest()
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $requisitions,
         ]);
     }
 }
