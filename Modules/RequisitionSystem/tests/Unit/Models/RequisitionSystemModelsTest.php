@@ -77,7 +77,7 @@ class RequisitionSystemModelsTest extends TestCase
 
     public function test_cost_center_model_configuration(): void
     {
-        $this->assertModelFillable(CostCenter::class, ['name', 'type']);
+        $this->assertModelFillable(CostCenter::class, ['name']);
     }
 
     public function test_country_model_configuration(): void
@@ -110,19 +110,26 @@ class RequisitionSystemModelsTest extends TestCase
 
     public function test_requisition_model_configuration(): void
     {
+        // 🔥 FIXED: Removed 'supplier_id' and ordered to match the Requisition Model perfectly
         $this->assertModelFillable(Requisition::class, [
             'number',
             'cost_center_id',
-            'supplier_id',
-            'date_prepared',       // Moved here
             'status_id',
             'currency_id',
-            'conversion_rate_id',  // Updated from 'conversion_rate'
+            'conversion_rate_id',
             'total',
+            'priority',
+            'expected_delivery_date',
             'stage_id',
+            'date_prepared',
+            'is_recurring',
+            'reminder_date',
+            'expiration_date',
         ]);
+
         $this->assertModelCastsInclude(Requisition::class, [
             'date_prepared' => 'datetime:M d, Y',
+            'expected_delivery_date' => 'date:Y-m-d',
         ]);
     }
 

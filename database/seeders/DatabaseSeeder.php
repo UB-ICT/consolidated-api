@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             \Modules\RequisitionSystem\Database\Seeders\SupplierSeeder::class,
 
             \Modules\PublicSafety\Database\Seeders\RoleAndAdminSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\FullRequisitionFlowSeeder::class,
         ]);
     }

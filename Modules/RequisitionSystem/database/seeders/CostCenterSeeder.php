@@ -15,7 +15,6 @@ class CostCenterSeeder extends Seeder
     {
          DB::table('cost_centers')->insert([
             'name' => Str::random(10),
-            'type' => "ICT",
         ]);
     }
 }

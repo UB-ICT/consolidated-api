@@ -23,10 +23,18 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('email')->unique();
             $table->string('TIN')->unique();
-            $table->integer('status_id');
             $table->timestamps();
 
-            $table->foreign('status_id')->references('id')->on('statuses');
+            // Foreign key constraint for your users table
+            $table->foreignId('status_id')
+                ->default(1)
+                ->constrained('statuses')
+                ->onDelete('restrict');
+
+            $table->foreignUuid('approved_by_user_id')
+                ->nullable()
+                ->constrained('public.users')
+                ->onDelete('set null');
         });
     }
 

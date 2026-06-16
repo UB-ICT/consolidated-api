@@ -10,12 +10,13 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::connection($this->connection)->create('pipeline_stages', function (Blueprint $table) {
+        Schema::connection('porsql')->create('pipeline_stages', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('pipeline_id')->constrained('pipelines')->onDelete('cascade');
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+            $table->timestamps();
 
-            // Setting a composite primary key for the pivot relationship consistency
-            $table->primary(['pipeline_id', 'stage_id']);
+            $table->unique(['pipeline_id', 'stage_id']);
         });
     }
 

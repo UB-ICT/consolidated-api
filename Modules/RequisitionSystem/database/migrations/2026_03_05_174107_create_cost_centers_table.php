@@ -19,7 +19,6 @@ return new class extends Migration
         Schema::connection($this->connection)->create('cost_centers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('type');
             $table->timestamps();
         });
     }

@@ -18,7 +18,6 @@ return new class extends Migration
         Schema::connection($this->connection)->create('stages', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('pipeline_id')->constrained('pipelines')->onDelete('cascade');
 
             $table->timestamps();
         });

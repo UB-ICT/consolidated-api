@@ -20,13 +20,18 @@ return new class extends Migration
             $table->id();
             $table->string('number')->unique();
             $table->foreignId('cost_center_id')->constrained('cost_centers');
-            $table->foreignId('supplier_id')->constrained('suppliers');
             $table->timestamp('date_prepared')->useCurrent();
             $table->foreignId('status_id')->constrained('statuses');
             $table->foreignId('currency_id')->constrained('currencies');
             $table->foreignId('conversion_rate_id')->constrained('conversion_rates');
             $table->decimal('total', 15, 2);
             $table->foreignId('stage_id')->constrained('stages');
+            $table->string('priority')->default('low');
+            $table->date('expected_delivery_date');
+
+            $table->boolean('is_recurring')->default(false);
+            $table->date('reminder_date')->nullable();
+            $table->date('expiration_date')->nullable();
             $table->timestamps();
         });
     }
