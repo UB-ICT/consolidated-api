@@ -151,7 +151,8 @@ class RequisitionSystemModelsTest extends TestCase
             'phone_number',
             'email',
             'TIN',
-            'status_id'
+            'status_id',
+            'notes',
         ]);
     }
 
