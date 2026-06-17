@@ -25,9 +25,8 @@ class AuthTestDataSeeder extends Seeder
             'director-of-finance',
             'accounts-payable',
             'senior-account',
-            'director/dean',
-            'cost-center',
-            'developer',
+            'director-dean',
+            'requester',
         ];
 
         // Guarantee roles exist and capture their database UUIDs safely
@@ -96,7 +95,7 @@ class AuthTestDataSeeder extends Seeder
         ];
 
         // 5. Seed management layouts nested under the RequisitionSystem app item
-        $managementRoles = array_diff($targetRoleNames, ['cost-center']);
+        $managementRoles = array_diff($targetRoleNames, ['requester']);
         foreach ($managementRoles as $roleName) {
             $roleId = $roleMap[$roleName];
             foreach ($managementMenuItems as $item) {
@@ -120,7 +119,7 @@ class AuthTestDataSeeder extends Seeder
         }
 
         // 6. Seed cost-center layout nested under the RequisitionSystem app item
-        $costCenterId = $roleMap['cost-center'];
+        $costCenterId = $roleMap['requester'];
         foreach ($costCenterMenuItems as $item) {
             $subMenu = Menu::firstOrNew([
                 'path'    => $item['path'],
