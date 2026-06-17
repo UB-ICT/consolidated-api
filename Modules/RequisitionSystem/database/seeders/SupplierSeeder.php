@@ -23,6 +23,7 @@ class SupplierSeeder extends Seeder
                 'phone_number'   => '+501 600-0001',
                 'TIN'            => 'TIN-001',
                 'status_id'      => 2, // 'Pending'
+                'notes'          => 'Preferred supplier for office supplies and equipment.',
             ]
         );
 
@@ -52,6 +53,7 @@ class SupplierSeeder extends Seeder
                 'phone_number'   => '+501 615-9988',
                 'TIN'            => 'TIN-042',
                 'status_id'      => 3, // 'Pending'
+                'notes'          => 'Specializes in medical diagnostic equipment and tools.',
             ]
         );
 

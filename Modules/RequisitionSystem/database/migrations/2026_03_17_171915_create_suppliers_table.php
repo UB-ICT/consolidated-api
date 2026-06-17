@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('contact_person');
             $table->string('phone_number');
             $table->string('email')->unique();
-            $table->string('TIN')->unique();
+            $table->string('TIN')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             // Foreign key constraint for your users table

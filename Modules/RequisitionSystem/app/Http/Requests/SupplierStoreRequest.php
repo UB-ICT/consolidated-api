@@ -41,6 +41,8 @@ class SupplierStoreRequest extends FormRequest
                 Rule::unique('suppliers', 'TIN')->ignore($supplier)
             ],
 
+            'notes'          => 'nullable|string|max:1000',
+
             'status_id'      => 'nullable|integer',
 
             // Banking Data Fields
