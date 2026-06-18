@@ -59,6 +59,9 @@ Route::group([
     Route::apiResource('statuses', StatusController::class);
     
     Route::get('suppliers/status-counts', [SupplierController::class, 'getStatusCounts']);
+    Route::post('suppliers/quick', [SupplierController::class, 'quickStore']);
+    Route::post('suppliers/{supplier}/approve', [SupplierController::class, 'approve']);
+    Route::post('suppliers/{supplier}/reject', [SupplierController::class, 'reject']);
     Route::apiResource('suppliers', SupplierController::class);
 
     Route::apiResource('userStages', UserStageController::class);

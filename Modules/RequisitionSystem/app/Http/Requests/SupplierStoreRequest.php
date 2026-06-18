@@ -24,7 +24,7 @@ class SupplierStoreRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('suppliers', 'name')->ignore($supplier)
+                Rule::unique('porsql.suppliers', 'name')->ignore($supplier)
             ],
             'contact_person' => 'required|string|max:255',
             'phone_number'   => 'required|string|max:50',
@@ -33,24 +33,18 @@ class SupplierStoreRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('suppliers', 'email')->ignore($supplier)
+                Rule::unique('porsql.suppliers', 'email')->ignore($supplier)
             ],
             'TIN'            => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('suppliers', 'TIN')->ignore($supplier)
+                Rule::unique('porsql.suppliers', 'TIN')->ignore($supplier)
             ],
 
             'notes'          => 'nullable|string|max:1000',
 
             'status_id'      => 'nullable|integer',
-
-            // Banking Data Fields
-            'bank_id'        => 'required|exists:banks,id',
-            'account_number' => 'required|string|max:50',
-            'account_name'   => 'nullable|string|max:255',
-            'address'        => 'nullable|string|max:500',
         ];
     }
 }

@@ -3,92 +3,113 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Modules\RequisitionSystem\Models\Supplier;
-use Modules\RequisitionSystem\Http\Requests\SupplierStoreRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\RequisitionSystem\Http\Requests\SupplierQuickStoreRequest;
+use Modules\RequisitionSystem\Http\Requests\SupplierReviewRequest;
+use Modules\RequisitionSystem\Http\Requests\SupplierStoreRequest;
+use Modules\RequisitionSystem\Models\Status;
+use Modules\RequisitionSystem\Models\Supplier;
+use Modules\RequisitionSystem\Support\GuardsSupplierReview;
 
 class SupplierController extends Controller
 {
-    /**
-     * List all suppliers
-     */
-    public function index()
+    use GuardsSupplierReview;
+
+    public function index(): JsonResponse
     {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
         return response()->json([
             'success' => true,
-            'data' => Supplier::with('status')->orderBy('name')->get(),
+            'meta'    => [
+                'can_review_suppliers' => $this->userCanReviewSuppliers($user),
+            ],
+            'data' => Supplier::with('status')
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
-    public function store(SupplierStoreRequest $request)
+    public function quickStore(SupplierQuickStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $supplier = DB::connection('porsql')->transaction(function () use ($validated) {
-            $supplier = Supplier::create($validated);
+        $supplier = Supplier::create([
+            'name'           => $validated['name'],
+            'contact_person' => $validated['contact_person'] ?? '',
+            'phone_number'   => $validated['phone_number'] ?? '',
+            'email'          => $validated['email'] ?? sprintf(
+                'supplier-%s@pending.local',
+                now()->format('YmdHis')
+            ),
+            'TIN'            => $validated['TIN'] ?? null,
+            'notes'          => $validated['notes'] ?? null,
+            'status_id'      => Status::where('name', 'Pending')->value('id') ?? 2,
+        ]);
 
-            $supplier->bankAccount()->create([
-                'bank_id'        => $validated['bank_id'],
-                'account_number' => $validated['account_number'],
-                'account_name'   => $validated['account_name'] ?? $supplier->name,
-                'address'        => $validated['address'] ?? null,
-            ]);
-
-            return $supplier;
-        });
-
-        // 🔥 Change load() to refresh() with relations to pull directly from porsql
         return response()->json([
             'success' => true,
             'message' => 'Supplier created successfully.',
-            'data'    => $supplier->refresh()->load('bankAccount.bank'),
+            'data'    => $supplier->load('status'),
         ], 201);
     }
 
-    /**
-     * Show supplier
-     */
-    public function show(Supplier $supplier)
-    {
-        return response()->json([
-            'success' => true,
-            'data' => $supplier,
-        ]);
-    }
-
-    /**
-     * Update supplier
-     */
-    public function update(SupplierStoreRequest $request, Supplier $supplier)
+    public function store(SupplierStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        DB::connection('porsql')->transaction(function () use ($validated, $supplier) {
-            $supplier->update($validated);
+        $supplier = Supplier::create([
+            'name'           => $validated['name'],
+            'contact_person' => $validated['contact_person'],
+            'phone_number'   => $validated['phone_number'],
+            'email'          => $validated['email'],
+            'TIN'            => $validated['TIN'],
+            'notes'          => $validated['notes'] ?? null,
+            'status_id'      => $validated['status_id']
+                ?? Status::where('name', 'Pending')->value('id')
+                ?? 2,
+        ]);
 
-            $supplier->bankAccount()->updateOrCreate(
-                ['supplier_id' => $supplier->id],
-                [
-                    'bank_id'        => $validated['bank_id'],
-                    'account_number' => $validated['account_number'],
-                    'account_name'   => $validated['account_name'] ?? $supplier->name,
-                    'address'        => $validated['address'] ?? null,
-                ]
-            );
-        });
-
-        // 🔥 Force a refresh here too to show the modified banking rows
         return response()->json([
             'success' => true,
-            'message' => 'Supplier updated successfully.',
-            'data'    => $supplier->refresh()->load('bankAccount.bank'),
+            'message' => 'Supplier created successfully.',
+            'data'    => $supplier->load('status'),
+        ], 201);
+    }
+
+    public function show(Supplier $supplier): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $supplier->load('status'),
         ]);
     }
 
-    /**
-     * Delete supplier
-     */
-    public function destroy(Supplier $supplier)
+    public function update(SupplierStoreRequest $request, Supplier $supplier): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $supplier->update([
+            'name'           => $validated['name'],
+            'contact_person' => $validated['contact_person'],
+            'phone_number'   => $validated['phone_number'],
+            'email'          => $validated['email'],
+            'TIN'            => $validated['TIN'],
+            'notes'          => $validated['notes'] ?? null,
+            'status_id'      => $validated['status_id'] ?? $supplier->status_id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier updated successfully.',
+            'data'    => $supplier->refresh()->load('status'),
+        ]);
+    }
+
+    public function destroy(Supplier $supplier): JsonResponse
     {
         $supplier->delete();
 
@@ -98,21 +119,61 @@ class SupplierController extends Controller
         ]);
     }
 
-    /**
-     * Get aggregated supplier counts grouped by their active system status.
-     * (Feeds dashboard metrics: Approved 5, Pending review 2)
-     */
-    public function getStatusCounts()
+    public function approve(
+        SupplierReviewRequest $request,
+        Supplier $supplier
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+        $this->assertUserCanReviewSuppliers($user);
+
+        $approvedStatusId = Status::where('name', 'Approved')->value('id') ?? 3;
+
+        $supplier->update([
+            'status_id'           => $approvedStatusId,
+            'approved_by_user_id' => $user?->id,
+            'notes'               => $request->validated('comments') ?? $supplier->notes,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier approved successfully.',
+            'data'    => $supplier->refresh()->load('status'),
+        ]);
+    }
+
+    public function reject(
+        SupplierReviewRequest $request,
+        Supplier $supplier
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+        $this->assertUserCanReviewSuppliers($user);
+
+        $rejectedStatusId = Status::where('name', 'Rejected')->value('id') ?? 4;
+
+        $supplier->update([
+            'status_id'           => $rejectedStatusId,
+            'approved_by_user_id' => $user?->id,
+            'notes'               => $request->validated('comments') ?? $supplier->notes,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier rejected successfully.',
+            'data'    => $supplier->refresh()->load('status'),
+        ]);
+    }
+
+    public function getStatusCounts(): JsonResponse
     {
-        // 1. Query database for totals grouped by status_id on your 'porsql' connection
         $counts = Supplier::select('status_id', DB::raw('count(*) as total'))
             ->groupBy('status_id')
             ->get()
-            ->pluck('total', 'status_id'); // Formats array as [status_id => total]
+            ->pluck('total', 'status_id');
 
-        // 2. Map totals out to match the semantic names defined in your Status model
         $statusMap = [
-            'draft'        => $counts->get(1, 0), // Default to 0 if no matching records exist
+            'draft'        => $counts->get(1, 0),
             'pending'      => $counts->get(2, 0),
             'approved'     => $counts->get(3, 0),
             'rejected'     => $counts->get(4, 0),
@@ -121,7 +182,7 @@ class SupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $statusMap
+            'data'    => $statusMap,
         ]);
     }
 }

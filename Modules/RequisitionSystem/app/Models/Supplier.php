@@ -19,6 +19,7 @@ class Supplier extends Model
         'TIN',
         'status_id',
         'notes',
+        'approved_by_user_id',
     ];
 
     /**

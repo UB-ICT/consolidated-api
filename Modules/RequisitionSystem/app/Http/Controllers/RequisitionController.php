@@ -15,6 +15,7 @@ use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
+use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 
 class RequisitionController extends Controller
 {
@@ -261,6 +262,10 @@ class RequisitionController extends Controller
 
     private function syncSuppliers(Requisition $requisition, array $suppliers): void
     {
+        $suppliers = RequisitionSupplierQuoteRules::normalizeRecommendedSupplier(
+            $suppliers
+        );
+
         $syncData = [];
 
         foreach ($suppliers as $supplier) {

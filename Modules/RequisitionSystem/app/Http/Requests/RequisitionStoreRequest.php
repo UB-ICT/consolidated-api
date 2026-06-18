@@ -4,6 +4,7 @@ namespace Modules\RequisitionSystem\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 
 class RequisitionStoreRequest extends FormRequest
 {
@@ -61,5 +62,38 @@ class RequisitionStoreRequest extends FormRequest
                 'max:2000',
             ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $total = RequisitionSupplierQuoteRules::calculateItemsTotal(
+                $this->input('items', [])
+            );
+
+            $errors = RequisitionSupplierQuoteRules::validateSuppliers(
+                $this->input('suppliers', []),
+                $total
+            );
+
+            foreach ($errors as $field => $message) {
+                $validator->errors()->add($field, $message);
+            }
+        });
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $suppliers = $this->input('suppliers');
+
+        if (!is_array($suppliers)) {
+            return;
+        }
+
+        $this->merge([
+            'suppliers' => RequisitionSupplierQuoteRules::normalizeRecommendedSupplier(
+                $suppliers
+            ),
+        ]);
     }
 }
