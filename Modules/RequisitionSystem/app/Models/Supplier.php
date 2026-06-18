@@ -18,6 +18,7 @@ class Supplier extends Model
         'email',
         'TIN',
         'status_id',
+        'notes',
     ];
 
     /**

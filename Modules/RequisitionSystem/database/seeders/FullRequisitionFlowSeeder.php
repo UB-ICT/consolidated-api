@@ -70,28 +70,28 @@ class FullRequisitionFlowSeeder extends Seeder
             // ==============================================================
             // 2b. ROLES CREATION & ASSIGNMENT
             // ==============================================================
-            $budgetOfficerRole = Role::firstOrCreate(
-                ['role_name' => 'Budget Officer'],
-                ['id' => (string) Str::uuid(), 'description' => 'Global Budget Oversight']
-            );
-            $vpRole = Role::firstOrCreate(
-                ['role_name' => 'VP'],
-                ['id' => (string) Str::uuid(), 'description' => 'Vice President Approval Access']
-            );
-            $financeDirectorRole = Role::firstOrCreate(
-                ['role_name' => 'Director of Finance'],
-                ['id' => (string) Str::uuid(), 'description' => 'Finance Department Executive Management']
-            );
-            $payrollOfficerRole = Role::firstOrCreate(
-                ['role_name' => 'Payroll Officer'],
-                ['id' => (string) Str::uuid(), 'description' => 'Payroll Processing Controls']
-            );
-            $presidentRole = Role::firstOrCreate(
-                ['role_name' => 'President'],
-                ['id' => (string) Str::uuid(), 'description' => 'President of the Company']
-            );
+            // $budgetOfficerRole = Role::firstOrCreate(
+            //     ['role_name' => 'Budget Officer'],
+            //     ['id' => (string) Str::uuid(), 'description' => 'Global Budget Oversight']
+            // );
+            // $vpRole = Role::firstOrCreate(
+            //     ['role_name' => 'VP'],
+            //     ['id' => (string) Str::uuid(), 'description' => 'Vice President Approval Access']
+            // );
+            // $financeDirectorRole = Role::firstOrCreate(
+            //     ['role_name' => 'Director of Finance'],
+            //     ['id' => (string) Str::uuid(), 'description' => 'Finance Department Executive Management']
+            // );
+            // $payrollOfficerRole = Role::firstOrCreate(
+            //     ['role_name' => 'Payroll Officer'],
+            //     ['id' => (string) Str::uuid(), 'description' => 'Payroll Processing Controls']
+            // );
+            // $presidentRole = Role::firstOrCreate(
+            //     ['role_name' => 'President'],
+            //     ['id' => (string) Str::uuid(), 'description' => 'President of the Company']
+            // );
             $requesterRole = Role::firstOrCreate(
-                ['role_name' => 'Requester'],
+                ['role_name' => 'requester'],
                 ['id' => (string) Str::uuid(), 'description' => 'Standard Departmental Requisitioner']
             );
 

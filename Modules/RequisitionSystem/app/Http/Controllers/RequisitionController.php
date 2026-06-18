@@ -32,7 +32,7 @@ class RequisitionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
             }
 
-            $globalRoles = ['Budget Officer', 'VP', 'Director of Finance', 'Payroll Officer'];
+            $globalRoles = ['director-of-finance', 'payroll-officer'];
             $hasGlobalAccess = $user->roles()->whereIn('roles.role_name', $globalRoles)->exists();
 
             // Standard Users get automatically locked down here
