@@ -7,16 +7,16 @@ use Modules\RequisitionSystem\Models\Currency;
 
 class CurrencySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Currency::insert([
-            ['name' => 'Belize Dollar', 'symbol' => 'BZ$'],
-            ['name' => 'US Dollar', 'symbol' => '$'],
-            ['name' => 'Euro', 'symbol' => '€'],
-            ['name' => 'British Pound', 'symbol' => '£'],
-        ]);
+        $currencies = [
+            ['id' => 1, 'name' => 'BZD', 'symbol' => 'BZ$'],
+            ['id' => 2, 'name' => 'USD', 'symbol' => '$'],
+            ['id' => 3, 'name' => 'EUR', 'symbol' => '€'],
+        ];
+
+        foreach ($currencies as $currency) {
+            Currency::updateOrCreate(['id' => $currency['id']], $currency);
+        }
     }
 }

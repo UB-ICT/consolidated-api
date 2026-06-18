@@ -10,6 +10,8 @@ class ConversionRate extends Model
 {
     use HasFactory;
 
+    protected $connection = 'porsql';
+
     /**
      * The attributes that are mass assignable.
      */

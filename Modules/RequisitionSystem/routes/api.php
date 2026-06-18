@@ -44,6 +44,12 @@ Route::group([
     Route::apiResource('pipelines', PipelineController::class);
 
     Route::apiResource('requisitions', RequisitionController::class);
+    Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);
+    Route::post('requisitions/{requisition}/attachments', [AttachmentController::class, 'store']);
+    Route::get('attachments/{attachment}', [AttachmentController::class, 'show']);
+    Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download']);
+    Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy']);
+
     Route::get('/cost-center', [RequisitionController::class, 'byCostCenter']);
 
     Route::apiResource('stages', StageController::class);
@@ -57,8 +63,4 @@ Route::group([
     Route::apiResource('addresses', AddressController::class);
     Route::apiResource('approvals', ApprovalController::class);
     Route::apiResource('conversionRates', ConversionRateController::class);
-
-    Route::post('/upload', [AttachmentController::class, 'uploadRequisitionSystemPhoto']);
-    Route::post('/signature', [AttachmentController::class, 'uploadSignatureCanvas']);
-    Route::get('/download/{fileType}/{fileName}', [AttachmentController::class, 'downloadRequisitionSystemFile']);
 });

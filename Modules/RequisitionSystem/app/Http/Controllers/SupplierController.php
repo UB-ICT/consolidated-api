@@ -16,7 +16,7 @@ class SupplierController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Supplier::all(),
+            'data' => Supplier::with('status')->orderBy('name')->get(),
         ]);
     }
 

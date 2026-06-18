@@ -14,12 +14,14 @@ class RequisitionSeeder extends Seeder
             [
                 'number' => 'REQ-0001',
                 'cost_center_id' => 1,
-                'supplier_id' => 1,
                 'status_id' => 1,
                 'currency_id' => 1,
-                'conversion_rate_id' => 1,
                 'total' => 100,
                 'stage_id' => 1,
+                'priority' => 'routine',
+                'expected_delivery_date' => now()->addWeek()->format('Y-m-d'),
+                'is_recurring' => false,
+                'reminder_date' => null,
                 'date_prepared' => now(),
             ],
         ]);

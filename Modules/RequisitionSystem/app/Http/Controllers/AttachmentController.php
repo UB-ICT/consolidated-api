@@ -3,161 +3,132 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Modules\RequisitionSystem\Models\Attachment;
+use Modules\RequisitionSystem\Models\Requisition;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentController extends Controller
 {
-    /**
-     * Upload photos or documents associated with a requisition or supplier.
-     */
-    public function uploadRequisitionSystemPhoto(Request $request): JsonResponse
+    public function index(Requisition $requisition): JsonResponse
     {
-        try {
-            // Validate incoming payload
-            $request->validate([
-                'file'           => 'required', // Can be an array or a single file
-                'requisition_id' => 'nullable|integer',
-                'supplier_id'    => 'nullable|integer',
-                'uploaded_by'    => 'required|integer', // e.g., auth()->id() passed from front-end
-            ]);
+        $attachments = $requisition->attachments()
+            ->with('supplier.status')
+            ->latest()
+            ->get();
 
-            if (!$request->hasFile('file')) {
-                throw new \Exception('No files were uploaded.');
-            }
-
-            $files = $request->file('file');
-            if (!is_array($files)) {
-                $files = [$files];
-            }
-
-            $result = [];
-
-            foreach ($files as $file) {
-                if ($file->isValid()) {
-                    // Generate a safe unique name
-                    $fileName = Str::random(40) . '.' . $file->getClientOriginalExtension();
-
-                    // Laravel Store: saves to storage/app/private/uploads/photos (secured)
-                    $storedPath = $file->storeAs('uploads/photos', $fileName, 'local');
-
-                    // Save the metadata record into the Database via Attachment Model
-                    $attachment = Attachment::create([
-                        'file_name'      => $file->getClientOriginalName(),
-                        'file_path'      => $storedPath,
-                        'uploaded_by'    => $request->input('uploaded_by'),
-                        'requisition_id' => $request->input('requisition_id'),
-                        'supplier_id'    => $request->input('supplier_id'),
-                    ]);
-
-                    $result[] = [
-                        "id"             => $attachment->id,
-                        "original_name"  => $attachment->file_name,
-                        "generated_name" => $fileName,
-                        "file_path"      => $attachment->file_path,
-                    ];
-
-                    Log::info("Attachment saved to DB ID: {$attachment->id} - {$attachment->file_name}");
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Files uploaded and attached successfully.',
-                'data'    => $result
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error('File upload error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data'    => null
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $attachments,
+        ]);
     }
 
-    /**
-     * Store base64 digital signatures directly linked to an Attachment record.
-     */
-    public function uploadSignatureCanvas(Request $request): JsonResponse
+    public function store(Request $request, Requisition $requisition): JsonResponse
     {
-        try {
-            $request->validate([
-                'signature'      => 'required|string',
-                'requisition_id' => 'nullable|integer',
-                'uploaded_by'    => 'required|integer',
-            ]);
+        $validated = $request->validate([
+            'file'        => 'required|file|mimes:pdf|max:10240',
+            'supplier_id' => 'required|integer|exists:porsql.suppliers,id',
+        ]);
 
-            $signatureData = $request->signature;
-            $signatureData = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
-            $signatureData = str_replace(' ', '+', $signatureData);
-            $decodedSignature = base64_decode($signatureData, true);
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
 
-            if ($decodedSignature === false) {
-                throw new \Exception("Invalid signature format");
-            }
-
-            // Define folder layout safely within Laravel framework storage
-            $fileName = Str::uuid() . '.png';
-            $relativePath = 'uploads/signatures/' . $fileName;
-
-            // Save the raw file directly via Storage system
-            Storage::disk('local')->put($relativePath, $decodedSignature);
-
-            // Persist the signature as an item in your attachment registry table
-            $attachment = Attachment::create([
-                'file_name'      => 'signature_' . time() . '.png',
-                'file_path'      => $relativePath,
-                'uploaded_by'    => $request->input('uploaded_by'),
-                'requisition_id' => $request->input('requisition_id'),
-                'supplier_id'    => null,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Signature saved and registered successfully',
-                'data'    => [
-                    'id'        => $attachment->id,
-                    'file_path' => $attachment->file_path
-                ]
-            ], 201);
-        } catch (\Throwable $e) {
-            Log::error("Signature storage failure: ", ['error' => $e->getMessage()]);
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+                'message' => 'Unauthenticated.',
+            ], 401);
         }
+
+        $file = $validated['file'];
+        $fileName = Str::uuid() . '.pdf';
+        $storedPath = $file->storeAs('uploads/quotes', $fileName, 'local');
+
+        $attachment = Attachment::create([
+            'file_name'      => $file->getClientOriginalName(),
+            'file_path'      => $storedPath,
+            'uploaded_by'    => $user->id,
+            'requisition_id' => $requisition->id,
+            'supplier_id'    => $validated['supplier_id'],
+        ]);
+
+        $requisition->suppliers()->syncWithoutDetaching([
+            $validated['supplier_id'] => [
+                'is_recommended' => false,
+            ],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Quote uploaded successfully.',
+            'data' => $attachment->load('supplier.status'),
+        ], 201);
     }
 
-    /**
-     * Download secure files via file path strings.
-     */
-    public function downloadRequisitionSystemFile(string $fileType, string $fileName)
+    public function show(Attachment $attachment): StreamedResponse|JsonResponse
     {
-        try {
-            // Reconstructs target string matching your store layouts safely
-            $filePath = storage_path('app/uploads/' . $fileType . '/' . $fileName);
+        return $this->streamFile($attachment, inline: true);
+    }
 
-            if (file_exists($filePath)) {
-                return response()->download($filePath);
+    public function download(Attachment $attachment): StreamedResponse|JsonResponse
+    {
+        return $this->streamFile($attachment, inline: false);
+    }
+
+    public function destroy(Attachment $attachment): JsonResponse
+    {
+        DB::connection('porsql')->transaction(function () use ($attachment) {
+            $requisitionId = $attachment->requisition_id;
+            $supplierId = $attachment->supplier_id;
+
+            if (Storage::disk('local')->exists($attachment->file_path)) {
+                Storage::disk('local')->delete($attachment->file_path);
             }
 
+            $attachment->delete();
+
+            $hasOtherAttachments = Attachment::query()
+                ->where('requisition_id', $requisitionId)
+                ->where('supplier_id', $supplierId)
+                ->exists();
+
+            if (!$hasOtherAttachments) {
+                Requisition::find($requisitionId)?->suppliers()->detach($supplierId);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Quote removed successfully.',
+        ]);
+    }
+
+    private function streamFile(
+        Attachment $attachment,
+        bool $inline
+    ): StreamedResponse|JsonResponse {
+        if (!Storage::disk('local')->exists($attachment->file_path)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Requested file asset could not be located.',
-                'data'    => null
+                'message' => 'File not found.',
             ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data'    => null
-            ], 500);
         }
+
+        $disposition = $inline ? 'inline' : 'attachment';
+
+        return Storage::disk('local')->response(
+            $attachment->file_path,
+            $attachment->file_name,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => "{$disposition}; filename=\"{$attachment->file_name}\"",
+            ]
+        );
     }
 }

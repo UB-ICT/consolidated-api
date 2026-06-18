@@ -116,7 +116,6 @@ class RequisitionSystemModelsTest extends TestCase
             'cost_center_id',
             'status_id',
             'currency_id',
-            'conversion_rate_id',
             'total',
             'priority',
             'expected_delivery_date',
@@ -124,12 +123,13 @@ class RequisitionSystemModelsTest extends TestCase
             'date_prepared',
             'is_recurring',
             'reminder_date',
-            'expiration_date',
         ]);
 
         $this->assertModelCastsInclude(Requisition::class, [
             'date_prepared' => 'datetime:M d, Y',
             'expected_delivery_date' => 'date:Y-m-d',
+            'reminder_date' => 'date:Y-m-d',
+            'is_recurring' => 'boolean',
         ]);
     }
 

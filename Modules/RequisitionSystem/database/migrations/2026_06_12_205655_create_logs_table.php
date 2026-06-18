@@ -3,26 +3,24 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\RequisitionSystem\Database\Migrations\EnsuresTimestamps;
 
 return new class extends Migration
 {
+    use EnsuresTimestamps;
+
     protected $connection = 'porsql';
 
     public function up(): void
     {
-        Schema::connection($this->connection)->create('logs', function (Blueprint $table) {
-            $table->id(); // integer primary key (bigint)
-
+        $this->ensureTableWithTimestamps('logs', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('requisition_id')->constrained('requisitions')->onDelete('cascade');
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
-
-            // Keeps it as a UUID if your app's core users table actually uses UUIDs
             $table->uuid('user_id');
-
             $table->string('comments')->nullable();
             $table->timestamps();
 
-            // Foreign key constraint for your users table
             $table->foreign('user_id')
                 ->references('id')
                 ->on('public.users')

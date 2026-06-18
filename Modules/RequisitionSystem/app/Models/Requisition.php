@@ -17,7 +17,6 @@ class Requisition extends Model
         'cost_center_id',
         'status_id',
         'currency_id',
-        'conversion_rate_id',
         'total',
         'priority',
         'expected_delivery_date',
@@ -25,12 +24,13 @@ class Requisition extends Model
         'date_prepared',
         'is_recurring',
         'reminder_date',
-        'expiration_date',
     ];
 
     protected $casts = [
         'date_prepared' => 'datetime:M d, Y',
         'expected_delivery_date' => 'date:Y-m-d',
+        'reminder_date' => 'date:Y-m-d',
+        'is_recurring' => 'boolean',
         'total' => 'decimal:2',
     ];
 
@@ -73,6 +73,11 @@ class Requisition extends Model
     public function status(): BelongsTo
     {
         return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class, 'requisition_id');
     }
 
     /**

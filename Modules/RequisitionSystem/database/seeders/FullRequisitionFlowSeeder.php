@@ -153,9 +153,9 @@ class FullRequisitionFlowSeeder extends Seeder
             // 6. CURRENCY
             // ==============================================================
             $currency = Currency::firstOrCreate([
-                'name' => 'Belize Dollar'
+                'name' => 'BZD',
             ], [
-                'symbol' => 'BZ$'
+                'symbol' => 'BZ$',
             ]);
 
             // ==============================================================
@@ -225,15 +225,13 @@ class FullRequisitionFlowSeeder extends Seeder
                 'cost_center_id' => $ictCC->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
-                'conversion_rate_id' => $rate->id,
                 'total' => 0,
-                'priority' => 'high',
+                'priority' => 'urgent',
                 'expected_delivery_date' => now()->addDays(10)->format('Y-m-d'),
-                'stage_id' => $directorApproval->id, // 📍 Advanced
+                'stage_id' => $directorApproval->id,
                 'date_prepared' => now(),
                 'is_recurring' => false,
                 'reminder_date' => null,
-                'expiration_date' => null,
             ]);
 
             // Requisition 2: Sitting at Stage 3 (Budget Officer)
@@ -242,15 +240,13 @@ class FullRequisitionFlowSeeder extends Seeder
                 'cost_center_id' => $fstCC->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
-                'conversion_rate_id' => $rate->id,
                 'total' => 0,
-                'priority' => 'medium',
+                'priority' => 'standard',
                 'expected_delivery_date' => now()->addWeeks(3)->format('Y-m-d'),
-                'stage_id' => $stageBudgetOfficer->id, // 📍 Advanced
+                'stage_id' => $stageBudgetOfficer->id,
                 'date_prepared' => now()->subDays(3),
                 'is_recurring' => true,
                 'reminder_date' => now()->addDays(5)->format('Y-m-d'),
-                'expiration_date' => now()->addDays(35)->format('Y-m-d'),
             ]);
 
             // Requisition 3: Sitting at Stage 4 (VP Approval)
@@ -259,15 +255,13 @@ class FullRequisitionFlowSeeder extends Seeder
                 'cost_center_id' => $medCC->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
-                'conversion_rate_id' => $rate->id,
                 'total' => 0,
-                'priority' => 'low',
+                'priority' => 'routine',
                 'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'),
-                'stage_id' => $vpApproval->id, // 📍 Advanced
+                'stage_id' => $vpApproval->id,
                 'date_prepared' => now()->subDays(6),
                 'is_recurring' => true,
                 'reminder_date' => now()->format('Y-m-d'),
-                'expiration_date' => now()->addDays(30)->format('Y-m-d'),
             ]);
 
             // Requisition 4: Kept at Stage 1 (Submitted)
@@ -276,15 +270,13 @@ class FullRequisitionFlowSeeder extends Seeder
                 'cost_center_id' => $accCC->id,
                 'status_id' => $status->id,
                 'currency_id' => $currency->id,
-                'conversion_rate_id' => $rate->id,
                 'total' => 0,
-                'priority' => 'high',
+                'priority' => 'urgent',
                 'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
-                'stage_id' => $submitted->id, // 📍 Kept initial
+                'stage_id' => $submitted->id,
                 'date_prepared' => now(),
                 'is_recurring' => false,
                 'reminder_date' => null,
-                'expiration_date' => null,
             ]);
 
             // ==============================================================

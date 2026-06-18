@@ -12,9 +12,9 @@ class ConversionRateSeeder extends Seeder
     {
         // get existing currency OR create one safely
         $currency = Currency::firstOrCreate([
-            'name' => 'Belize Dollar',
+            'name' => 'BZD',
         ], [
-            'symbol' => 'BZ$'
+            'symbol' => 'BZ$',
         ]);
 
         ConversionRate::create([

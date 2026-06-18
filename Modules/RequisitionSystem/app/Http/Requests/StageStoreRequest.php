@@ -14,8 +14,7 @@ class StageStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'        => 'required|string|max:255',
-            'pipeline_id' => 'required|integer|exists:pipelines,id',
+            'name' => 'required|string|max:255',
         ];
     }
 }
