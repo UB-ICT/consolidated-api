@@ -245,15 +245,15 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
-        foreach ($items as $index => $item) {
+        foreach ($items as $item) {
             Item::create([
-                'description' => $item['description'],
-                'quantity' => (int) $item['quantity'],
-                'unit_cost' => $item['unit_cost'],
-                'total' => $item['quantity'] * $item['unit_cost'],
-                'comments' => $item['comments'] ?? null,
-                'line_item_number' => $index + 1,
-                'requisition_id' => $requisition->id,
+                'description'      => $item['description'],
+                'quantity'         => (int) $item['quantity'],
+                'unit_cost'        => $item['unit_cost'],
+                'total'            => $item['quantity'] * $item['unit_cost'],
+                'comments'         => $item['comments'] ?? null,
+                'line_item_number' => $item['line_item_number'],
+                'requisition_id'   => $requisition->id,
             ]);
         }
 

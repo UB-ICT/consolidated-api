@@ -410,7 +410,7 @@ class FullRequisitionFlowSeeder extends Seeder
                 'description'      => $item['description'],
                 'quantity'         => $item['quantity'],
                 'unit_cost'        => $item['unit_cost'],
-                'line_item_number' => $index + 1,
+                'line_item_number' => (string) ($index + 1),
                 'total'            => $item['quantity'] * $item['unit_cost'],
                 'requisition_id'   => $requisition->id,
             ]);

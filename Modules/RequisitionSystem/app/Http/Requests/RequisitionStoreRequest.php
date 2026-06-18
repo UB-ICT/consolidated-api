@@ -4,7 +4,10 @@ namespace Modules\RequisitionSystem\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\RequisitionSystem\Models\Status;
+use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
+use Modules\RequisitionSystem\Support\SupplierStatus;
 
 class RequisitionStoreRequest extends FormRequest
 {
@@ -49,8 +52,9 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.quoted_total'           => 'nullable|numeric|min:0',
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
 
-            'items'               => 'required|array|min:1',
-            'items.*.description' => 'required|string|max:255',
+            'items'                      => 'required|array|min:1',
+            'items.*.line_item_number'   => 'required|string|max:50',
+            'items.*.description'        => 'required|string|max:255',
             'items.*.quantity'    => 'required|numeric|min:1',
             'items.*.unit_cost'   => 'required|numeric|min:0',
             'items.*.comments'    => 'nullable|string|max:1000',
@@ -78,6 +82,27 @@ class RequisitionStoreRequest extends FormRequest
 
             foreach ($errors as $field => $message) {
                 $validator->errors()->add($field, $message);
+            }
+
+            $deletedStatusId = Status::where('name', SupplierStatus::DELETED)->value('id');
+
+            if (!$deletedStatusId) {
+                return;
+            }
+
+            $deletedSupplierIds = Supplier::query()
+                ->where('status_id', $deletedStatusId)
+                ->pluck('id');
+
+            foreach ($this->input('suppliers', []) as $index => $supplier) {
+                $supplierId = $supplier['supplier_id'] ?? null;
+
+                if ($supplierId && $deletedSupplierIds->contains((int) $supplierId)) {
+                    $validator->errors()->add(
+                        "suppliers.{$index}.supplier_id",
+                        'The selected supplier has been deleted.'
+                    );
+                }
             }
         });
     }

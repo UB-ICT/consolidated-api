@@ -4,6 +4,7 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\RequisitionSystem\Http\Requests\SupplierQuickStoreRequest;
@@ -12,24 +13,29 @@ use Modules\RequisitionSystem\Http\Requests\SupplierStoreRequest;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Support\GuardsSupplierReview;
+use Modules\RequisitionSystem\Support\SupplierStatus;
 
 class SupplierController extends Controller
 {
     use GuardsSupplierReview;
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
+
+        $query = Supplier::with('status')->orderBy('name');
+
+        if ($request->boolean('exclude_deleted')) {
+            $query->selectable();
+        }
 
         return response()->json([
             'success' => true,
             'meta'    => [
                 'can_review_suppliers' => $this->userCanReviewSuppliers($user),
             ],
-            'data' => Supplier::with('status')
-                ->orderBy('name')
-                ->get(),
+            'data' => $query->get(),
         ]);
     }
 
@@ -90,6 +96,13 @@ class SupplierController extends Controller
 
     public function update(SupplierStoreRequest $request, Supplier $supplier): JsonResponse
     {
+        if ($supplier->isDeleted()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Deleted suppliers cannot be updated.',
+            ], 422);
+        }
+
         $validated = $request->validated();
 
         $supplier->update([
@@ -111,11 +124,25 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier): JsonResponse
     {
-        $supplier->delete();
+        if ($supplier->isDeleted()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Supplier is already deleted.',
+                'data'    => $supplier->load('status'),
+            ]);
+        }
+
+        $deletedStatusId = Status::where('name', SupplierStatus::DELETED)->value('id')
+            ?? SupplierStatus::DELETED_ID;
+
+        $supplier->update([
+            'status_id' => $deletedStatusId,
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Supplier deleted successfully.',
+            'data'    => $supplier->refresh()->load('status'),
         ]);
     }
 
@@ -126,6 +153,13 @@ class SupplierController extends Controller
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
         $this->assertUserCanReviewSuppliers($user);
+
+        if ($supplier->isDeleted()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Deleted suppliers cannot be approved.',
+            ], 422);
+        }
 
         $approvedStatusId = Status::where('name', 'Approved')->value('id') ?? 3;
 
@@ -150,6 +184,13 @@ class SupplierController extends Controller
         $user = Auth::user();
         $this->assertUserCanReviewSuppliers($user);
 
+        if ($supplier->isDeleted()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Deleted suppliers cannot be rejected.',
+            ], 422);
+        }
+
         $rejectedStatusId = Status::where('name', 'Rejected')->value('id') ?? 4;
 
         $supplier->update([
@@ -161,6 +202,33 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier rejected successfully.',
+            'data'    => $supplier->refresh()->load('status'),
+        ]);
+    }
+
+    public function activate(Supplier $supplier): JsonResponse
+    {
+        if (!$supplier->isDeleted()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only deleted suppliers can be set to active.',
+            ], 422);
+        }
+
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $approvedStatusId = Status::where('name', SupplierStatus::APPROVED)->value('id')
+            ?? SupplierStatus::APPROVED_ID;
+
+        $supplier->update([
+            'status_id'           => $approvedStatusId,
+            'approved_by_user_id' => $user?->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Supplier set to active successfully.',
             'data'    => $supplier->refresh()->load('status'),
         ]);
     }
@@ -178,6 +246,10 @@ class SupplierController extends Controller
             'approved'     => $counts->get(3, 0),
             'rejected'     => $counts->get(4, 0),
             'under_review' => $counts->get(5, 0),
+            'deleted'      => $counts->get(
+                Status::where('name', SupplierStatus::DELETED)->value('id') ?? 7,
+                0
+            ),
         ];
 
         return response()->json([

@@ -13,5 +13,5 @@ class Status extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['name'];
+    protected $fillable = ['id', 'name'];
 }

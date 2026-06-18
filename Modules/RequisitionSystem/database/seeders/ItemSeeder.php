@@ -13,7 +13,7 @@ class ItemSeeder extends Seeder
             [
                 'description' => 'Office Chairs',
                 'quantity' => 2,
-                'line_item_number' => 1,
+                'line_item_number' => '1',
                 'unit_cost' => 50,
                 'total' => 100,
                 'comments' => 'Ergonomic chairs',

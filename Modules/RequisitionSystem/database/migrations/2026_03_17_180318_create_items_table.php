@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('description');
             $table->integer('quantity');
-            $table->integer('line_item_number');
+            $table->string('line_item_number', 50);
             $table->decimal('unit_cost', 10, 2);
             $table->decimal('total', 10, 2);
             $table->string('comments')->nullable();

@@ -16,7 +16,7 @@ class ItemStoreRequest extends FormRequest
         return [
             'description'      => 'required|string|max:255',
             'quantity'         => 'required|numeric|min:1',
-            'line_item_number' => 'required|integer|min:1',
+            'line_item_number' => 'required|string|max:50',
             'unit_cost'        => 'required|numeric|min:0',
             'total'            => 'required|numeric|min:0', // Changed to required since we guarantee it in prepare
             'comments'         => 'nullable|string|max:1000',

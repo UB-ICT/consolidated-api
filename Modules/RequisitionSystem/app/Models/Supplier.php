@@ -2,10 +2,12 @@
 
 namespace Modules\RequisitionSystem\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\RequisitionSystem\Support\SupplierStatus;
 
 class Supplier extends Model
 {
@@ -21,6 +23,22 @@ class Supplier extends Model
         'notes',
         'approved_by_user_id',
     ];
+
+    public function scopeSelectable(Builder $query): Builder
+    {
+        $deletedStatusId = Status::where('name', SupplierStatus::DELETED)->value('id');
+
+        if (!$deletedStatusId) {
+            return $query;
+        }
+
+        return $query->where('status_id', '!=', $deletedStatusId);
+    }
+
+    public function isDeleted(): bool
+    {
+        return strcasecmp($this->status?->name ?? '', SupplierStatus::DELETED) === 0;
+    }
 
     /**
      * Get the banking details for the supplier.

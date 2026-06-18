@@ -62,6 +62,7 @@ Route::group([
     Route::post('suppliers/quick', [SupplierController::class, 'quickStore']);
     Route::post('suppliers/{supplier}/approve', [SupplierController::class, 'approve']);
     Route::post('suppliers/{supplier}/reject', [SupplierController::class, 'reject']);
+    Route::post('suppliers/{supplier}/activate', [SupplierController::class, 'activate']);
     Route::apiResource('suppliers', SupplierController::class);
 
     Route::apiResource('userStages', UserStageController::class);
