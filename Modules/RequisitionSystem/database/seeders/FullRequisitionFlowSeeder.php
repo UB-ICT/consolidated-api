@@ -218,66 +218,71 @@ class FullRequisitionFlowSeeder extends Seeder
             // ==============================================================
             // 12. REQUISITIONS (Distributed Across Explicit Stages)
             // ==============================================================
+            $year = now()->format('Y');
 
-            // Requisition 1: Sitting at Stage 2 (Director's Approval)
-            $requisition1 = Requisition::create([
-                'number' => 'REQ-' . now()->format('Y') . '-0001',
-                'cost_center_id' => $ictCC->id,
-                'status_id' => $status->id,
-                'currency_id' => $currency->id,
-                'total' => 0,
-                'priority' => 'urgent',
-                'expected_delivery_date' => now()->addDays(10)->format('Y-m-d'),
-                'stage_id' => $directorApproval->id,
-                'date_prepared' => now(),
-                'is_recurring' => false,
-                'reminder_date' => null,
-            ]);
+            $requisition1 = Requisition::updateOrCreate(
+                ['number' => "REQ-{$year}-0001"],
+                [
+                    'cost_center_id' => $ictCC->id,
+                    'status_id' => $status->id,
+                    'currency_id' => $currency->id,
+                    'total' => 0,
+                    'priority' => 'urgent',
+                    'expected_delivery_date' => now()->addDays(10)->format('Y-m-d'),
+                    'stage_id' => $directorApproval->id,
+                    'date_prepared' => now(),
+                    'is_recurring' => false,
+                    'reminder_date' => null,
+                ]
+            );
 
-            // Requisition 2: Sitting at Stage 3 (Budget Officer)
-            $requisition2 = Requisition::create([
-                'number' => 'REQ-' . now()->format('Y') . '-0002',
-                'cost_center_id' => $fstCC->id,
-                'status_id' => $status->id,
-                'currency_id' => $currency->id,
-                'total' => 0,
-                'priority' => 'standard',
-                'expected_delivery_date' => now()->addWeeks(3)->format('Y-m-d'),
-                'stage_id' => $stageBudgetOfficer->id,
-                'date_prepared' => now()->subDays(3),
-                'is_recurring' => true,
-                'reminder_date' => now()->addDays(5)->format('Y-m-d'),
-            ]);
+            $requisition2 = Requisition::updateOrCreate(
+                ['number' => "REQ-{$year}-0002"],
+                [
+                    'cost_center_id' => $fstCC->id,
+                    'status_id' => $status->id,
+                    'currency_id' => $currency->id,
+                    'total' => 0,
+                    'priority' => 'standard',
+                    'expected_delivery_date' => now()->addWeeks(3)->format('Y-m-d'),
+                    'stage_id' => $stageBudgetOfficer->id,
+                    'date_prepared' => now()->subDays(3),
+                    'is_recurring' => true,
+                    'reminder_date' => now()->addDays(5)->format('Y-m-d'),
+                ]
+            );
 
-            // Requisition 3: Sitting at Stage 4 (VP Approval)
-            $requisition3 = Requisition::create([
-                'number' => 'REQ-' . now()->format('Y') . '-0003',
-                'cost_center_id' => $medCC->id,
-                'status_id' => $status->id,
-                'currency_id' => $currency->id,
-                'total' => 0,
-                'priority' => 'routine',
-                'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'),
-                'stage_id' => $vpApproval->id,
-                'date_prepared' => now()->subDays(6),
-                'is_recurring' => true,
-                'reminder_date' => now()->format('Y-m-d'),
-            ]);
+            $requisition3 = Requisition::updateOrCreate(
+                ['number' => "REQ-{$year}-0003"],
+                [
+                    'cost_center_id' => $medCC->id,
+                    'status_id' => $status->id,
+                    'currency_id' => $currency->id,
+                    'total' => 0,
+                    'priority' => 'routine',
+                    'expected_delivery_date' => now()->addMonths(1)->format('Y-m-d'),
+                    'stage_id' => $vpApproval->id,
+                    'date_prepared' => now()->subDays(6),
+                    'is_recurring' => true,
+                    'reminder_date' => now()->format('Y-m-d'),
+                ]
+            );
 
-            // Requisition 4: Kept at Stage 1 (Submitted)
-            $requisition4 = Requisition::create([
-                'number' => 'REQ-' . now()->format('Y') . '-0004',
-                'cost_center_id' => $accCC->id,
-                'status_id' => $status->id,
-                'currency_id' => $currency->id,
-                'total' => 0,
-                'priority' => 'urgent',
-                'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
-                'stage_id' => $submitted->id,
-                'date_prepared' => now(),
-                'is_recurring' => false,
-                'reminder_date' => null,
-            ]);
+            $requisition4 = Requisition::updateOrCreate(
+                ['number' => "REQ-{$year}-0004"],
+                [
+                    'cost_center_id' => $accCC->id,
+                    'status_id' => $status->id,
+                    'currency_id' => $currency->id,
+                    'total' => 0,
+                    'priority' => 'urgent',
+                    'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
+                    'stage_id' => $submitted->id,
+                    'date_prepared' => now(),
+                    'is_recurring' => false,
+                    'reminder_date' => null,
+                ]
+            );
 
             // ==============================================================
             // 12b. SOURCING MATRIX BINDING
@@ -301,9 +306,9 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 13. LINE ITEMS 
+            // 13. LINE ITEMS
             // ==============================================================
-            $ictItems = collect([
+            $ictItems = $this->seedLineItems($requisition1, [
                 ['description' => '27-inch 4K Development Monitors', 'quantity' => 5, 'unit_cost' => 350.00],
                 ['description' => 'Mechanical Keyboards (Hot-swappable)', 'quantity' => 10, 'unit_cost' => 85.00],
                 ['description' => 'Ergonomic Mesh Office Chairs', 'quantity' => 4, 'unit_cost' => 220.00],
@@ -314,19 +319,10 @@ class FullRequisitionFlowSeeder extends Seeder
                 ['description' => 'USB-C Dual Display Docking Stations', 'quantity' => 6, 'unit_cost' => 130.00],
                 ['description' => 'External 4TB Rugged Backup Hard Drives', 'quantity' => 4, 'unit_cost' => 125.00],
                 ['description' => 'Anti-Static Wrist Straps & Toolkit Combo', 'quantity' => 5, 'unit_cost' => 45.00],
-            ])->map(function ($item, $index) use ($requisition1) {
-                return Item::create([
-                    'description'      => $item['description'],
-                    'quantity'         => $item['quantity'],
-                    'unit_cost'        => $item['unit_cost'],
-                    'line_item_number' => $index + 1,
-                    'total'            => $item['quantity'] * $item['unit_cost'],
-                    'requisition_id'   => $requisition1->id,
-                ]);
-            });
+            ]);
             $requisition1->update(['total' => $ictItems->sum('total')]);
 
-            $fstItems = collect([
+            $fstItems = $this->seedLineItems($requisition2, [
                 ['description' => 'Digital Binocular Compound Microscopes', 'quantity' => 2, 'unit_cost' => 650.00],
                 ['description' => 'Borosilicate Glass Beakers Set (250ml/500ml)', 'quantity' => 12, 'unit_cost' => 15.00],
                 ['description' => 'Graduated Measuring Cylinders (100ml)', 'quantity' => 10, 'unit_cost' => 18.00],
@@ -337,19 +333,10 @@ class FullRequisitionFlowSeeder extends Seeder
                 ['description' => 'Centrifuge Tubes Rack (50ml Capacity)', 'quantity' => 8, 'unit_cost' => 12.50],
                 ['description' => 'Distilled Water Purifier Cartridges', 'quantity' => 6, 'unit_cost' => 65.00],
                 ['description' => 'Laboratory Safety Goggles (Anti-Fog)', 'quantity' => 30, 'unit_cost' => 8.00],
-            ])->map(function ($item, $index) use ($requisition2) {
-                return Item::create([
-                    'description'      => $item['description'],
-                    'quantity'         => $item['quantity'],
-                    'unit_cost'        => $item['unit_cost'],
-                    'line_item_number' => $index + 1,
-                    'total'            => $item['quantity'] * $item['unit_cost'],
-                    'requisition_id'   => $requisition2->id,
-                ]);
-            });
+            ]);
             $requisition2->update(['total' => $fstItems->sum('total')]);
 
-            $medItems = collect([
+            $medItems = $this->seedLineItems($requisition3, [
                 ['description' => 'Automated External Defibrillator (AED)', 'quantity' => 1, 'unit_cost' => 1800.00],
                 ['description' => 'Digital Blood Pressure Monitors', 'quantity' => 6, 'unit_cost' => 75.00],
                 ['description' => 'Infrared Non-Contact Forehead Thermometers', 'quantity' => 10, 'unit_cost' => 45.00],
@@ -360,32 +347,14 @@ class FullRequisitionFlowSeeder extends Seeder
                 ['description' => 'Adjustable Height IV Fluid Poles', 'quantity' => 4, 'unit_cost' => 90.00],
                 ['description' => 'Anatomical Medical Training Models', 'quantity' => 2, 'unit_cost' => 320.00],
                 ['description' => 'Disposable Syringes with Needles (Box of 500)', 'quantity' => 3, 'unit_cost' => 110.00],
-            ])->map(function ($item, $index) use ($requisition3) {
-                return Item::create([
-                    'description'      => $item['description'],
-                    'quantity'         => $item['quantity'],
-                    'unit_cost'        => $item['unit_cost'],
-                    'line_item_number' => $index + 1,
-                    'total'            => $item['quantity'] * $item['unit_cost'],
-                    'requisition_id'   => $requisition3->id,
-                ]);
-            });
+            ]);
             $requisition3->update(['total' => $medItems->sum('total')]);
 
-            $accItems = collect([
+            $accItems = $this->seedLineItems($requisition4, [
                 ['description' => 'Heavy Duty Cross-Cut Paper Shredder', 'quantity' => 1, 'unit_cost' => 450.00],
                 ['description' => 'Desktop Financial Calculators', 'quantity' => 5, 'unit_cost' => 60.00],
                 ['description' => 'A4 Thermal Receipt Paper Rolls (Pack of 50)', 'quantity' => 5, 'unit_cost' => 90.00],
-            ])->map(function ($item, $index) use ($requisition4) {
-                return Item::create([
-                    'description'      => $item['description'],
-                    'quantity'         => $item['quantity'],
-                    'unit_cost'        => $item['unit_cost'],
-                    'line_item_number' => $index + 1,
-                    'total'            => $item['quantity'] * $item['unit_cost'],
-                    'requisition_id'   => $requisition4->id,
-                ]);
-            });
+            ]);
             $requisition4->update(['total' => $accItems->sum('total')]);
 
             // ==============================================================
@@ -425,6 +394,25 @@ class FullRequisitionFlowSeeder extends Seeder
                 'stage_id' => $vpApproval->id,
             ], [
                 'status' => 'pending'
+            ]);
+        });
+    }
+
+    /**
+     * @param  array<int, array{description: string, quantity: int|float, unit_cost: float}>  $items
+     */
+    private function seedLineItems(Requisition $requisition, array $items)
+    {
+        $requisition->items()->delete();
+
+        return collect($items)->map(function (array $item, int $index) use ($requisition) {
+            return Item::create([
+                'description'      => $item['description'],
+                'quantity'         => $item['quantity'],
+                'unit_cost'        => $item['unit_cost'],
+                'line_item_number' => $index + 1,
+                'total'            => $item['quantity'] * $item['unit_cost'],
+                'requisition_id'   => $requisition->id,
             ]);
         });
     }
