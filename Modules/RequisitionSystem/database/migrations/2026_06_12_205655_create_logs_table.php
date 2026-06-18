@@ -64,30 +64,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        $schema = Schema::connection($this->connection);
-
-        if (!$schema->hasTable('logs')) {
-            return;
-        }
-
-        if (!$schema->hasColumn('logs', 'stage_id')) {
-            $schema->table('logs', function (Blueprint $table) {
-                $table->foreignId('stage_id')
-                    ->nullable()
-                    ->constrained('stages');
-            });
-        }
-
-        if ($schema->hasColumn('logs', 'summary')) {
-            $schema->table('logs', function (Blueprint $table) {
-                $table->dropColumn('summary');
-            });
-        }
-
-        if ($schema->hasColumn('logs', 'action')) {
-            $schema->table('logs', function (Blueprint $table) {
-                $table->dropColumn('action');
-            });
-        }
+        Schema::connection($this->connection)->dropIfExists('logs');
     }
 };

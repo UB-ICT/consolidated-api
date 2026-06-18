@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\RequisitionSystem\Database\Migrations\EnsuresTimestamps;
 
@@ -22,6 +23,13 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection($this->connection)->dropIfExists('cost_centers');
+        $schema = Schema::connection($this->connection);
+
+        $schema->dropIfExists('user_cost_center');
+        $schema->dropIfExists('por_users');
+
+        DB::connection($this->connection)->statement(
+            'DROP TABLE IF EXISTS cost_centers CASCADE'
+        );
     }
 };

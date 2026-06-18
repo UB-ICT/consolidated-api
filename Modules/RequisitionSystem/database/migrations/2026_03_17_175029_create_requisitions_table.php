@@ -41,6 +41,18 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection($this->connection)->dropIfExists('requisitions');
+        $schema = Schema::connection($this->connection);
+
+        foreach ([
+            'logs',
+            'requisition_suppliers',
+            'items',
+            'attachments',
+            'approvals',
+        ] as $dependentTable) {
+            $schema->dropIfExists($dependentTable);
+        }
+
+        $schema->dropIfExists('requisitions');
     }
 };

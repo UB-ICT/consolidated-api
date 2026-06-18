@@ -22,14 +22,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $schema = Schema::connection($this->connection);
-
-        if ($schema->hasTable('stages') && !$schema->hasColumn('stages', 'pipeline_id')) {
-            $schema->table('stages', function (Blueprint $table) {
-                $table->foreignId('pipeline_id')
-                    ->nullable()
-                    ->constrained('pipelines');
-            });
-        }
+        // Dropping pipeline_id during refresh rollback would recreate a FK that
+        // blocks dropping pipelines before stages is removed.
     }
 };
