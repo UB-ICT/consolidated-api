@@ -8,6 +8,8 @@ class CostCenter extends Model
 {
     protected $connection = 'porsql';
 
+    protected $connection = 'porsql';
+
     /**
      * The attributes that are mass assignable.
      */

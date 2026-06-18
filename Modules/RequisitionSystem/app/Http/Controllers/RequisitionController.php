@@ -4,10 +4,16 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Modules\RequisitionSystem\Models\ConversionRate;
+use Modules\RequisitionSystem\Models\Currency;
+use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Requisition;
+use Modules\RequisitionSystem\Models\Stage;
+use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class RequisitionController extends Controller
 {
@@ -113,38 +119,24 @@ class RequisitionController extends Controller
         ], 201);
     }
 
-    /**
-     * Show an individual requisition with its attached sourcing vendors
-     */
-    public function show(Requisition $requisition)
+    public function show(Requisition $requisition): JsonResponse
     {
+        $requisition->load(['items', 'costCenter', 'supplier', 'status']);
+
         return response()->json([
             'success' => true,
             'data' => $requisition->load(['suppliers', 'items', 'costCenter', 'stage']),
         ]);
     }
 
-    /**
-     * Update an existing requisition and its multi-vendor configurations
-     */
-    public function update(RequisitionStoreRequest $request, Requisition $requisition)
-    {
-        $validated = $request->validated();
-
-        DB::connection('porsql')->transaction(function () use ($requisition, $request) {
-            $requisition->update($request->except('suppliers'));
-
-            $syncData = [];
-            foreach ($request->input('suppliers', []) as $supplier) {
-                $syncData[$supplier['supplier_id']] = [
-                    'is_recommended'         => $supplier['is_recommended'] ?? false,
-                    'quoted_total'           => $supplier['quoted_total'] ?? null,
-                    'quote_reference_number' => $supplier['quote_reference_number'] ?? null,
-                ];
-            }
-
-            $requisition->suppliers()->sync($syncData);
-        });
+    public function update(
+        RequisitionStoreRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        $requisition = $this->persistRequisition(
+            $request->validated(),
+            $requisition
+        );
 
         return response()->json([
             'success' => true,
@@ -153,10 +145,7 @@ class RequisitionController extends Controller
         ]);
     }
 
-    /**
-     * Delete requisition
-     */
-    public function destroy(Requisition $requisition)
+    public function destroy(Requisition $requisition): JsonResponse
     {
         $requisition->delete();
 
@@ -164,5 +153,64 @@ class RequisitionController extends Controller
             'success' => true,
             'message' => 'Requisition deleted successfully.',
         ]);
+    }
+
+    private function persistRequisition(
+        array $data,
+        ?Requisition $requisition = null
+    ): Requisition {
+        return DB::connection('porsql')->transaction(function () use ($data, $requisition) {
+            $items = $data['items'];
+            unset($data['items']);
+
+            $data['total'] = collect($items)->sum(
+                fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
+            );
+
+            $data['number'] = $data['number']
+                ?? $this->generateRequisitionNumber();
+
+            $data['status_id'] = $data['status_id']
+                ?? Status::where('name', 'Draft')->value('id')
+                ?? Status::query()->value('id');
+
+            $data['currency_id'] = $data['currency_id']
+                ?? Currency::query()->value('id');
+
+            $data['conversion_rate_id'] = $data['conversion_rate_id']
+                ?? ConversionRate::query()->value('id');
+
+            $data['stage_id'] = $data['stage_id']
+                ?? Stage::query()->value('id');
+
+            if ($requisition) {
+                $requisition->update($data);
+                $requisition->items()->delete();
+            } else {
+                $requisition = Requisition::create($data);
+            }
+
+            foreach ($items as $index => $item) {
+                Item::create([
+                    'description' => $item['description'],
+                    'quantity' => (int) $item['quantity'],
+                    'unit_cost' => $item['unit_cost'],
+                    'total' => $item['quantity'] * $item['unit_cost'],
+                    'comments' => $item['comments'] ?? null,
+                    'line_item_number' => $index + 1,
+                    'requisition_id' => $requisition->id,
+                ]);
+            }
+
+            return $requisition->fresh(['items', 'costCenter', 'supplier', 'status']);
+        });
+    }
+
+    private function generateRequisitionNumber(): string
+    {
+        $year = now()->format('Y');
+        $count = Requisition::whereYear('created_at', $year)->count() + 1;
+
+        return sprintf('REQ-%s-%04d', $year, $count);
     }
 }

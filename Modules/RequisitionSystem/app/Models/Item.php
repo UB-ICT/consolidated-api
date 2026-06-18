@@ -8,14 +8,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Item extends Model
 {
 
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = ['description', 'quantity', 'line_item_number', 'unit_cost', 'total', 'comments', 'requisition_id'];
+    protected $connection = 'porsql';
 
-    /**
-     * Get the parent requisition that owns this line item.
-     */
+    protected $fillable = [
+        'description',
+        'quantity',
+        'line_item_number',
+        'unit_cost',
+        'total',
+        'comments',
+        'requisition_id',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_cost' => 'decimal:2',
+        'total' => 'decimal:2',
+    ];
+
     public function requisition(): BelongsTo
     {
         return $this->belongsTo(Requisition::class, 'requisition_id');

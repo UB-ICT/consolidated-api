@@ -3,7 +3,8 @@
 namespace Modules\RequisitionSystem\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule; // 🔥 Make sure to import this at the top!
+use Illuminate\Validation\Rule;
+use Modules\RequisitionSystem\Models\Supplier;
 
 class SupplierStoreRequest extends FormRequest
 {

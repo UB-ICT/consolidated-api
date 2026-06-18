@@ -4,7 +4,9 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\RequisitionSystem\Models\CostCenter;
+use Modules\RequisitionSystem\Models\UserCostCenter;
 use Modules\RequisitionSystem\Http\Requests\CostCenterStoreRequest;
 
 class CostCenterController extends Controller
@@ -20,6 +22,19 @@ class CostCenterController extends Controller
             'success' => true,
             'data'    => $costCenters
         ], 200);
+    }
+
+    public function assignedToMe(Request $request): JsonResponse
+    {
+        $assignment = UserCostCenter::with('costCenter')
+            ->where('user_id', $request->user()->id)
+            ->latest('id')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => $assignment?->costCenter,
+        ]);
     }
 
     /**

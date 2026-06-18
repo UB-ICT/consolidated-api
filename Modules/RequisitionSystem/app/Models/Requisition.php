@@ -3,9 +3,9 @@
 namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class Requisition extends Model
@@ -29,9 +29,19 @@ class Requisition extends Model
     ];
 
     protected $casts = [
-        'date_prepared'          => 'datetime:M d, Y',
+        'date_prepared' => 'datetime:M d, Y',
         'expected_delivery_date' => 'date:Y-m-d',
+        'total' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $requisition) {
+            if (!$requisition->date_prepared) {
+                $requisition->date_prepared = now();
+            }
+        });
+    }
 
     public function items(): HasMany
     {
@@ -40,25 +50,29 @@ class Requisition extends Model
 
     public function suppliers(): BelongsToMany
     {
-        return $this->belongsToMany(Supplier::class, 'requisition_suppliers', 'requisition_id', 'supplier_id')
+        return $this->belongsToMany(
+            Supplier::class,
+            'requisition_suppliers',
+            'requisition_id',
+            'supplier_id'
+        )
             ->withPivot('is_recommended', 'quoted_total', 'quote_reference_number')
             ->withTimestamps();
     }
 
-    /**
-     * Get the Cost Center that owns this requisition.
-     */
     public function costCenter(): BelongsTo
     {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
-    /**
-     * Get the current workflow Stage of this requisition.
-     */
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class, 'stage_id');
+    }
+
+    public function status(): BelongsTo
+    {
+        return $this->belongsTo(Status::class, 'status_id');
     }
 
     /**
@@ -67,6 +81,9 @@ class Requisition extends Model
     public function scopeScopeUpcomingReminders(Builder $query, int $daysAhead = 30): Builder
     {
         return $query->where('is_recurring', true)
-            ->whereBetween('reminder_date', [now()->toDateString(), now()->addDays($daysAhead)->toDateString()]);
+            ->whereBetween(
+                'reminder_date',
+                [now()->toDateString(), now()->addDays($daysAhead)->toDateString()]
+            );
     }
 }

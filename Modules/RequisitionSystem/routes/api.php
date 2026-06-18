@@ -36,6 +36,7 @@ Route::group([
     'namespace' => 'Modules\RequisitionSystem\Http\Controllers',
     'middleware' => 'auth:sanctum',
 ], function () {
+    Route::get('costCenters/assigned/me', [CostCenterController::class, 'assignedToMe']);
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('costCenters', CostCenterController::class);
