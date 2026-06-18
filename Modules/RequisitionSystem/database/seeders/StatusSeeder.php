@@ -15,6 +15,7 @@ class StatusSeeder extends Seeder
             ['id' => 3, 'name' => 'Approved'],
             ['id' => 4, 'name' => 'Rejected'],
             ['id' => 5, 'name' => 'Under Review'],
+            ['id' => 6, 'name' => 'Cost Center Review'],
         ];
 
         foreach ($statuses as $status) {

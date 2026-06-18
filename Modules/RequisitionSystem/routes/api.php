@@ -17,6 +17,7 @@ use Modules\RequisitionSystem\Http\Controllers\AddressController;
 use Modules\RequisitionSystem\Http\Controllers\SupplierBankController;
 use Modules\RequisitionSystem\Http\Controllers\ApprovalController;
 use Modules\RequisitionSystem\Http\Controllers\ConversionRateController;
+use Modules\RequisitionSystem\Http\Controllers\RequisitionLogController;
 
 /*
  *--------------------------------------------------------------------------
@@ -44,6 +45,8 @@ Route::group([
     Route::apiResource('pipelines', PipelineController::class);
 
     Route::apiResource('requisitions', RequisitionController::class);
+    Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
+    Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);
     Route::post('requisitions/{requisition}/attachments', [AttachmentController::class, 'store']);
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show']);

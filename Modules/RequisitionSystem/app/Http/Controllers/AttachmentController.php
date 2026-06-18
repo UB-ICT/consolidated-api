@@ -18,10 +18,19 @@ class AttachmentController extends Controller
 {
     public function index(Requisition $requisition): JsonResponse
     {
+        $supplierPivots = $requisition->suppliers()
+            ->get()
+            ->keyBy('id');
+
         $attachments = $requisition->attachments()
             ->with('supplier.status')
             ->latest()
-            ->get();
+            ->get()
+            ->map(function (Attachment $attachment) use ($supplierPivots) {
+                $supplier = $supplierPivots->get($attachment->supplier_id);
+
+                return $this->formatAttachmentResponse($attachment, $supplier?->pivot);
+            });
 
         return response()->json([
             'success' => true,
@@ -32,8 +41,11 @@ class AttachmentController extends Controller
     public function store(Request $request, Requisition $requisition): JsonResponse
     {
         $validated = $request->validate([
-            'file'        => 'required|file|mimes:pdf|max:10240',
-            'supplier_id' => 'required|integer|exists:porsql.suppliers,id',
+            'file'                   => 'required|file|mimes:pdf|max:10240',
+            'supplier_id'            => 'required|integer|exists:porsql.suppliers,id',
+            'is_recommended'         => 'sometimes|boolean',
+            'quoted_total'           => 'nullable|numeric|min:0',
+            'quote_reference_number' => 'nullable|string|max:100',
         ]);
 
         /** @var \Modules\Auth\Models\User|null $user */
@@ -58,16 +70,27 @@ class AttachmentController extends Controller
             'supplier_id'    => $validated['supplier_id'],
         ]);
 
+        $pivotData = [
+            'is_recommended'         => $validated['is_recommended'] ?? false,
+            'quoted_total'           => $validated['quoted_total'] ?? null,
+            'quote_reference_number' => $validated['quote_reference_number'] ?? null,
+        ];
+
         $requisition->suppliers()->syncWithoutDetaching([
-            $validated['supplier_id'] => [
-                'is_recommended' => false,
-            ],
+            $validated['supplier_id'] => $pivotData,
         ]);
+
+        $supplier = $requisition->suppliers()
+            ->where('suppliers.id', $validated['supplier_id'])
+            ->first();
 
         return response()->json([
             'success' => true,
             'message' => 'Quote uploaded successfully.',
-            'data' => $attachment->load('supplier.status'),
+            'data' => $this->formatAttachmentResponse(
+                $attachment->load('supplier.status'),
+                $supplier?->pivot
+            ),
         ], 201);
     }
 
@@ -107,6 +130,18 @@ class AttachmentController extends Controller
             'success' => true,
             'message' => 'Quote removed successfully.',
         ]);
+    }
+
+    private function formatAttachmentResponse(
+        Attachment $attachment,
+        mixed $pivot = null
+    ): array {
+        $data = $attachment->toArray();
+        $data['is_recommended'] = (bool) ($pivot?->is_recommended ?? false);
+        $data['quoted_total'] = $pivot?->quoted_total;
+        $data['quote_reference_number'] = $pivot?->quote_reference_number;
+
+        return $data;
     }
 
     private function streamFile(

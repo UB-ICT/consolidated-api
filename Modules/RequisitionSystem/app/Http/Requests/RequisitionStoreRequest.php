@@ -53,6 +53,13 @@ class RequisitionStoreRequest extends FormRequest
             'items.*.quantity'    => 'required|numeric|min:1',
             'items.*.unit_cost'   => 'required|numeric|min:0',
             'items.*.comments'    => 'nullable|string|max:1000',
+
+            'activity_comment' => [
+                Rule::prohibitedIf(fn () => $this->isMethod('POST')),
+                'nullable',
+                'string',
+                'max:2000',
+            ],
         ];
     }
 }

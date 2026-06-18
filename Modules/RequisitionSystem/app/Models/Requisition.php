@@ -80,6 +80,11 @@ class Requisition extends Model
         return $this->hasMany(Attachment::class, 'requisition_id');
     }
 
+    public function logs(): HasMany
+    {
+        return $this->hasMany(Logs::class, 'requisition_id');
+    }
+
     /**
      * Scope a query to only include upcoming scheduled or expiring recurring requisitions.
      */

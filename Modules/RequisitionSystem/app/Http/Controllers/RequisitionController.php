@@ -5,6 +5,7 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
@@ -12,10 +13,17 @@ use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
-use Illuminate\Support\Facades\Auth;
+use Modules\RequisitionSystem\Services\RequisitionLogService;
+use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 
 class RequisitionController extends Controller
 {
+    use GuardsRequisitionEditing;
+
+    public function __construct(
+        private readonly RequisitionLogService $logService
+    ) {}
+
     /**
      * List all requisitions with their attached suppliers & line items.
      * * Supports: 
@@ -36,10 +44,7 @@ class RequisitionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
             }
 
-            $globalRoles = ['director-of-finance', 'payroll-officer'];
-            $hasGlobalAccess = $user->roles()->whereIn('roles.role_name', $globalRoles)->exists();
-
-            if (!$hasGlobalAccess) {
+            if (!$this->userHasGlobalRequisitionAccess($user)) {
                 $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
                 if ($assignedCostCenterIds->isEmpty()) {
@@ -82,6 +87,12 @@ class RequisitionController extends Controller
     public function store(RequisitionStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
 
         $requisition = DB::connection('porsql')->transaction(function () use ($validated) {
             $requisition = $this->persistRequisition($validated);
@@ -90,18 +101,26 @@ class RequisitionController extends Controller
             return $requisition;
         });
 
+        $this->logService->recordCreation($requisition, $user);
+
         return response()->json([
             'success' => true,
             'message' => 'Requisition created successfully.',
-            'data' => $requisition->refresh()->load(['suppliers.status', 'items', 'status', 'attachments.supplier.status']),
+            'data' => $this->formatRequisitionResponse($requisition->refresh(), $user),
         ], 201);
     }
 
     public function show(Requisition $requisition): JsonResponse
     {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
         return response()->json([
             'success' => true,
-            'data' => $requisition->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status']),
+            'data' => $this->formatRequisitionResponse(
+                $requisition->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status']),
+                $user
+            ),
         ]);
     }
 
@@ -110,6 +129,18 @@ class RequisitionController extends Controller
         Requisition $requisition
     ): JsonResponse {
         $validated = $request->validated();
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertCostCenterCanEdit($requisition->load('status'), $user);
+        $this->assertLineItemsNotAdded($requisition, $validated['items'] ?? [], $user);
+
+        $before = $requisition->replicate();
+        $before->setRelation('status', $requisition->status);
+        $previousItems = $requisition->items()->get();
+        $previousStatusName = $requisition->status?->name;
+        $activityComment = $validated['activity_comment'] ?? null;
+        unset($validated['activity_comment']);
 
         $requisition = DB::connection('porsql')->transaction(function () use ($validated, $requisition) {
             $requisition = $this->persistRequisition($validated, $requisition);
@@ -118,10 +149,39 @@ class RequisitionController extends Controller
             return $requisition;
         });
 
+        $requisition->load('status');
+        $wasSubmitted = in_array($previousStatusName, $this->costCenterEditableStatuses(), true)
+            && $requisition->status?->name === 'Pending'
+            && $previousStatusName !== 'Pending';
+
+        if ($wasSubmitted) {
+            $changeSummary = $this->logService->summarizeChanges(
+                $before,
+                $validated,
+                $previousItems
+            );
+
+            $this->logService->recordSubmission(
+                $requisition,
+                $user,
+                $activityComment,
+                $changeSummary
+            );
+        } else {
+            $this->logService->recordUpdate(
+                $requisition,
+                $user,
+                $before,
+                $validated,
+                $previousItems,
+                $activityComment
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Requisition updated successfully.',
-            'data' => $requisition->refresh()->load(['suppliers.status', 'items', 'status', 'attachments.supplier.status']),
+            'data' => $this->formatRequisitionResponse($requisition->refresh(), $user),
         ]);
     }
 
@@ -133,6 +193,16 @@ class RequisitionController extends Controller
             'success' => true,
             'message' => 'Requisition deleted successfully.',
         ]);
+    }
+
+    private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
+    {
+        $requisition->setAttribute(
+            'is_editable',
+            $this->isEditableByCostCenter($requisition->loadMissing('status'), $user)
+        );
+
+        return $requisition;
     }
 
     private function persistRequisition(

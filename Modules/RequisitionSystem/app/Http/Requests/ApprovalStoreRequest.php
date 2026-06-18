@@ -14,10 +14,10 @@ class ApprovalStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'requisition_id' => 'required|integer|exists:requisitions,id', // Assumes a requisitions table exists
-            'user_id'        => 'required|integer|exists:users,id',        // Assumes a users table exists
-            'comments'       => 'nullable|string|max:1000',
-            'status'         => 'sometimes|string|in:approved,rejected,pending', // Optional, standard for approvals
+            'requisition_id' => 'required|integer|exists:porsql.requisitions,id',
+            'comments'       => 'nullable|string|max:2000',
+            'status'         => 'sometimes|string|in:approved,rejected,pending',
+            'stage_id'       => 'nullable|integer|exists:porsql.stages,id',
         ];
     }
 }

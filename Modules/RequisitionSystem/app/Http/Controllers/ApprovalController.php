@@ -4,14 +4,20 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Modules\RequisitionSystem\Models\Approval;
+use Modules\RequisitionSystem\Models\Requisition;
+use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Http\Requests\ApprovalStoreRequest;
+use Modules\RequisitionSystem\Services\RequisitionLogService;
+use Modules\RequisitionSystem\Support\RequisitionLogAction;
 
 class ApprovalController extends Controller
 {
-    /**
-     * Display a listing of approvals.
-     */
+    public function __construct(
+        private readonly RequisitionLogService $logService
+    ) {}
+
     public function index(): JsonResponse
     {
         $approvals = Approval::all();
@@ -22,16 +28,39 @@ class ApprovalController extends Controller
         ], 200);
     }
 
-    /**
-     * Store a newly created approval in storage.
-     */
     public function store(ApprovalStoreRequest $request): JsonResponse
     {
-        // Automatically merges validated data; can include a timestamp for your casted 'signed_at'
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
         $data = $request->validated();
+        $data['user_id'] = $user->id;
         $data['signed_at'] = now();
 
         $approval = Approval::create($data);
+        $requisition = Requisition::findOrFail($data['requisition_id']);
+        $stageName = isset($data['stage_id'])
+            ? Stage::find($data['stage_id'])?->name
+            : null;
+
+        if (in_array($approval->status, ['approved', 'rejected'], true)) {
+            $this->logService->recordApprovalDecision(
+                $requisition,
+                $user,
+                $approval->status === 'approved'
+                    ? RequisitionLogAction::APPROVED
+                    : RequisitionLogAction::REJECTED,
+                $approval->comments,
+                $stageName
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -40,9 +69,6 @@ class ApprovalController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified approval.
-     */
     public function show(Approval $approval): JsonResponse
     {
         return response()->json([
@@ -51,12 +77,40 @@ class ApprovalController extends Controller
         ], 200);
     }
 
-    /**
-     * Update the specified approval in storage.
-     */
     public function update(ApprovalStoreRequest $request, Approval $approval): JsonResponse
     {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $previousStatus = $approval->status;
         $approval->update($request->validated());
+
+        if (
+            $previousStatus !== $approval->status
+            && in_array($approval->status, ['approved', 'rejected'], true)
+        ) {
+            $requisition = Requisition::findOrFail($approval->requisition_id);
+            $stageName = $approval->stage_id
+                ? Stage::find($approval->stage_id)?->name
+                : null;
+
+            $this->logService->recordApprovalDecision(
+                $requisition,
+                $user,
+                $approval->status === 'approved'
+                    ? RequisitionLogAction::APPROVED
+                    : RequisitionLogAction::REJECTED,
+                $approval->comments,
+                $stageName
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -65,9 +119,6 @@ class ApprovalController extends Controller
         ], 200);
     }
 
-    /**
-     * Remove the specified approval from storage.
-     */
     public function destroy(Approval $approval): JsonResponse
     {
         $approval->delete();
