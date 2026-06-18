@@ -14,9 +14,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pipeline_id')->constrained('pipelines')->onDelete('cascade');
             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+            $table->unsignedInteger('sequence')->default(1);
             $table->timestamps();
 
             $table->unique(['pipeline_id', 'stage_id']);
+            $table->index(['pipeline_id', 'sequence']);
         });
     }
 
