@@ -13,7 +13,6 @@ use Modules\RequisitionSystem\Models\{
     Pipeline,
     Stage,
     Currency,
-    ConversionRate,
     Supplier,
     Bank,
     SupplierBank,
@@ -168,12 +167,7 @@ class FullRequisitionFlowSeeder extends Seeder
             $currency = Currency::firstOrCreate(['name' => 'BZD'], ['symbol' => 'BZ$']);
 
             // ==============================================================
-            // 7. CONVERSION RATE
-            // ==============================================================
-            ConversionRate::firstOrCreate(['currency_id' => $currency->id], ['rate' => 1]);
-
-            // ==============================================================
-            // 8. PIPELINE
+            // 7. PIPELINE
             // ==============================================================
             $pipeline = Pipeline::firstOrCreate(['name' => 'operations']);
 

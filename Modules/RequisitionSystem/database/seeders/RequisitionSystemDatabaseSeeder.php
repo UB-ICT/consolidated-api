@@ -20,7 +20,6 @@ class RequisitionSystemDatabaseSeeder extends Seeder
             StageSeeder::class,
             UserStageSeeder::class,
             CurrencySeeder::class,
-            ConversionRateSeeder::class,
             BankSeeder::class,
             SupplierSeeder::class,
             SupplierBankSeeder::class,

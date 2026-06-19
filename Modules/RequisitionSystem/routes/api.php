@@ -16,7 +16,6 @@ use Modules\RequisitionSystem\Http\Controllers\AttachmentController;
 use Modules\RequisitionSystem\Http\Controllers\AddressController;
 use Modules\RequisitionSystem\Http\Controllers\SupplierBankController;
 use Modules\RequisitionSystem\Http\Controllers\ApprovalController;
-use Modules\RequisitionSystem\Http\Controllers\ConversionRateController;
 use Modules\RequisitionSystem\Http\Controllers\RequisitionLogController;
 
 /*
@@ -73,5 +72,4 @@ Route::group([
     Route::apiResource('banks', BankController::class);
     Route::apiResource('addresses', AddressController::class);
     Route::apiResource('approvals', ApprovalController::class);
-    Route::apiResource('conversionRates', ConversionRateController::class);
 });

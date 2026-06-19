@@ -6,7 +6,6 @@ use Modules\RequisitionSystem\Models\Address;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Attachment;
 use Modules\RequisitionSystem\Models\Bank;
-use Modules\RequisitionSystem\Models\ConversionRate;
 use Modules\RequisitionSystem\Models\CostCenter;
 use Modules\RequisitionSystem\Models\Country;
 use Modules\RequisitionSystem\Models\Currency;
@@ -69,11 +68,6 @@ class RequisitionSystemModelsTest extends TestCase
     public function test_bank_model_configuration(): void
     {
         $this->assertModelFillable(Bank::class, ['name']);
-    }
-
-    public function test_conversion_rate_model_configuration(): void
-    {
-        $this->assertModelFillable(ConversionRate::class, ['rate', 'currency_id']);
     }
 
     public function test_cost_center_model_configuration(): void
