@@ -224,7 +224,7 @@ class RequisitionController extends Controller
         if (!$requisition) {
             // Requisitions created directly by the requester instantly go to 'Pending' review
             $data['status_id'] = $data['status_id']
-                ?? Status::where('name', 'Pending')->value('id')
+                ?? Status::where('name', 'Draft')->value('id')
                 ?? Status::query()->value('id');
 
             // Find the stage linked to Sequence #2 (Director Approval) inside your pivot architecture
