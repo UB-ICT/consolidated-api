@@ -34,11 +34,11 @@ class FullRequisitionFlowSeeder extends Seeder
             // ==============================================================
             // 1. COST CENTERS (Type column removed)
             // ==============================================================
-            $ictCC  = CostCenter::firstOrCreate(['name' => 'ICT-001']);
-            $fstCC  = CostCenter::firstOrCreate(['name' => 'FST-002']);
+            $ictCC = CostCenter::firstOrCreate(['name' => 'ICT-001']);
+            $fstCC = CostCenter::firstOrCreate(['name' => 'FST-002']);
             $fmssCC = CostCenter::firstOrCreate(['name' => 'FMSS-003']);
-            $accCC  = CostCenter::firstOrCreate(['name' => 'ACC-004']);
-            $medCC  = CostCenter::firstOrCreate(['name' => 'MED-005']);
+            $accCC = CostCenter::firstOrCreate(['name' => 'ACC-004']);
+            $medCC = CostCenter::firstOrCreate(['name' => 'MED-005']);
 
             // ==============================================================
             // 2. USER
@@ -67,29 +67,6 @@ class FullRequisitionFlowSeeder extends Seeder
                 );
             }
 
-            // ==============================================================
-            // 2b. ROLES CREATION & ASSIGNMENT
-            // ==============================================================
-            // $budgetOfficerRole = Role::firstOrCreate(
-            //     ['role_name' => 'Budget Officer'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Global Budget Oversight']
-            // );
-            // $vpRole = Role::firstOrCreate(
-            //     ['role_name' => 'VP'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Vice President Approval Access']
-            // );
-            // $financeDirectorRole = Role::firstOrCreate(
-            //     ['role_name' => 'Director of Finance'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Finance Department Executive Management']
-            // );
-            // $payrollOfficerRole = Role::firstOrCreate(
-            //     ['role_name' => 'Payroll Officer'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Payroll Processing Controls']
-            // );
-            // $presidentRole = Role::firstOrCreate(
-            //     ['role_name' => 'President'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'President of the Company']
-            // );
             $requesterRole = Role::firstOrCreate(
                 ['role_name' => 'requester'],
                 ['id' => (string) Str::uuid(), 'description' => 'Standard Departmental Requisitioner']
@@ -167,29 +144,31 @@ class FullRequisitionFlowSeeder extends Seeder
                 'rate' => 1
             ]);
 
-            // ==============================================================
-            // 8. PIPELINE
-            // ==============================================================
+            /// ==============================================================
+// 8. PIPELINE
+// ==============================================================
             $pipeline = Pipeline::firstOrCreate([
                 'name' => 'operations'
             ]);
 
             // ==============================================================
-            // 9. STAGES (Sequenced for the Pivot Table Tracker)
-            // ==============================================================
-            $submitted          = Stage::firstOrCreate(['name' => 'Submitted']);
-            $directorApproval   = Stage::firstOrCreate(['name' => "Director's Approval"]);
+// 9. STAGES (Look up by name only)
+// ==============================================================
+            $draft = Stage::firstOrCreate(['name' => 'Draft']);
+            $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
+            $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
-            $vpApproval         = Stage::firstOrCreate(['name' => 'VP Approval']);
-            $financeApproval    = Stage::firstOrCreate(['name' => 'Finance Approval']);
+            $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
+            $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
 
-            // 🔥 Sync structural links to the pivot table with explicit sequence orders mapping your UI layout
+            // 🔥 This pivot table sync is what actually binds them to the pipeline!
             $pipeline->stages()->syncWithoutDetaching([
-                $submitted->id          => ['sequence' => 1],
-                $directorApproval->id   => ['sequence' => 2],
-                $stageBudgetOfficer->id => ['sequence' => 3],
-                $vpApproval->id         => ['sequence' => 4],
-                $financeApproval->id    => ['sequence' => 5]
+                $draft->id => ['sequence' => 1],
+                $submitted->id => ['sequence' => 2],
+                $directorApproval->id => ['sequence' => 3],
+                $stageBudgetOfficer->id => ['sequence' => 4],
+                $vpApproval->id => ['sequence' => 5],
+                $financeApproval->id => ['sequence' => 6]
             ]);
 
             // ==============================================================
@@ -407,12 +386,12 @@ class FullRequisitionFlowSeeder extends Seeder
 
         return collect($items)->map(function (array $item, int $index) use ($requisition) {
             return Item::create([
-                'description'      => $item['description'],
-                'quantity'         => $item['quantity'],
-                'unit_cost'        => $item['unit_cost'],
+                'description' => $item['description'],
+                'quantity' => $item['quantity'],
+                'unit_cost' => $item['unit_cost'],
                 'line_item_number' => (string) ($index + 1),
-                'total'            => $item['quantity'] * $item['unit_cost'],
-                'requisition_id'   => $requisition->id,
+                'total' => $item['quantity'] * $item['unit_cost'],
+                'requisition_id' => $requisition->id,
             ]);
         });
     }
