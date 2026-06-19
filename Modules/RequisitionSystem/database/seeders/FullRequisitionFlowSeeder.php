@@ -28,11 +28,9 @@ class FullRequisitionFlowSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::transaction(function () {
-
-            // ==============================================================
-            // 1. COST CENTERS (Lookup or create)
-            // ==============================================================
+        // ==============================================================
+        // 1. COST CENTERS (Lookup or create)
+        // ==============================================================
             $ictCC = CostCenter::firstOrCreate(['name' => 'ICT-001']);
             $fstCC = CostCenter::firstOrCreate(['name' => 'FST-002']);
             $fmssCC = CostCenter::firstOrCreate(['name' => 'FMSS-003']);
@@ -395,7 +393,6 @@ class FullRequisitionFlowSeeder extends Seeder
             ], [
                 'status' => 'pending'
             ]);
-        });
     }
 
     /**

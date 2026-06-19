@@ -51,47 +51,42 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'Wellness', 'director-dean' => 'Martin Cuellar', 'email' => 'mcuellar@ub.edu.bz'],
         ];
 
-        DB::transaction(function () use ($matrix) {
-            // 1. Fetch or create the definitive 'director-dean' role record
-            $directorDeanRole = Role::firstOrCreate(
-                ['role_name' => 'director-dean'],
-                ['id' => (string) Str::uuid(), 'description' => 'Head of Cost Center / Dean of Faculty']
+        $directorDeanRole = Role::firstOrCreate(
+            ['role_name' => 'director-dean'],
+            ['id' => (string) Str::uuid(), 'description' => 'Head of Cost Center / Dean of Faculty']
+        );
+
+        foreach ($matrix as $row) {
+            // Users live on pgsql; pivots on porsql. Do not wrap both in one
+            // default-connection transaction or FK checks cannot see new users.
+            $userAccount = User::firstOrCreate(
+                ['email' => $row['email']],
+                [
+                    'name' => $row['director-dean'],
+                ]
             );
 
-            foreach ($matrix as $row) {
-                // 2. Insert or fetch the clean User account using the literal email provided
-                $userAccount = User::firstOrCreate(
-                    ['email' => $row['email']],
-                    [
-                        'name' => $row['director-dean'],
-                    ]
-                );
+            DB::connection('pgsql')->table('user_roles')->updateOrInsert(
+                [
+                    'user_id' => $userAccount->id,
+                    'role_id' => $directorDeanRole->id
+                ]
+            );
 
-                // 3. Assign the 'director-dean' role to the user inside user_roles pivot
-                DB::connection('pgsql')->table('user_roles')->updateOrInsert(
-                    [
-                        'user_id' => $userAccount->id,
-                        'role_id' => $directorDeanRole->id
-                    ]
-                );
+            $costCenter = CostCenter::firstOrCreate([
+                'name' => $row['cc']
+            ]);
 
-                // 4. Insert or fetch the Cost Center
-                $costCenter = CostCenter::firstOrCreate([
-                    'name' => $row['cc']
-                ]);
-
-                // 5. Map relationship inside your cross-db pivot tracker table
-                DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
-                    [
-                        'user_id' => $userAccount->id,
-                        'cost_center_id' => $costCenter->id
-                    ],
-                    [
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
-                );
-            }
-        });
+            DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
+                [
+                    'user_id' => $userAccount->id,
+                    'cost_center_id' => $costCenter->id
+                ],
+                [
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+            );
+        }
     }
 }
