@@ -32,83 +32,96 @@ class FullRequisitionFlowSeeder extends Seeder
         DB::transaction(function () {
 
             // ==============================================================
-            // 1. COST CENTERS (Type column removed)
+            // 1. COST CENTERS (Lookup or create)
             // ==============================================================
-            $ictCC  = CostCenter::firstOrCreate(['name' => 'ICT-001']);
-            $fstCC  = CostCenter::firstOrCreate(['name' => 'FST-002']);
+            $ictCC = CostCenter::firstOrCreate(['name' => 'ICT-001']);
+            $fstCC = CostCenter::firstOrCreate(['name' => 'FST-002']);
             $fmssCC = CostCenter::firstOrCreate(['name' => 'FMSS-003']);
-            $accCC  = CostCenter::firstOrCreate(['name' => 'ACC-004']);
-            $medCC  = CostCenter::firstOrCreate(['name' => 'MED-005']);
+            $accCC = CostCenter::firstOrCreate(['name' => 'ACC-004']);
+            $medCC = CostCenter::firstOrCreate(['name' => 'MED-005']);
 
             // ==============================================================
-            // 2. USER
+            // 2. USERS & ROLES
             // ==============================================================
-            $approver = User::firstOrCreate(
+
+            // --- Create or Find Users ---
+            $james = User::firstOrCreate(
                 ['email' => 'james.faber@ub.edu.bz'],
-                [
-                    'name' => 'James Faber',
-                    'password' => bcrypt('Kingjames_x2'),
-                ]
+                ['name' => 'James Faber', 'password' => bcrypt('Kingjames_x2')]
             );
 
-            // Link James Faber explicitly to ONLY 3 out of the 5 cost centers
-            $assignedCostCenters = [$ictCC->id, $fstCC->id, $medCC->id];
+            $luis = User::firstOrCreate(
+                ['email' => 'luis.herrera@ub.edu.bz'],
+                ['name' => 'Luis Herrera', 'password' => bcrypt('password')]
+            );
 
-            foreach ($assignedCostCenters as $ccId) {
+            $stephanie = User::firstOrCreate(
+                ['email' => 'stephanie.windsor@ub.edu.bz'],
+                ['name' => 'Stephanie Windsor', 'password' => bcrypt('password')]
+            );
+
+            $steve = User::firstOrCreate(
+                ['email' => 'steve.castillo@ub.edu.bz'],
+                ['name' => 'Steve Castillo', 'password' => bcrypt('password')]
+            );
+
+            $daren = User::firstOrCreate(
+                ['email' => 'daren.brown@ub.edu.bz'],
+                ['name' => 'Daren Brown', 'password' => bcrypt('password')]
+            );
+
+            $justina = User::firstOrCreate(
+                ['email' => 'justina.oh@ub.edu.bz'],
+                ['name' => 'Justina Oh', 'password' => bcrypt('password')]
+            );
+
+            // --- Find Pre-existing Roles from DB ---
+            $requesterRole = Role::where('role_name', 'requester')->first();
+            $directorDeanRole = Role::where('role_name', 'director-dean')->first();
+            $budgetOfficerRole = Role::where('role_name', 'budget-officer')->first();
+            $vpRole = Role::where('role_name', 'vice-president')->first();
+            $financeDirRole = Role::where('role_name', 'director-of-finance')->first();
+            $purchaseOfficerRole = Role::where('role_name', 'purchase-officer')->first();
+
+            // --- Sync Users to Roles via Pivot ---
+            $userRoleMappings = [
+                ['user_id' => $james->id, 'role' => $requesterRole],
+                ['user_id' => $luis->id, 'role' => $directorDeanRole],
+                ['user_id' => $stephanie->id, 'role' => $budgetOfficerRole],
+                ['user_id' => $steve->id, 'role' => $vpRole],
+                ['user_id' => $daren->id, 'role' => $financeDirRole],
+                ['user_id' => $justina->id, 'role' => $purchaseOfficerRole],
+            ];
+
+            foreach ($userRoleMappings as $mapping) {
+                if ($mapping['role']) {
+                    DB::connection('pgsql')->table('user_roles')->updateOrInsert(
+                        ['user_id' => $mapping['user_id'], 'role_id' => $mapping['role']->id]
+                    );
+                }
+            }
+
+            // --- Cost Center Routing Assignments ---
+            // James Faber assigned to ICT, FST, and MED
+            $jamesCostCenters = [$ictCC->id, $fstCC->id, $medCC->id];
+            foreach ($jamesCostCenters as $ccId) {
                 DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
-                    [
-                        'user_id' => $approver->id,
-                        'cost_center_id' => $ccId
-                    ],
-                    [
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
+                    ['user_id' => $james->id, 'cost_center_id' => $ccId],
+                    ['created_at' => now(), 'updated_at' => now()]
                 );
             }
 
-            // ==============================================================
-            // 2b. ROLES CREATION & ASSIGNMENT
-            // ==============================================================
-            // $budgetOfficerRole = Role::firstOrCreate(
-            //     ['role_name' => 'Budget Officer'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Global Budget Oversight']
-            // );
-            // $vpRole = Role::firstOrCreate(
-            //     ['role_name' => 'VP'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Vice President Approval Access']
-            // );
-            // $financeDirectorRole = Role::firstOrCreate(
-            //     ['role_name' => 'Director of Finance'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Finance Department Executive Management']
-            // );
-            // $payrollOfficerRole = Role::firstOrCreate(
-            //     ['role_name' => 'Payroll Officer'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'Payroll Processing Controls']
-            // );
-            // $presidentRole = Role::firstOrCreate(
-            //     ['role_name' => 'President'],
-            //     ['id' => (string) Str::uuid(), 'description' => 'President of the Company']
-            // );
-            $requesterRole = Role::firstOrCreate(
-                ['role_name' => 'requester'],
-                ['id' => (string) Str::uuid(), 'description' => 'Standard Departmental Requisitioner']
+            // Luis Herrera explicitly attached to ICT (Information and Communication Technology)
+            DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
+                ['user_id' => $luis->id, 'cost_center_id' => $ictCC->id],
+                ['created_at' => now(), 'updated_at' => now()]
             );
 
-            // Assign James Faber to the restricted "Requester" role by default
-            DB::connection('pgsql')->table('user_roles')->updateOrInsert(
-                [
-                    'user_id' => $approver->id,
-                    'role_id' => $requesterRole->id
-                ],
-            );
 
             // ==============================================================
             // 3. COUNTRY
             // ==============================================================
-            $country = Country::firstOrCreate([
-                'name' => 'Belize'
-            ]);
+            $country = Country::firstOrCreate(['name' => 'Belize']);
 
             // ==============================================================
             // 4. SUPPLIERS
@@ -152,59 +165,44 @@ class FullRequisitionFlowSeeder extends Seeder
             // ==============================================================
             // 6. CURRENCY
             // ==============================================================
-            $currency = Currency::firstOrCreate([
-                'name' => 'BZD',
-            ], [
-                'symbol' => 'BZ$',
-            ]);
+            $currency = Currency::firstOrCreate(['name' => 'BZD'], ['symbol' => 'BZ$']);
 
             // ==============================================================
             // 7. CONVERSION RATE
             // ==============================================================
-            $rate = ConversionRate::firstOrCreate([
-                'currency_id' => $currency->id
-            ], [
-                'rate' => 1
-            ]);
+            ConversionRate::firstOrCreate(['currency_id' => $currency->id], ['rate' => 1]);
 
             // ==============================================================
             // 8. PIPELINE
             // ==============================================================
-            $pipeline = Pipeline::firstOrCreate([
-                'name' => 'operations'
-            ]);
+            $pipeline = Pipeline::firstOrCreate(['name' => 'operations']);
 
             // ==============================================================
-            // 9. STAGES (Sequenced for the Pivot Table Tracker)
+            // 9. STAGES
             // ==============================================================
-            $submitted          = Stage::firstOrCreate(['name' => 'Submitted']);
-            $directorApproval   = Stage::firstOrCreate(['name' => "Director's Approval"]);
+            $draft = Stage::firstOrCreate(['name' => 'Draft']);
+            $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
-            $vpApproval         = Stage::firstOrCreate(['name' => 'VP Approval']);
-            $financeApproval    = Stage::firstOrCreate(['name' => 'Finance Approval']);
+            $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
+            $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
 
-            // 🔥 Sync structural links to the pivot table with explicit sequence orders mapping your UI layout
             $pipeline->stages()->syncWithoutDetaching([
-                $submitted->id          => ['sequence' => 1],
-                $directorApproval->id   => ['sequence' => 2],
+                $draft->id => ['sequence' => 1],
+                $directorApproval->id => ['sequence' => 2],
                 $stageBudgetOfficer->id => ['sequence' => 3],
-                $vpApproval->id         => ['sequence' => 4],
-                $financeApproval->id    => ['sequence' => 5]
+                $vpApproval->id => ['sequence' => 4],
+                $financeApproval->id => ['sequence' => 5]
             ]);
 
             // ==============================================================
             // 10. STATUS
             // ==============================================================
-            $status = Status::firstOrCreate([
-                'name' => 'Pending'
-            ]);
+            $status = Status::firstOrCreate(['name' => 'Pending']);
 
             // ==============================================================
             // 11. BANK
             // ==============================================================
-            $bank = Bank::firstOrCreate([
-                'name' => 'Belize Bank'
-            ]);
+            $bank = Bank::firstOrCreate(['name' => 'Belize Bank']);
 
             SupplierBank::firstOrCreate([
                 'supplier_id' => $supplierABC->id,
@@ -216,7 +214,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
 
             // ==============================================================
-            // 12. REQUISITIONS (Distributed Across Explicit Stages)
+            // 12. REQUISITIONS
             // ==============================================================
             $year = now()->format('Y');
 
@@ -277,7 +275,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'total' => 0,
                     'priority' => 'urgent',
                     'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
-                    'stage_id' => $submitted->id,
+                    'stage_id' => $directorApproval->id,
                     'date_prepared' => now(),
                     'is_recurring' => false,
                     'reminder_date' => null,
@@ -361,36 +359,32 @@ class FullRequisitionFlowSeeder extends Seeder
             // 14. USER STAGE
             // ==============================================================
             UserStage::firstOrCreate([
-                'user_id' => $approver->id,
+                'user_id' => $james->id,
                 'stage_id' => $directorApproval->id,
             ]);
 
             // ==============================================================
-            // 15. APPROVALS (Aligned with current active stages)
+            // 15. APPROVALS
             // ==============================================================
-
-            // Requisition 1 is awaiting action at Director's Approval stage
             Approval::firstOrCreate([
                 'requisition_id' => $requisition1->id,
-                'user_id' => $approver->id,
+                'user_id' => $james->id,
                 'stage_id' => $directorApproval->id,
             ], [
                 'status' => 'pending'
             ]);
 
-            // Requisition 2 is awaiting action at Budget Officer stage
             Approval::firstOrCreate([
                 'requisition_id' => $requisition2->id,
-                'user_id' => $approver->id,
+                'user_id' => $james->id,
                 'stage_id' => $stageBudgetOfficer->id,
             ], [
                 'status' => 'pending'
             ]);
 
-            // Requisition 3 is awaiting action at VP Approval stage
             Approval::firstOrCreate([
                 'requisition_id' => $requisition3->id,
-                'user_id' => $approver->id,
+                'user_id' => $james->id,
                 'stage_id' => $vpApproval->id,
             ], [
                 'status' => 'pending'
@@ -407,12 +401,12 @@ class FullRequisitionFlowSeeder extends Seeder
 
         return collect($items)->map(function (array $item, int $index) use ($requisition) {
             return Item::create([
-                'description'      => $item['description'],
-                'quantity'         => $item['quantity'],
-                'unit_cost'        => $item['unit_cost'],
+                'description' => $item['description'],
+                'quantity' => $item['quantity'],
+                'unit_cost' => $item['unit_cost'],
                 'line_item_number' => (string) ($index + 1),
-                'total'            => $item['quantity'] * $item['unit_cost'],
-                'requisition_id'   => $requisition->id,
+                'total' => $item['quantity'] * $item['unit_cost'],
+                'requisition_id' => $requisition->id,
             ]);
         });
     }

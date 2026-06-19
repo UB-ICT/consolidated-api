@@ -123,6 +123,7 @@ class RequisitionSystemModelsTest extends TestCase
             'date_prepared',
             'is_recurring',
             'reminder_date',
+            'current_stage_sequence',
         ]);
 
         $this->assertModelCastsInclude(Requisition::class, [
@@ -153,6 +154,7 @@ class RequisitionSystemModelsTest extends TestCase
             'TIN',
             'status_id',
             'notes',
+            'approved_by_user_id',
         ]);
     }
 

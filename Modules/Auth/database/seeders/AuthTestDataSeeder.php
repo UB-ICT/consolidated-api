@@ -27,6 +27,7 @@ class AuthTestDataSeeder extends Seeder
             'senior-account',
             'director-dean',
             'requester',
+            'purchase-officer',
         ];
 
         // Guarantee roles exist and capture their database UUIDs safely
@@ -46,18 +47,18 @@ class AuthTestDataSeeder extends Seeder
         $apps = [
             'requisition' => [
                 'label' => 'Requisition System',
-                'path'  => '/requisitions',
-                'icon'  => 'briefcase',
+                'path' => '/requisitions',
+                'icon' => 'briefcase',
             ],
             'public_safety' => [
                 'label' => 'Public Safety',
-                'path'  => '/public-safety',
-                'icon'  => 'shield-check',
+                'path' => '/public-safety',
+                'icon' => 'shield-check',
             ],
             'ub_forms' => [
                 'label' => 'UB Annual Reports',
-                'path'  => '/ub-annual-reports',
-                'icon'  => 'clipboard-document-list',
+                'path' => '/ub-annual-reports',
+                'icon' => 'clipboard-document-list',
             ],
         ];
 
@@ -71,9 +72,9 @@ class AuthTestDataSeeder extends Seeder
             }
 
             $menuApp->fill([
-                'label'      => $appData['label'],
-                'icon'       => $appData['icon'],
-                'type'       => 'application',
+                'label' => $appData['label'],
+                'icon' => $appData['icon'],
+                'type' => 'application',
                 'sort_order' => 1,
             ])->save();
 
@@ -100,7 +101,7 @@ class AuthTestDataSeeder extends Seeder
             $roleId = $roleMap[$roleName];
             foreach ($managementMenuItems as $item) {
                 $subMenu = Menu::firstOrNew([
-                    'path'    => $item['path'],
+                    'path' => $item['path'],
                     'role_id' => $roleId
                 ]);
 
@@ -109,10 +110,10 @@ class AuthTestDataSeeder extends Seeder
                 }
 
                 $subMenu->fill([
-                    'label'      => $item['label'],
-                    'icon'       => $item['icon'],
-                    'type'       => 'submenu',
-                    'parent_id'  => $appIds['requisition'],
+                    'label' => $item['label'],
+                    'icon' => $item['icon'],
+                    'type' => 'submenu',
+                    'parent_id' => $appIds['requisition'],
                     'sort_order' => $item['sort_order'],
                 ])->save();
             }
@@ -122,7 +123,7 @@ class AuthTestDataSeeder extends Seeder
         $costCenterId = $roleMap['requester'];
         foreach ($costCenterMenuItems as $item) {
             $subMenu = Menu::firstOrNew([
-                'path'    => $item['path'],
+                'path' => $item['path'],
                 'role_id' => $costCenterId
             ]);
 
@@ -131,10 +132,10 @@ class AuthTestDataSeeder extends Seeder
             }
 
             $subMenu->fill([
-                'label'      => $item['label'],
-                'icon'       => $item['icon'],
-                'type'       => 'submenu',
-                'parent_id'  => $appIds['requisition'],
+                'label' => $item['label'],
+                'icon' => $item['icon'],
+                'type' => 'submenu',
+                'parent_id' => $appIds['requisition'],
                 'sort_order' => $item['sort_order'],
             ])->save();
         }
@@ -158,10 +159,10 @@ class AuthTestDataSeeder extends Seeder
             }
 
             $userMenu->fill([
-                'label'      => $item['label'],
-                'icon'       => $item['icon'],
-                'role_id'    => $item['role_id'],
-                'parent_id'  => null,
+                'label' => $item['label'],
+                'icon' => $item['icon'],
+                'role_id' => $item['role_id'],
+                'parent_id' => null,
                 'sort_order' => $item['sort_order'],
             ])->save();
         }
@@ -184,10 +185,10 @@ class AuthTestDataSeeder extends Seeder
             }
 
             $extLink->fill([
-                'label'      => $link['label'],
-                'icon'       => $link['icon'],
-                'role_id'    => null,
-                'parent_id'  => null,
+                'label' => $link['label'],
+                'icon' => $link['icon'],
+                'role_id' => null,
+                'parent_id' => null,
                 'sort_order' => $link['sort_order'],
             ])->save();
         }
@@ -204,8 +205,8 @@ class AuthTestDataSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $userData['email']],
                 [
-                    'id'       => Str::uuid()->toString(),
-                    'name'     => $userData['name'],
+                    'id' => Str::uuid()->toString(),
+                    'name' => $userData['name'],
                     'password' => Hash::make('password'),
                 ]
             );
