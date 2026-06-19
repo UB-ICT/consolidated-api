@@ -44,7 +44,8 @@ class RequisitionSystemModelsTest extends TestCase
             'user_id',
             'comments',
             'stage_id',
-            'status'
+            'status',
+            'signed_at',
         ]);
         $this->assertModelCastsInclude(Approval::class, [
             'signed_at' => 'datetime:M d, Y',
