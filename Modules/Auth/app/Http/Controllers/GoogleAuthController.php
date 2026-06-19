@@ -103,7 +103,9 @@ class GoogleAuthController extends Controller
         // Default Sanctum ability so token checks behave like a normal PAT (empty [] can confuse tooling).
         $token = $_user->createToken('google-login', ['*'])->plainTextToken;
 
-        $this->instantiateCourseMonitoring($_user->email);
+        if ($system !== 'portal') {
+            $this->instantiateCourseMonitoring($_user->email);
+        }
 
         $query = http_build_query([
             'token' => $token,
@@ -306,6 +308,25 @@ class GoogleAuthController extends Controller
             Log::error('Error getting tables from Firebase: ' . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Portal session user — menus come from PostgreSQL via /v1/menu/*, not Firestore.
+     */
+    public function getPortalUserInfo(Request $request)
+    {
+        $user = auth('sanctum')->user() ?? $request->user('sanctum');
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $mailingGroups = $this->getUserMailingGroups($user);
+
+        return response()->json([
+            'user' => $this->formatUserResponse($user, $mailingGroups, [], [], []),
+            'menus' => [],
+        ]);
     }
 
     /**

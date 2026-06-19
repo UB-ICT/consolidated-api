@@ -24,7 +24,8 @@ use Modules\Auth\Http\Controllers\UserRoleController;
 Route::post('/v1/auth/login', [AuthController::class, 'login']);
 Route::post('/v1/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('/v1/auth/mockGoogleLogin', [GoogleAuthController::class, 'mockGoogleLogin']);
-Route::get('/v1/user', [GoogleAuthController::class, 'getAnnualReportUserInfo'])->middleware('auth:sanctum');
+Route::get('/v1/user', [GoogleAuthController::class, 'getPortalUserInfo'])->middleware('auth:sanctum');
+Route::get('/v1/annual-reports/user', [GoogleAuthController::class, 'getAnnualReportUserInfo'])->middleware('auth:sanctum');
 Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafetyUserInfo'])->middleware('auth:sanctum');
 Route::get('/user', [GoogleAuthController::class, 'user']);
 
