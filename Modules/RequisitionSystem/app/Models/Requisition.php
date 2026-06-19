@@ -24,6 +24,7 @@ class Requisition extends Model
         'date_prepared',
         'is_recurring',
         'reminder_date',
+        'current_stage_sequence',
     ];
 
     protected $casts = [

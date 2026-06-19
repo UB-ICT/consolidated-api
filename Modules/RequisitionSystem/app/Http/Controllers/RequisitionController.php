@@ -176,7 +176,7 @@ class RequisitionController extends Controller
                 $validated,
                 $previousItems,
                 $activityComment
-            );
+              );
         }
 
         return response()->json([
@@ -220,10 +220,25 @@ class RequisitionController extends Controller
         $data['number'] = $data['number']
             ?? $this->generateRequisitionNumber();
 
+        // 1. Initial creation setup
         if (!$requisition) {
+            // Requisitions created directly by the requester instantly go to 'Pending' review
             $data['status_id'] = $data['status_id']
-                ?? Status::where('name', 'Draft')->value('id')
+                ?? Status::where('name', 'Pending')->value('id')
                 ?? Status::query()->value('id');
+
+            // Find the stage linked to Sequence #2 (Director Approval) inside your pivot architecture
+            $pipelineId = $data['pipeline_id'] ?? 1; 
+
+            $directorStageId = DB::connection('porsql')
+                ->table('pipeline_stages')
+                ->where('pipeline_id', $pipelineId)
+                ->where('sequence', 2)
+                ->value('stage_id');
+
+            // Progress stage pointer and cache structural sequence index for the frontend timeline
+            $data['stage_id'] = $directorStageId ?? Stage::query()->value('id');
+            $data['current_stage_sequence'] = 2; 
         } elseif (!array_key_exists('status_id', $data)) {
             unset($data['status_id']);
         }
@@ -231,13 +246,16 @@ class RequisitionController extends Controller
         $data['currency_id'] = $data['currency_id']
             ?? Currency::query()->value('id');
 
-        $data['stage_id'] = $data['stage_id']
-            ?? Stage::query()->value('id');
+        // Fallback catch for standard stage pointer initialization on old architecture structures
+        if (!isset($data['stage_id'])) {
+            $data['stage_id'] = $data['stage_id'] ?? Stage::query()->value('id');
+        }
 
         if (!$data['is_recurring']) {
             $data['reminder_date'] = null;
         }
 
+        // 2. Perform persistence lifecycle updates
         if ($requisition) {
             $requisition->update($data);
             $requisition->items()->delete();
@@ -245,6 +263,7 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
+        // 3. Write individual Line Item dependencies
         foreach ($items as $item) {
             Item::create([
                 'description'      => $item['description'],

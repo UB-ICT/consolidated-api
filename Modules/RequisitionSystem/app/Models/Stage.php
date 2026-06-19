@@ -20,6 +20,8 @@ class Stage extends Model
      */
     public function pipelines(): BelongsToMany
     {
-        return $this->belongsToMany(Pipeline::class, 'pipeline_stages', 'stage_id', 'pipeline_id');
+        return $this->belongsToMany(Pipeline::class, 'pipeline_stages', 'stage_id', 'pipeline_id')
+            ->withPivot('sequence') // Allows you to access $pipeline->pivot->sequence
+            ->withTimestamps();     // Keeps pivot timestamps updated automatically
     }
 }

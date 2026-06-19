@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Modules\RequisitionSystem\Database\Migrations\EnsuresTimestamps;
+use Modules\RequisitionSystem\database\migrations\EnsuresTimestamps;
 
 return new class extends Migration
 {
