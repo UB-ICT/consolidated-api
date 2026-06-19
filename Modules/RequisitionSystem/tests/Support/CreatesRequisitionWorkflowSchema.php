@@ -67,6 +67,17 @@ trait CreatesRequisitionWorkflowSchema
             $table->timestamps();
         });
 
+        Schema::connection('porsql')->create('approvals', function (Blueprint $table) {
+            $table->id();
+            $table->uuid('user_id');
+            $table->foreignId('requisition_id')->constrained('requisitions');
+            $table->foreignId('stage_id')->constrained('stages');
+            $table->string('status');
+            $table->text('comments')->nullable();
+            $table->timestamp('signed_at')->nullable();
+            $table->timestamps();
+        });
+
         $this->seedWorkflowStatuses();
         $this->seedWorkflowPipeline();
     }

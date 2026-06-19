@@ -332,7 +332,16 @@ class RequisitionController extends Controller
         $comments = $request->validated('comments');
         $stageName = Stage::find($actingStageId)?->name;
 
-        DB::connection('porsql')->transaction(function () use ($requisition) {
+        DB::connection('porsql')->transaction(function () use ($requisition, $user, $comments, $actingStageId) {
+            Approval::create([
+                'requisition_id' => $requisition->id,
+                'user_id'        => $user->id,
+                'stage_id'       => $actingStageId,
+                'status'         => 'cost_center_review',
+                'comments'       => $comments,
+                'signed_at'      => now(),
+            ]);
+
             RequisitionWorkflow::applyCostCenterReview($requisition->refresh());
         });
 
@@ -371,9 +380,23 @@ class RequisitionController extends Controller
             $this->isEditableByCostCenter($requisition, $user)
         );
 
+        $stageDecision = $user
+            ? $this->findUserStageDecision($requisition, $user)
+            : null;
+
+        $requisition->setAttribute(
+            'show_approval_actions',
+            $this->userCanViewApprovalActions($requisition, $user)
+        );
+
         $requisition->setAttribute(
             'can_approve',
             $this->canUserApproveRequisition($requisition, $user)
+        );
+
+        $requisition->setAttribute(
+            'user_stage_action',
+            $stageDecision?->status
         );
 
         $pipeline = Pipeline::with('stages')
