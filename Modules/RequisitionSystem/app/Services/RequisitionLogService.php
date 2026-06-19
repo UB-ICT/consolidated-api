@@ -146,6 +146,31 @@ class RequisitionLogService
         );
     }
 
+    public function recordPurchaseOrderNumberUpdate(
+        Requisition $requisition,
+        User $user,
+        ?string $purchaseOrderNumber,
+        ?string $previousValue = null
+    ): Logs {
+        if ($purchaseOrderNumber) {
+            $summary = sprintf(
+                'Purchase order number set to %s.',
+                $purchaseOrderNumber
+            );
+        } else {
+            $summary = $previousValue
+                ? sprintf('Purchase order number %s removed.', $previousValue)
+                : 'Purchase order number cleared.';
+        }
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::UPDATED,
+            $summary
+        );
+    }
+
     private function buildChangeSummary(
         Requisition $before,
         array $validated,

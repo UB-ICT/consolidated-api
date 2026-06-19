@@ -48,6 +48,7 @@ Route::group([
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
     Route::post('requisitions/{requisition}/request-review', [RequisitionController::class, 'requestReview']);
+    Route::patch('requisitions/{requisition}/purchase-order-number', [RequisitionController::class, 'updatePurchaseOrderNumber']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);

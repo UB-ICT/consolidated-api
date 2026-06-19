@@ -14,6 +14,7 @@ class Requisition extends Model
 
     protected $fillable = [
         'number',
+        'purchase_order_number',
         'cost_center_id',
         'status_id',
         'currency_id',

@@ -27,6 +27,7 @@ class RequisitionStoreRequest extends FormRequest
                 'max:255',
                 Rule::unique('porsql.requisitions', 'number')->ignore($requisition?->id),
             ],
+            'purchase_order_number' => 'prohibited',
 
             'cost_center_id' => 'required|integer|exists:porsql.cost_centers,id',
             'date_prepared' => 'nullable|date',

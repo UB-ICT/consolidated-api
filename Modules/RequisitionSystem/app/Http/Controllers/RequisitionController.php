@@ -14,10 +14,12 @@ use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
+use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
+use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 use Modules\RequisitionSystem\Support\RequisitionWorkflow;
@@ -26,6 +28,7 @@ class RequisitionController extends Controller
 {
     use GuardsRequisitionEditing;
     use GuardsRequisitionApproval;
+    use GuardsRequisitionPurchaseOrder;
 
     public function __construct(
         private readonly RequisitionLogService $logService
@@ -361,6 +364,40 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function updatePurchaseOrderNumber(
+        RequisitionPurchaseOrderRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertCanUpdatePurchaseOrderNumber($requisition, $user);
+
+        $purchaseOrderNumber = $request->validated('purchase_order_number');
+        $previousValue = $requisition->purchase_order_number;
+
+        $requisition->update([
+            'purchase_order_number' => $purchaseOrderNumber,
+        ]);
+
+        if ((string) $previousValue !== (string) $purchaseOrderNumber) {
+            $this->logService->recordPurchaseOrderNumberUpdate(
+                $requisition,
+                $user,
+                $purchaseOrderNumber,
+                $previousValue
+            );
+        }
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Purchase order number updated successfully.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
     public function destroy(Requisition $requisition): JsonResponse
     {
         $requisition->delete();
@@ -397,6 +434,11 @@ class RequisitionController extends Controller
         $requisition->setAttribute(
             'user_stage_action',
             $stageDecision?->status
+        );
+
+        $requisition->setAttribute(
+            'can_edit_purchase_order_number',
+            $this->canEditPurchaseOrderNumber($requisition, $user)
         );
 
         $pipeline = Pipeline::with('stages')

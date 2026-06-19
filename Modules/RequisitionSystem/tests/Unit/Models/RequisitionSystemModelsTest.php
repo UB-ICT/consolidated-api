@@ -114,6 +114,7 @@ class RequisitionSystemModelsTest extends TestCase
         // 🔥 FIXED: Removed 'supplier_id' and ordered to match the Requisition Model perfectly
         $this->assertModelFillable(Requisition::class, [
             'number',
+            'purchase_order_number',
             'cost_center_id',
             'status_id',
             'currency_id',
