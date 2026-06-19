@@ -45,6 +45,9 @@ Route::group([
     Route::apiResource('pipelines', PipelineController::class);
 
     Route::apiResource('requisitions', RequisitionController::class);
+    Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
+    Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
+    Route::post('requisitions/{requisition}/request-review', [RequisitionController::class, 'requestReview']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);

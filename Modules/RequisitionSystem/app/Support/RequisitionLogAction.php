@@ -16,6 +16,8 @@ final class RequisitionLogAction
 
     public const COMMENT = 'comment';
 
+    public const COST_CENTER_REVIEW = 'cost_center_review';
+
     public static function all(): array
     {
         return [
@@ -25,6 +27,7 @@ final class RequisitionLogAction
             self::APPROVED,
             self::REJECTED,
             self::COMMENT,
+            self::COST_CENTER_REVIEW,
         ];
     }
 }

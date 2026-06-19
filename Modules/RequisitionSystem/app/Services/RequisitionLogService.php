@@ -113,6 +113,25 @@ class RequisitionLogService
         return $this->record($requisition, $user, $action, $summary, $comments);
     }
 
+    public function recordCostCenterReviewRequest(
+        Requisition $requisition,
+        User $user,
+        ?string $comments = null,
+        ?string $stageName = null
+    ): Logs {
+        $summary = $stageName
+            ? sprintf('Sent back to cost center for review from %s stage.', $stageName)
+            : 'Sent back to cost center for review.';
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::COST_CENTER_REVIEW,
+            $summary,
+            $comments
+        );
+    }
+
     public function recordComment(
         Requisition $requisition,
         User $user,

@@ -7,19 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
+use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
-use Modules\RequisitionSystem\Models\Status;
+use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
+use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
+use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
+use Modules\RequisitionSystem\Support\RequisitionWorkflow;
 
 class RequisitionController extends Controller
 {
     use GuardsRequisitionEditing;
+    use GuardsRequisitionApproval;
 
     public function __construct(
         private readonly RequisitionLogService $logService
@@ -77,11 +83,15 @@ class RequisitionController extends Controller
         }
 
         $requisitions = $query->latest()->get();
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
 
         return response()->json([
             'success' => true,
             'count'   => $requisitions->count(),
-            'data'    => $requisitions,
+            'data'    => $requisitions->map(
+                fn (Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
+            ),
         ]);
     }
 
@@ -95,18 +105,27 @@ class RequisitionController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $requisition = DB::connection('porsql')->transaction(function () use ($validated) {
-            $requisition = $this->persistRequisition($validated);
+        $shouldSubmit = $request->shouldSubmit();
+        unset($validated['submit']);
+
+        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $shouldSubmit) {
+            $requisition = $this->persistRequisition($validated, null, $shouldSubmit);
             $this->syncSuppliers($requisition, $validated['suppliers'] ?? []);
 
             return $requisition;
         });
 
-        $this->logService->recordCreation($requisition, $user);
+        if ($shouldSubmit) {
+            $this->logService->recordSubmission($requisition, $user);
+        } else {
+            $this->logService->recordCreation($requisition, $user);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Requisition created successfully.',
+            'message' => $shouldSubmit
+                ? 'Requisition submitted successfully.'
+                : 'Requisition saved successfully.',
             'data' => $this->formatRequisitionResponse($requisition->refresh(), $user),
         ], 201);
     }
@@ -133,29 +152,28 @@ class RequisitionController extends Controller
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
 
+        $shouldSubmit = $request->shouldSubmit();
+        unset($validated['submit']);
+
         $this->assertCostCenterCanEdit($requisition->load('status'), $user);
         $this->assertLineItemsNotAdded($requisition, $validated['items'] ?? [], $user);
 
         $before = $requisition->replicate();
         $before->setRelation('status', $requisition->status);
         $previousItems = $requisition->items()->get();
-        $previousStatusName = $requisition->status?->name;
         $activityComment = $validated['activity_comment'] ?? null;
         unset($validated['activity_comment']);
 
-        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $requisition) {
-            $requisition = $this->persistRequisition($validated, $requisition);
+        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $requisition, $shouldSubmit) {
+            $requisition = $this->persistRequisition($validated, $requisition, $shouldSubmit);
             $this->syncSuppliers($requisition, $validated['suppliers'] ?? []);
 
             return $requisition;
         });
 
         $requisition->load('status');
-        $wasSubmitted = in_array($previousStatusName, $this->costCenterEditableStatuses(), true)
-            && $requisition->status?->name === 'Pending'
-            && $previousStatusName !== 'Pending';
 
-        if ($wasSubmitted) {
+        if ($shouldSubmit) {
             $changeSummary = $this->logService->summarizeChanges(
                 $before,
                 $validated,
@@ -176,13 +194,161 @@ class RequisitionController extends Controller
                 $validated,
                 $previousItems,
                 $activityComment
-              );
+            );
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Requisition updated successfully.',
+            'message' => $shouldSubmit
+                ? 'Requisition submitted successfully.'
+                : 'Requisition updated successfully.',
             'data' => $this->formatRequisitionResponse($requisition->refresh(), $user),
+        ]);
+    }
+
+    public function approve(
+        RequisitionApprovalRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanApprove($requisition, $user);
+
+        $actingStageId = $this->matchingUserStageId($requisition, $user);
+
+        if (!$actingStageId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to the current approval stage.',
+            ], 403);
+        }
+
+        $comments = $request->validated('comments');
+        $stageName = Stage::find($actingStageId)?->name;
+
+        DB::connection('porsql')->transaction(function () use ($requisition, $user, $comments, $actingStageId) {
+            Approval::create([
+                'requisition_id' => $requisition->id,
+                'user_id'        => $user->id,
+                'stage_id'       => $actingStageId,
+                'status'         => 'approved',
+                'comments'       => $comments,
+                'signed_at'      => now(),
+            ]);
+
+            RequisitionWorkflow::advanceAfterApproval(
+                $requisition->refresh(),
+                $actingStageId
+            );
+        });
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        $this->logService->recordApprovalDecision(
+            $requisition,
+            $user,
+            RequisitionLogAction::APPROVED,
+            $comments,
+            $stageName
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition approved successfully.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
+    public function reject(
+        RequisitionApprovalRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanApprove($requisition, $user);
+
+        $actingStageId = $this->matchingUserStageId($requisition, $user);
+
+        if (!$actingStageId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to the current approval stage.',
+            ], 403);
+        }
+
+        $comments = $request->validated('comments');
+        $stageName = Stage::find($actingStageId)?->name;
+
+        DB::connection('porsql')->transaction(function () use ($requisition, $user, $comments, $actingStageId) {
+            Approval::create([
+                'requisition_id' => $requisition->id,
+                'user_id'        => $user->id,
+                'stage_id'       => $actingStageId,
+                'status'         => 'rejected',
+                'comments'       => $comments,
+                'signed_at'      => now(),
+            ]);
+
+            RequisitionWorkflow::applyRejection($requisition->refresh());
+        });
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        $this->logService->recordApprovalDecision(
+            $requisition,
+            $user,
+            RequisitionLogAction::REJECTED,
+            $comments,
+            $stageName
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition rejected successfully.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
+    public function requestReview(
+        RequisitionApprovalRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanApprove($requisition, $user);
+
+        $actingStageId = $this->matchingUserStageId($requisition, $user);
+
+        if (!$actingStageId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to the current approval stage.',
+            ], 403);
+        }
+
+        $comments = $request->validated('comments');
+        $stageName = Stage::find($actingStageId)?->name;
+
+        DB::connection('porsql')->transaction(function () use ($requisition) {
+            RequisitionWorkflow::applyCostCenterReview($requisition->refresh());
+        });
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        $this->logService->recordCostCenterReviewRequest(
+            $requisition,
+            $user,
+            $comments,
+            $stageName
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition sent back to cost center for review.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
         ]);
     }
 
@@ -198,20 +364,35 @@ class RequisitionController extends Controller
 
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
+        $requisition->loadMissing('status', 'stage');
+
         $requisition->setAttribute(
             'is_editable',
-            $this->isEditableByCostCenter($requisition->loadMissing('status'), $user)
+            $this->isEditableByCostCenter($requisition, $user)
         );
+
+        $requisition->setAttribute(
+            'can_approve',
+            $this->canUserApproveRequisition($requisition, $user)
+        );
+
+        $pipeline = Pipeline::with('stages')
+            ->find(RequisitionWorkflow::defaultPipelineId());
+
+        if ($pipeline) {
+            $requisition->setRelation('pipeline', $pipeline);
+        }
 
         return $requisition;
     }
 
     private function persistRequisition(
         array $data,
-        ?Requisition $requisition = null
+        ?Requisition $requisition = null,
+        bool $shouldSubmit = false
     ): Requisition {
         $items = $data['items'];
-        unset($data['items'], $data['suppliers']);
+        unset($data['items'], $data['suppliers'], $data['submit']);
 
         $data['total'] = collect($items)->sum(
             fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
@@ -220,42 +401,29 @@ class RequisitionController extends Controller
         $data['number'] = $data['number']
             ?? $this->generateRequisitionNumber();
 
-        // 1. Initial creation setup
         if (!$requisition) {
-            // Requisitions created directly by the requester instantly go to 'Pending' review
-            $data['status_id'] = $data['status_id']
-                ?? Status::where('name', 'Draft')->value('id')
-                ?? Status::query()->value('id');
-
-            // Find the stage linked to Sequence #2 (Director Approval) inside your pivot architecture
-            $pipelineId = $data['pipeline_id'] ?? 1; 
-
-            $directorStageId = DB::connection('porsql')
-                ->table('pipeline_stages')
-                ->where('pipeline_id', $pipelineId)
-                ->where('sequence', 2)
-                ->value('stage_id');
-
-            // Progress stage pointer and cache structural sequence index for the frontend timeline
-            $data['stage_id'] = $directorStageId ?? Stage::query()->value('id');
-            $data['current_stage_sequence'] = 2; 
-        } elseif (!array_key_exists('status_id', $data)) {
-            unset($data['status_id']);
+            if ($shouldSubmit) {
+                RequisitionWorkflow::applySubmitState($data);
+            } else {
+                RequisitionWorkflow::applyDraftState($data);
+            }
+        } elseif ($shouldSubmit) {
+            if ($requisition->status?->name === 'Cost Center Review') {
+                RequisitionWorkflow::applyResubmitFromCostCenterReview($data, $requisition);
+            } else {
+                RequisitionWorkflow::applySubmitState($data);
+            }
+        } else {
+            unset($data['status_id'], $data['stage_id'], $data['current_stage_sequence']);
         }
 
         $data['currency_id'] = $data['currency_id']
             ?? Currency::query()->value('id');
 
-        // Fallback catch for standard stage pointer initialization on old architecture structures
-        if (!isset($data['stage_id'])) {
-            $data['stage_id'] = $data['stage_id'] ?? Stage::query()->value('id');
-        }
-
         if (!$data['is_recurring']) {
             $data['reminder_date'] = null;
         }
 
-        // 2. Perform persistence lifecycle updates
         if ($requisition) {
             $requisition->update($data);
             $requisition->items()->delete();
@@ -263,7 +431,6 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
-        // 3. Write individual Line Item dependencies
         foreach ($items as $item) {
             Item::create([
                 'description'      => $item['description'],

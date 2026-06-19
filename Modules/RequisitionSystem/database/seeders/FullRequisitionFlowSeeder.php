@@ -359,8 +359,20 @@ class FullRequisitionFlowSeeder extends Seeder
             // 14. USER STAGE
             // ==============================================================
             UserStage::firstOrCreate([
-                'user_id' => $james->id,
+                'user_id' => $luis->id,
                 'stage_id' => $directorApproval->id,
+            ]);
+            UserStage::firstOrCreate([
+                'user_id' => $stephanie->id,
+                'stage_id' => $stageBudgetOfficer->id,
+            ]);
+            UserStage::firstOrCreate([
+                'user_id' => $steve->id,
+                'stage_id' => $vpApproval->id,
+            ]);
+            UserStage::firstOrCreate([
+                'user_id' => $daren->id,
+                'stage_id' => $financeApproval->id,
             ]);
 
             // ==============================================================

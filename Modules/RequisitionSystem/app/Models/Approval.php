@@ -14,7 +14,7 @@ class Approval extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['requisition_id', 'user_id', 'comments', 'stage_id', 'status'];
+    protected $fillable = ['requisition_id', 'user_id', 'comments', 'stage_id', 'status', 'signed_at'];
 
     protected $casts = [
         'signed_at' => 'datetime:M d, Y',

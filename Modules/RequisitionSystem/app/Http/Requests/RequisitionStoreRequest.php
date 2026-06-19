@@ -60,6 +60,8 @@ class RequisitionStoreRequest extends FormRequest
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.comments' => 'nullable|string|max:1000',
 
+            'submit' => 'sometimes|boolean',
+
             'activity_comment' => [
                 Rule::prohibitedIf(fn() => $this->isMethod('POST')),
                 'nullable',
@@ -69,9 +71,18 @@ class RequisitionStoreRequest extends FormRequest
         ];
     }
 
+    public function shouldSubmit(): bool
+    {
+        return $this->boolean('submit');
+    }
+
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if (!$this->shouldSubmit()) {
+                return;
+            }
+
             $total = RequisitionSupplierQuoteRules::calculateItemsTotal(
                 $this->input('items', [])
             );
