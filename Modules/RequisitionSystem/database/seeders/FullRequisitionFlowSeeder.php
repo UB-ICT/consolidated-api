@@ -155,7 +155,6 @@ class FullRequisitionFlowSeeder extends Seeder
 // 9. STAGES (Look up by name only)
 // ==============================================================
             $draft = Stage::firstOrCreate(['name' => 'Draft']);
-            $submitted = Stage::firstOrCreate(['name' => 'Submitted']);
             $directorApproval = Stage::firstOrCreate(['name' => "Director's Approval"]);
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
             $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
@@ -164,11 +163,10 @@ class FullRequisitionFlowSeeder extends Seeder
             // 🔥 This pivot table sync is what actually binds them to the pipeline!
             $pipeline->stages()->syncWithoutDetaching([
                 $draft->id => ['sequence' => 1],
-                $submitted->id => ['sequence' => 2],
-                $directorApproval->id => ['sequence' => 3],
-                $stageBudgetOfficer->id => ['sequence' => 4],
-                $vpApproval->id => ['sequence' => 5],
-                $financeApproval->id => ['sequence' => 6]
+                $directorApproval->id => ['sequence' => 2],
+                $stageBudgetOfficer->id => ['sequence' => 3],
+                $vpApproval->id => ['sequence' => 4],
+                $financeApproval->id => ['sequence' => 5]
             ]);
 
             // ==============================================================
@@ -256,7 +254,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'total' => 0,
                     'priority' => 'urgent',
                     'expected_delivery_date' => now()->addDays(14)->format('Y-m-d'),
-                    'stage_id' => $submitted->id,
+                    'stage_id' => $directorApproval->id,
                     'date_prepared' => now(),
                     'is_recurring' => false,
                     'reminder_date' => null,

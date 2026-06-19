@@ -10,7 +10,7 @@ class StageSeeder extends Seeder
     public function run(): void
     {
         $stages = [
-            'Submitted',
+            'Draft',
             'Director Approval',
             'Budget Officer',
             'VP approval',
