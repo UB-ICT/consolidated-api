@@ -121,6 +121,30 @@ class RequisitionCancellationGuardTest extends TestCase
         $this->assertSame(3, $requisition->current_stage_sequence);
     }
 
+    public function test_director_dean_can_cancel_after_requisition_passed_their_stage(): void
+    {
+        [$user, $requisition] = $this->makeCostCenterUserWithRequisition(
+            'director-dean',
+            'Pending',
+            $this->stageIds['Budget Officer'],
+            3
+        );
+
+        $this->assertTrue($this->userCanCancelRequisition($requisition, $user));
+    }
+
+    public function test_requester_can_cancel_during_cost_center_review(): void
+    {
+        [$user, $requisition] = $this->makeCostCenterUserWithRequisition(
+            'requester',
+            'Cost Center Review',
+            $this->stageIds['Budget Officer'],
+            3
+        );
+
+        $this->assertTrue($this->userCanCancelRequisition($requisition, $user));
+    }
+
     /**
      * @return array{0: User, 1: Requisition}
      */
