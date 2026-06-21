@@ -97,25 +97,34 @@ class RequisitionStoreRequest extends FormRequest
                 $validator->errors()->add($field, $message);
             }
 
-            $deletedStatusId = Status::where('name', SupplierStatus::DELETED)->value('id');
-
-            if (!$deletedStatusId) {
-                return;
-            }
-
-            $deletedSupplierIds = Supplier::query()
-                ->where('status_id', $deletedStatusId)
+            $excludedSupplierIds = Supplier::query()
+                ->whereIn(
+                    'status_id',
+                    Status::query()
+                        ->whereIn('name', [SupplierStatus::DELETED, SupplierStatus::REJECTED])
+                        ->pluck('id')
+                )
                 ->pluck('id');
 
             foreach ($this->input('suppliers', []) as $index => $supplier) {
                 $supplierId = $supplier['supplier_id'] ?? null;
 
-                if ($supplierId && $deletedSupplierIds->contains((int) $supplierId)) {
-                    $validator->errors()->add(
-                        "suppliers.{$index}.supplier_id",
-                        'The selected supplier has been deleted.'
-                    );
+                if (!$supplierId || !$excludedSupplierIds->contains((int) $supplierId)) {
+                    continue;
                 }
+
+                $supplierModel = Supplier::query()
+                    ->with('status')
+                    ->find($supplierId);
+
+                $message = $supplierModel?->isRejected()
+                    ? 'The selected supplier has been rejected.'
+                    : 'The selected supplier has been deleted.';
+
+                $validator->errors()->add(
+                    "suppliers.{$index}.supplier_id",
+                    $message
+                );
             }
         });
     }

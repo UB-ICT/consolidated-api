@@ -26,13 +26,27 @@ class Supplier extends Model
 
     public function scopeSelectable(Builder $query): Builder
     {
-        $deletedStatusId = Status::where('name', SupplierStatus::DELETED)->value('id');
+        $excludedStatusIds = Status::query()
+            ->whereIn('name', [SupplierStatus::DELETED, SupplierStatus::REJECTED])
+            ->pluck('id')
+            ->filter()
+            ->all();
 
-        if (!$deletedStatusId) {
+        if ($excludedStatusIds === []) {
             return $query;
         }
 
-        return $query->where('status_id', '!=', $deletedStatusId);
+        return $query->whereNotIn('status_id', $excludedStatusIds);
+    }
+
+    public function isRejected(): bool
+    {
+        return strcasecmp($this->status?->name ?? '', SupplierStatus::REJECTED) === 0;
+    }
+
+    public function isSelectable(): bool
+    {
+        return !$this->isDeleted() && !$this->isRejected();
     }
 
     public function isDeleted(): bool

@@ -11,4 +11,8 @@ final class SupplierStatus
     public const DELETED = 'Deleted';
 
     public const DELETED_ID = 7;
+
+    public const REJECTED = 'Rejected';
+
+    public const REJECTED_ID = 4;
 }
