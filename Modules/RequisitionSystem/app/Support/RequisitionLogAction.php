@@ -18,6 +18,8 @@ final class RequisitionLogAction
 
     public const COST_CENTER_REVIEW = 'cost_center_review';
 
+    public const CANCELLED = 'cancelled';
+
     public static function all(): array
     {
         return [
@@ -28,6 +30,7 @@ final class RequisitionLogAction
             self::REJECTED,
             self::COMMENT,
             self::COST_CENTER_REVIEW,
+            self::CANCELLED,
         ];
     }
 }

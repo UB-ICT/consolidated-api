@@ -18,6 +18,7 @@ use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
+use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
@@ -28,6 +29,7 @@ class RequisitionController extends Controller
 {
     use GuardsRequisitionEditing;
     use GuardsRequisitionApproval;
+    use GuardsRequisitionCancellation;
     use GuardsRequisitionPurchaseOrder;
 
     public function __construct(
@@ -364,6 +366,30 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function cancel(
+        RequisitionApprovalRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanCancel($requisition, $user);
+
+        $comments = $request->validated('comments');
+
+        RequisitionWorkflow::applyCancellation($requisition->refresh());
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        $this->logService->recordCancellation($requisition, $user, $comments);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Requisition cancelled successfully.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
     public function updatePurchaseOrderNumber(
         RequisitionPurchaseOrderRequest $request,
         Requisition $requisition
@@ -439,6 +465,11 @@ class RequisitionController extends Controller
         $requisition->setAttribute(
             'can_edit_purchase_order_number',
             $this->canEditPurchaseOrderNumber($requisition, $user)
+        );
+
+        $requisition->setAttribute(
+            'can_cancel',
+            $this->userCanCancelRequisition($requisition, $user)
         );
 
         $pipeline = Pipeline::with('stages')

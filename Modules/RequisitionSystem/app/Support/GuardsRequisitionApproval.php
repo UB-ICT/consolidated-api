@@ -45,6 +45,10 @@ trait GuardsRequisitionApproval
             return false;
         }
 
+        if (!in_array($requisition->status?->name, $this->approvableStatuses(), true)) {
+            return false;
+        }
+
         return RequisitionWorkflow::matchingUserStageId($requisition, $user) !== null;
     }
 

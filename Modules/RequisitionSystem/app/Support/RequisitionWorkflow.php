@@ -143,6 +143,11 @@ final class RequisitionWorkflow
         return Status::where('name', 'Cost Center Review')->value('id');
     }
 
+    public static function cancelledStatusId(): ?int
+    {
+        return Status::where('name', 'Cancelled')->value('id');
+    }
+
     public static function applyDraftState(array &$data, ?int $pipelineId = null): void
     {
         $pipelineId ??= self::defaultPipelineId();
@@ -217,6 +222,13 @@ final class RequisitionWorkflow
     {
         $requisition->update([
             'status_id' => self::costCenterReviewStatusId() ?? $requisition->status_id,
+        ]);
+    }
+
+    public static function applyCancellation(Requisition $requisition): void
+    {
+        $requisition->update([
+            'status_id' => self::cancelledStatusId() ?? $requisition->status_id,
         ]);
     }
 }

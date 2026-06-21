@@ -19,4 +19,17 @@ class RequisitionLogActionTest extends TestCase
     {
         $this->assertSame('cost_center_review', RequisitionLogAction::COST_CENTER_REVIEW);
     }
+
+    public function test_all_includes_cancelled(): void
+    {
+        $this->assertContains(
+            RequisitionLogAction::CANCELLED,
+            RequisitionLogAction::all()
+        );
+    }
+
+    public function test_cancelled_constant_value(): void
+    {
+        $this->assertSame('cancelled', RequisitionLogAction::CANCELLED);
+    }
 }

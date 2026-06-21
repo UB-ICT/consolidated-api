@@ -109,6 +109,15 @@ class RequisitionApprovalGuardTest extends TestCase
         );
     }
 
+    public function test_user_cannot_view_approval_actions_when_requisition_is_rejected(): void
+    {
+        [$user, $requisition] = $this->makeAssignedRequisitionAtDirectorStage(
+            $this->statusIds['Rejected']
+        );
+
+        $this->assertFalse($this->userCanViewApprovalActions($requisition, $user));
+    }
+
     /**
      * @return array{0: User, 1: Requisition}
      */

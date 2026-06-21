@@ -132,6 +132,25 @@ class RequisitionLogService
         );
     }
 
+    public function recordCancellation(
+        Requisition $requisition,
+        User $user,
+        ?string $comments = null
+    ): Logs {
+        $summary = sprintf(
+            'Requisition %s cancelled.',
+            $requisition->number
+        );
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::CANCELLED,
+            $summary,
+            $comments
+        );
+    }
+
     public function recordComment(
         Requisition $requisition,
         User $user,

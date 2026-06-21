@@ -84,7 +84,7 @@ trait CreatesRequisitionWorkflowSchema
 
     protected function seedWorkflowStatuses(): void
     {
-        foreach (['Draft', 'Pending', 'Approved', 'Rejected', 'Cost Center Review'] as $name) {
+        foreach (['Draft', 'Pending', 'Approved', 'Rejected', 'Cost Center Review', 'Cancelled'] as $name) {
             $id = DB::connection('porsql')->table('statuses')->insertGetId([
                 'name'       => $name,
                 'created_at' => now(),
