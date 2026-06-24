@@ -48,7 +48,6 @@ class RequisitionController extends Controller
     public function index(Request $request)
     {
         $query = Requisition::with(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status']);
-
         if ($request->get('scope') === 'cost_center') {
             /** @var \Modules\Auth\Models\User $user */
             $user = Auth::user();
@@ -57,7 +56,11 @@ class RequisitionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
             }
 
-            if (!$this->userHasGlobalRequisitionAccess($user)) {
+            // 1. Get the current role context (allows overrides from Postman/Frontend query strings too!)
+            $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+
+            // 2. Pass BOTH the user object and the role string here ✅
+            if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
                 $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
                 if ($assignedCostCenterIds->isEmpty()) {
@@ -601,13 +604,13 @@ class RequisitionController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        // 1. Determine active role context (Query param fallback to database profile setup)
+        // 1. Determine active role context
         $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
 
         $query = Requisition::query();
 
-        // 2. Data Isolation Boundaries
-        // budget-officer passes this check and naturally gains GLOBAL viewing parameters (sees all cost centers)
+        // 2. Data Boundary Isolation
+        // Global roles (Budget Officer, VP, Finance Director, Purchase Officer) skip this and view all departments
         if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
@@ -619,42 +622,35 @@ class RequisitionController extends Controller
                 ]);
             }
 
-            // Restrict only local roles (requester, director-dean) to their cost centers
             $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
         }
 
         $now = Carbon::now();
 
-        // 3. 🔀 Strategy Split: Aggregate metrics based on the requested dashboard context
-        if ($currentRole === 'budget-officer') {
+        // 3. Define Stage Mapping based on the active role
+        $stageMapping = [
+            'director-dean'       => 2,
+            'budget-officer'      => 3,
+            'vice-president'      => 4,
+            'director-of-finance' => 5,
+            'purchase-officer'    => 6,
+        ];
 
-            // --- 📊 BUDGET OFFICER METRICS (Global View) ---
+        // 4. 🔀 Strategy Split: If it's a management workflow role, run the pipeline aggregation cards
+        if (array_key_exists($currentRole, $stageMapping)) {
+            $targetStage = $stageMapping[$currentRole];
+
             $metricsResult = $query->select(
-                // Card 1: Awaiting My Action (Sitting on Stage 3 [Budget Officer] AND Status is Pending [2])
-                DB::raw("SUM(CASE WHEN requisitions.stage_id = 3 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
+                // Card 1: Awaiting My Action (Sitting at their specific stage step AND Status is Pending [2])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id = {$targetStage} AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
 
-                // Card 2: In Pipeline (At or past budget review stage, but not fully Approved [3] or Rejected [4])
-                DB::raw("SUM(CASE WHEN requisitions.stage_id >= 3 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
+                // Card 2: In Pipeline (At or past their step review stage, but not fully Approved [3] or Rejected [4])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id >= {$targetStage} AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
 
                 // Card 3: Approved This Month (Fully Approved [3] system-wide within current month)
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
 
-                // Card 4: Supplier Requests (Under Review [5] across all cost centers)
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
-            )->first();
-
-            return response()->json([
-                'success' => true,
-                'role_context' => $currentRole,
-                'metrics' => $this->buildMetricsPayload($metricsResult, true)
-            ]);
-        } elseif ($currentRole === 'director-dean') {
-
-            // --- 🏛️ DIRECTOR-DEAN METRICS (Cost Center Locked) ---
-            $metricsResult = $query->select(
-                DB::raw("SUM(CASE WHEN requisitions.stage_id = 2 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
-                DB::raw("SUM(CASE WHEN requisitions.stage_id > 1 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
+                // Card 4: Supplier Requests / Under Review (Forms marked as Under Review [5])
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
             )->first();
 
@@ -664,8 +660,7 @@ class RequisitionController extends Controller
                 'metrics' => $this->buildMetricsPayload($metricsResult, true)
             ]);
         } else {
-
-            // --- 📝 REQUESTER METRICS (Default Fallback) ---
+            // --- 📝 BASIC REQUESTER METRICS (Default Fallback) ---
             $metricsResult = $query->select(
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 2 THEN 1 ELSE 0 END) as pending"),
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 3 THEN 1 ELSE 0 END) as approved"),
@@ -681,20 +676,23 @@ class RequisitionController extends Controller
         }
     }
 
-    private function userHasGlobalRequisitionAccess($user): bool
+    /**
+     * Check if a user/role combination bypasses Cost Center isolation sandboxing.
+     */
+    private function userHasGlobalRequisitionAccess($user, string $currentRole): bool
     {
-        return $user->hasAnyRole([
-            'super-admin',
-            'budget-officer',
-            'president',
-            'vice-president',
-            'director-of-finance',
-            'purchase-officer'
-        ]);
+        // Global roles naturally bypass local cost center limits
+        $globalRoles = ['budget-officer', 'vice-president', 'director-of-finance', 'purchase-officer', 'super-admin'];
+
+        if (in_array($currentRole, $globalRoles)) {
+            return true;
+        }
+
+        return $user->hasAnyRole($globalRoles);
     }
 
     /**
-     * Return safe formatting payload if cost centers are decoupled.
+     * Map database row aggregation to cleanly typecast integers.
      */
     private function buildMetricsPayload($result, bool $isWorkflowLayout): array
     {
@@ -715,9 +713,14 @@ class RequisitionController extends Controller
         ];
     }
 
+    /**
+     * Return structural fallback zeroes when relations are unassigned.
+     */
     private function getEmptyMetricsResponse(string $role): array
     {
-        if (in_array($role, ['director-dean', 'budget-officer'])) {
+        $workflowRoles = ['director-dean', 'budget-officer', 'vice-president', 'director-of-finance', 'purchase-officer'];
+
+        if (in_array($role, $workflowRoles)) {
             return ['awaiting_my_action' => 0, 'in_pipeline' => 0, 'approved_this_month' => 0, 'supplier_requests' => 0];
         }
         return ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'draft' => 0];
