@@ -601,14 +601,14 @@ class RequisitionController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        // 1. Determine the active role context (Default to the user's first role if query parameter isn't provided)
+        // 1. Determine active role context (Query param fallback to database profile setup)
         $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
 
-        // Base Query targeting the isolated connection
         $query = Requisition::query();
 
-        // 2. Data Boundary Isolation: Check if user is bound by Cost Center limits
-        if (!$this->userHasGlobalRequisitionAccess($user)) {
+        // 2. Data Isolation Boundaries
+        // budget-officer passes this check and naturally gains GLOBAL viewing parameters (sees all cost centers)
+        if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
             if ($assignedCostCenterIds->isEmpty()) {
@@ -619,43 +619,53 @@ class RequisitionController extends Controller
                 ]);
             }
 
-            // Lock down query strictly to their assigned cost centers (e.g., Admissions)
+            // Restrict only local roles (requester, director-dean) to their cost centers
             $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
         }
 
         $now = Carbon::now();
 
-        // 3. 🔀 Strategy Split: Evaluate layout aggregations per role context
-        if ($currentRole === 'director-dean') {
+        // 3. 🔀 Strategy Split: Aggregate metrics based on the requested dashboard context
+        if ($currentRole === 'budget-officer') {
 
-            // --- 🏛️ DIRECTOR-DEAN METRICS MATRIX ---
+            // --- 📊 BUDGET OFFICER METRICS (Global View) ---
             $metricsResult = $query->select(
-                // Card 1: Awaiting My Action (Sitting on Stage 2 [Director's Approval] AND Status is Pending [2])
-                DB::raw("SUM(CASE WHEN requisitions.stage_id = 2 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
+                // Card 1: Awaiting My Action (Sitting on Stage 3 [Budget Officer] AND Status is Pending [2])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id = 3 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
 
-                // Card 2: In Pipeline (Active forms past Draft, but not yet Approved [3] or Rejected [4])
-                DB::raw("SUM(CASE WHEN requisitions.stage_id > 1 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
+                // Card 2: In Pipeline (At or past budget review stage, but not fully Approved [3] or Rejected [4])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id >= 3 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
 
-                // Card 3: Approved This Month (Fully Cleared Status [3] updated within current calendar month)
+                // Card 3: Approved This Month (Fully Approved [3] system-wide within current month)
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
 
-                // Card 4: Supplier Requests (Forms marked as Under Review [5])
+                // Card 4: Supplier Requests (Under Review [5] across all cost centers)
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
             )->first();
 
             return response()->json([
                 'success' => true,
                 'role_context' => $currentRole,
-                'metrics' => [
-                    'awaiting_my_action' => (int) ($metricsResult->awaiting_my_action ?? 0),
-                    'in_pipeline'        => (int) ($metricsResult->in_pipeline ?? 0),
-                    'approved_this_month' => (int) ($metricsResult->approved_this_month ?? 0),
-                    'supplier_requests'  => (int) ($metricsResult->supplier_requests ?? 0),
-                ]
+                'metrics' => $this->buildMetricsPayload($metricsResult, true)
+            ]);
+        } elseif ($currentRole === 'director-dean') {
+
+            // --- 🏛️ DIRECTOR-DEAN METRICS (Cost Center Locked) ---
+            $metricsResult = $query->select(
+                DB::raw("SUM(CASE WHEN requisitions.stage_id = 2 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
+                DB::raw("SUM(CASE WHEN requisitions.stage_id > 1 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
+            )->first();
+
+            return response()->json([
+                'success' => true,
+                'role_context' => $currentRole,
+                'metrics' => $this->buildMetricsPayload($metricsResult, true)
             ]);
         } else {
 
-            // --- 📝 REQUESTER METRICS MATRIX (Fallback) ---
+            // --- 📝 REQUESTER METRICS (Default Fallback) ---
             $metricsResult = $query->select(
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 2 THEN 1 ELSE 0 END) as pending"),
                 DB::raw("SUM(CASE WHEN requisitions.status_id = 3 THEN 1 ELSE 0 END) as approved"),
@@ -666,12 +676,7 @@ class RequisitionController extends Controller
             return response()->json([
                 'success' => true,
                 'role_context' => $currentRole,
-                'metrics' => [
-                    'pending'  => (int) ($metricsResult->pending ?? 0),
-                    'approved' => (int) ($metricsResult->approved ?? 0),
-                    'rejected' => (int) ($metricsResult->rejected ?? 0),
-                    'draft'    => (int) ($metricsResult->draft ?? 0),
-                ]
+                'metrics' => $this->buildMetricsPayload($metricsResult, false)
             ]);
         }
     }
@@ -691,22 +696,30 @@ class RequisitionController extends Controller
     /**
      * Return safe formatting payload if cost centers are decoupled.
      */
-    private function getEmptyMetricsResponse(string $role): array
+    private function buildMetricsPayload($result, bool $isWorkflowLayout): array
     {
-        if ($role === 'director-dean') {
+        if ($isWorkflowLayout) {
             return [
-                'awaiting_my_action' => 0,
-                'in_pipeline' => 0,
-                'approved_this_month' => 0,
-                'supplier_requests' => 0
+                'awaiting_my_action'  => (int) ($result->awaiting_my_action ?? 0),
+                'in_pipeline'         => (int) ($result->in_pipeline ?? 0),
+                'approved_this_month' => (int) ($result->approved_this_month ?? 0),
+                'supplier_requests'   => (int) ($result->supplier_requests ?? 0),
             ];
         }
 
         return [
-            'pending' => 0,
-            'approved' => 0,
-            'rejected' => 0,
-            'draft' => 0
+            'pending'  => (int) ($result->pending ?? 0),
+            'approved' => (int) ($result->approved ?? 0),
+            'rejected' => (int) ($result->rejected ?? 0),
+            'draft'    => (int) ($result->draft ?? 0),
         ];
+    }
+
+    private function getEmptyMetricsResponse(string $role): array
+    {
+        if (in_array($role, ['director-dean', 'budget-officer'])) {
+            return ['awaiting_my_action' => 0, 'in_pipeline' => 0, 'approved_this_month' => 0, 'supplier_requests' => 0];
+        }
+        return ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'draft' => 0];
     }
 }

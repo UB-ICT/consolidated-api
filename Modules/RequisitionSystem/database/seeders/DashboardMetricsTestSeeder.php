@@ -11,58 +11,78 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardMetricsTestSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $db = DB::connection('porsql');
 
-        // Find your Director-Dean role id
-        $directorDeanRoleId = $db->table('public.roles')->where('role_name', 'director-dean')->value('id');
+        // 1. Fetch exact master data IDs from your roles table
+        $requesterRoleId  = $db->table('public.roles')->where('role_name', 'requester')->value('id');
+        $directorRoleId   = $db->table('public.roles')->where('role_name', 'director-dean')->value('id');
+        $budgetRoleId     = $db->table('public.roles')->where('role_name', 'budget-officer')->value('id');
 
+        // Dynamic lookup from the database to prevent foreign key errors
         $statusIds = [
-            'Pending' => $db->table('purchase_order_requisition.statuses')->where('name', 'Pending')->value('id'),
-            'Approved' => $db->table('purchase_order_requisition.statuses')->where('name', 'Approved')->value('id'),
-            'Rejected' => $db->table('purchase_order_requisition.statuses')->where('name', 'Rejected')->value('id'),
-            'Cost Center Review' => $db->table('purchase_order_requisition.statuses')->where('name', 'Cost Center Review')->value('id'),
+            'Draft'        => $db->table('purchase_order_requisition.statuses')->where('name', 'Draft')->value('id') ?? 1,
+            'Pending'      => $db->table('purchase_order_requisition.statuses')->where('name', 'Pending')->value('id') ?? 2,
+            'Approved'     => $db->table('purchase_order_requisition.statuses')->where('name', 'Approved')->value('id') ?? 3,
+            'Rejected'     => $db->table('purchase_order_requisition.statuses')->where('name', 'Rejected')->value('id') ?? 4,
+            'Under Review' => $db->table('purchase_order_requisition.statuses')->where('name', 'Under Review')->value('id')
+                ?? $db->table('purchase_order_requisition.statuses')->where('name', 'Pending')->value('id') // Safe fallback to Pending if ID 5 doesn't exist
+                ?? 2,
         ];
 
-        $admissionsCcId = $db->table('purchase_order_requisition.cost_centers')->where('name', 'Admissions')->value('id');
-        $currencyId = $db->table('purchase_order_requisition.currencies')->where('name', 'BZD')->value('id') ?? 1;
+        // Fetch Cost Center IDs dynamically using your exact table values
+        $admissionsCcId = $db->table('purchase_order_requisition.cost_centers')->where('name', 'Admissions')->value('id') ?? 1;
+        $hrCcId         = $db->table('purchase_order_requisition.cost_centers')->where('name', 'Human Resources')->value('id') ?? 12;
+        $toledoCcId     = $db->table('purchase_order_requisition.cost_centers')->where('name', 'Toledo')->value('id') ?? 30;
 
-        // Clean up user link and assign Director-Dean
+        $currencyId     = $db->table('purchase_order_requisition.currencies')->where('name', 'BZD')->value('id') ?? 1;
+
+        // 2. Setup your core Test User (James Faber)
         $user = User::updateOrCreate(
             ['email' => 'james.faber@ub.edu.bz'],
-            ['name' => 'James Faber', 'password' => Hash::make('Kingjames_x2'), 'email_verified_at' => now()]
+            [
+                'name' => 'James Faber',
+                'password' => Hash::make('Kingjames_x2'),
+                'email_verified_at' => now(),
+            ]
         );
+
         $user->roles()->detach();
         $user->costCenters()->detach();
 
-        $user->roles()->attach($directorDeanRoleId);
+        if ($directorRoleId) $user->roles()->attach($directorRoleId);
+        if ($budgetRoleId)   $user->roles()->attach($budgetRoleId);
+        if ($requesterRoleId) $user->roles()->attach($requesterRoleId);
+
         $user->costCenters()->attach($admissionsCcId);
 
-        // Clear previous test requisitions to avoid inflation errors
-        Requisition::where('cost_center_id', $admissionsCcId)->delete();
+        // 3. Clean up old test data
+        Requisition::whereIn('cost_center_id', [$admissionsCcId, $hrCcId, $toledoCcId])->delete();
 
-        // 🧪 SEEDING CONTROL GROUP VALUES (To match your exact interface image example):
+        // 🧪 4. GENERATING MOCK DATA MATRIX FOR WORKFLOW TESTING
 
-        // Card 1: Awaiting My Action = 1 (Stage ID 2, Status Pending)
-        $this->createMockItem($admissionsCcId, $statusIds['Pending'], $currencyId, 2, 1);
+        // --- Admissions ---
+        $this->createMockRequisitions($admissionsCcId, $statusIds['Draft'], $currencyId, 1, 2);
+        $this->createMockRequisitions($admissionsCcId, $statusIds['Pending'], $currencyId, 2, 1);
+        $this->createMockRequisitions($admissionsCcId, $statusIds['Approved'], $currencyId, 5, 2);
+        $this->createMockRequisitions($admissionsCcId, $statusIds['Under Review'], $currencyId, 2, 2);
 
-        // Card 2: In Pipeline = 4 (Total active across pipeline steps excluding final resolutions)
-        // (The item at Stage 2 already counts as 1. Let's add 3 more at subsequent processing stages to get 4)
-        $this->createMockItem($admissionsCcId, $statusIds['Pending'], $currencyId, 3, 2); // Budget Officer
-        $this->createMockItem($admissionsCcId, $statusIds['Pending'], $currencyId, 4, 1); // VP Approval
+        // --- HR & Toledo ---
+        $this->createMockRequisitions($hrCcId, $statusIds['Pending'], $currencyId, 3, 2);
+        $this->createMockRequisitions($toledoCcId, $statusIds['Pending'], $currencyId, 3, 1);
+        $this->createMockRequisitions($hrCcId, $statusIds['Pending'], $currencyId, 4, 2);
 
-        // Card 3: Approved This Month = 2 (Status Approved, updated_at defaults to current month)
-        $this->createMockItem($admissionsCcId, $statusIds['Approved'], $currencyId, 5, 2);
-
-        // Card 4: Supplier Requests = 2
-        $this->createMockItem($admissionsCcId, $statusIds['Cost Center Review'], $currencyId, 2, 2);
-
-        $this->command->info('Director-Dean dashboard testing layout successfully populated!');
+        $this->command->info('Tri-role dashboard testing data cleanly seeded with dynamic status guardrails!');
     }
 
-    private function createMockItem($costCenterId, $statusId, $currencyId, $stageId, $count): void
+    private function createMockRequisitions($costCenterId, $statusId, $currencyId, $stageId, $count): void
     {
+        if (!$statusId || !$costCenterId || !$stageId) return;
+
         for ($i = 0; $i < $count; $i++) {
             Requisition::create([
                 'number' => 'REQ-' . date('Y') . '-' . Str::upper(Str::random(5)),
@@ -71,7 +91,7 @@ class DashboardMetricsTestSeeder extends Seeder
                 'currency_id' => $currencyId,
                 'stage_id' => $stageId,
                 'current_stage_sequence' => $stageId,
-                'total' => rand(500, 1500),
+                'total' => rand(150, 4500),
                 'priority' => 'normal',
                 'date_prepared' => now(),
                 'is_recurring' => false,

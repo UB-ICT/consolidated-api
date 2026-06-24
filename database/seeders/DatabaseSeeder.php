@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CostCenterAndDirectorSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\FullRequisitionFlowSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\DashboardMetricsTestSeeder::class,
         ]);
     }
 }
