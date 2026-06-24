@@ -184,7 +184,7 @@ class FullRequisitionFlowSeeder extends Seeder
                 $directorApproval->id => ['sequence' => 2],
                 $stageBudgetOfficer->id => ['sequence' => 3],
                 $vpApproval->id => ['sequence' => 4],
-                $financeApproval->id => ['sequence' => 5]
+                $financeApproval->id => ['sequence' => 5],
                 $purchaseApproval->id => ['sequence' => 6]
             ]);
 
