@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
@@ -95,7 +96,7 @@ class RequisitionController extends Controller
             'success' => true,
             'count'   => $requisitions->count(),
             'data'    => $requisitions->map(
-                fn (Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
+                fn(Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
             ),
         ]);
     }
@@ -491,7 +492,7 @@ class RequisitionController extends Controller
         unset($data['items'], $data['suppliers'], $data['submit']);
 
         $data['total'] = collect($items)->sum(
-            fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
+            fn(array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
         );
 
         $data['number'] = $data['number']
@@ -569,5 +570,143 @@ class RequisitionController extends Controller
         $count = Requisition::whereYear('created_at', $year)->count() + 1;
 
         return sprintf('REQ-%s-%04d', $year, $count);
+    }
+
+    /**
+     * Define visible statuses for each user role.
+     */
+    private function getVisibleStatusesForRole(string $role): array
+    {
+        return match (strtolower($role)) {
+            'requester' => ['Pending', 'Approved', 'Rejected'],
+            'budget-officer', 'vice-president', 'president', 'director-of-finance' => [
+                'Pending',
+                'Approved',
+                'Rejected',
+                'Cost Center Review'
+            ],
+            default => ['Pending', 'Approved', 'Rejected'],
+        };
+    }
+
+    /**
+     * Handle the dashboard metrics request.
+     */
+    public function __invoke(Request $request): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // 1. Determine the active role context (Default to the user's first role if query parameter isn't provided)
+        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+
+        // Base Query targeting the isolated connection
+        $query = Requisition::query();
+
+        // 2. Data Boundary Isolation: Check if user is bound by Cost Center limits
+        if (!$this->userHasGlobalRequisitionAccess($user)) {
+            $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+
+            if ($assignedCostCenterIds->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'role_context' => $currentRole,
+                    'metrics' => $this->getEmptyMetricsResponse($currentRole)
+                ]);
+            }
+
+            // Lock down query strictly to their assigned cost centers (e.g., Admissions)
+            $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
+        }
+
+        $now = Carbon::now();
+
+        // 3. 🔀 Strategy Split: Evaluate layout aggregations per role context
+        if ($currentRole === 'director-dean') {
+
+            // --- 🏛️ DIRECTOR-DEAN METRICS MATRIX ---
+            $metricsResult = $query->select(
+                // Card 1: Awaiting My Action (Sitting on Stage 2 [Director's Approval] AND Status is Pending [2])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id = 2 AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
+
+                // Card 2: In Pipeline (Active forms past Draft, but not yet Approved [3] or Rejected [4])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id > 1 AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
+
+                // Card 3: Approved This Month (Fully Cleared Status [3] updated within current calendar month)
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
+
+                // Card 4: Supplier Requests (Forms marked as Under Review [5])
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
+            )->first();
+
+            return response()->json([
+                'success' => true,
+                'role_context' => $currentRole,
+                'metrics' => [
+                    'awaiting_my_action' => (int) ($metricsResult->awaiting_my_action ?? 0),
+                    'in_pipeline'        => (int) ($metricsResult->in_pipeline ?? 0),
+                    'approved_this_month' => (int) ($metricsResult->approved_this_month ?? 0),
+                    'supplier_requests'  => (int) ($metricsResult->supplier_requests ?? 0),
+                ]
+            ]);
+        } else {
+
+            // --- 📝 REQUESTER METRICS MATRIX (Fallback) ---
+            $metricsResult = $query->select(
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 2 THEN 1 ELSE 0 END) as pending"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 THEN 1 ELSE 0 END) as approved"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 4 THEN 1 ELSE 0 END) as rejected"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 1 THEN 1 ELSE 0 END) as draft")
+            )->first();
+
+            return response()->json([
+                'success' => true,
+                'role_context' => $currentRole,
+                'metrics' => [
+                    'pending'  => (int) ($metricsResult->pending ?? 0),
+                    'approved' => (int) ($metricsResult->approved ?? 0),
+                    'rejected' => (int) ($metricsResult->rejected ?? 0),
+                    'draft'    => (int) ($metricsResult->draft ?? 0),
+                ]
+            ]);
+        }
+    }
+
+    private function userHasGlobalRequisitionAccess($user): bool
+    {
+        return $user->hasAnyRole([
+            'super-admin',
+            'budget-officer',
+            'president',
+            'vice-president',
+            'director-of-finance',
+            'purchase-officer'
+        ]);
+    }
+
+    /**
+     * Return safe formatting payload if cost centers are decoupled.
+     */
+    private function getEmptyMetricsResponse(string $role): array
+    {
+        if ($role === 'director-dean') {
+            return [
+                'awaiting_my_action' => 0,
+                'in_pipeline' => 0,
+                'approved_this_month' => 0,
+                'supplier_requests' => 0
+            ];
+        }
+
+        return [
+            'pending' => 0,
+            'approved' => 0,
+            'rejected' => 0,
+            'draft' => 0
+        ];
     }
 }

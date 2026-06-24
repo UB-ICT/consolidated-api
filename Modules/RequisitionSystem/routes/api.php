@@ -43,6 +43,7 @@ Route::group([
     Route::apiResource('items', ItemController::class);
     Route::apiResource('pipelines', PipelineController::class);
 
+    Route::get('requisitions/dashboard-metrics', [RequisitionController::class, '__invoke']);
     Route::apiResource('requisitions', RequisitionController::class);
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
@@ -51,17 +52,19 @@ Route::group([
     Route::patch('requisitions/{requisition}/purchase-order-number', [RequisitionController::class, 'updatePurchaseOrderNumber']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
+
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);
     Route::post('requisitions/{requisition}/attachments', [AttachmentController::class, 'store']);
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show']);
     Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download']);
     Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
+
     Route::get('/cost-center', [RequisitionController::class, 'byCostCenter']);
 
     Route::apiResource('stages', StageController::class);
     Route::apiResource('statuses', StatusController::class);
-    
+
     Route::get('suppliers/status-counts', [SupplierController::class, 'getStatusCounts']);
     Route::post('suppliers/quick', [SupplierController::class, 'quickStore']);
     Route::post('suppliers/{supplier}/approve', [SupplierController::class, 'approve']);
