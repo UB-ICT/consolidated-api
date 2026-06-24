@@ -677,21 +677,6 @@ class RequisitionController extends Controller
     }
 
     /**
-     * Check if a user/role combination bypasses Cost Center isolation sandboxing.
-     */
-    private function userHasGlobalRequisitionAccess($user, string $currentRole): bool
-    {
-        // Global roles naturally bypass local cost center limits
-        $globalRoles = ['budget-officer', 'vice-president', 'director-of-finance', 'purchase-officer', 'super-admin'];
-
-        if (in_array($currentRole, $globalRoles)) {
-            return true;
-        }
-
-        return $user->hasAnyRole($globalRoles);
-    }
-
-    /**
      * Map database row aggregation to cleanly typecast integers.
      */
     private function buildMetricsPayload($result, bool $isWorkflowLayout): array

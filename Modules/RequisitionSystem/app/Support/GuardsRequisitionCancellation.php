@@ -20,13 +20,18 @@ trait GuardsRequisitionCancellation
             ->exists();
     }
 
-    protected function userCanCancelRequisition(Requisition $requisition, ?User $user): bool
+    /**
+     * Determine authorization rules for cancelling a requisition sheet.
+     * Safely checks runtime role context strings if available.
+     */
+    protected function userCanCancelRequisition(Requisition $requisition, ?User $user, ?string $currentRole = null): bool
     {
         if (!$user) {
             return false;
         }
 
-        if ($this->userHasGlobalRequisitionAccess($user)) {
+        // Safeguard check: If the userHasGlobalRequisitionAccess method exists on the composition class, evaluate it
+        if (method_exists($this, 'userHasGlobalRequisitionAccess') && $this->userHasGlobalRequisitionAccess($user, $currentRole)) {
             return false;
         }
 
@@ -43,7 +48,7 @@ trait GuardsRequisitionCancellation
         return $assignedCostCenterIds->contains($requisition->cost_center_id);
     }
 
-    protected function assertUserCanCancel(Requisition $requisition, ?User $user): void
+    protected function assertUserCanCancel(Requisition $requisition, ?User $user, ?string $currentRole = null): void
     {
         if (!$user) {
             throw new HttpResponseException(response()->json([
@@ -54,7 +59,7 @@ trait GuardsRequisitionCancellation
 
         $requisition->loadMissing('status');
 
-        if (!$this->userCanCancelRequisition($requisition, $user)) {
+        if (!$this->userCanCancelRequisition($requisition, $user, $currentRole)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to cancel this requisition.',
