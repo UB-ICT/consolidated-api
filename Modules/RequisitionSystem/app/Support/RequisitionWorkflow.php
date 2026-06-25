@@ -95,7 +95,7 @@ final class RequisitionWorkflow
         return UserStage::query()
             ->where('user_id', $user->id)
             ->pluck('stage_id')
-            ->map(fn ($stageId) => (int) $stageId);
+            ->map(fn($stageId) => (int) $stageId);
     }
 
     public static function matchingUserStageId(Requisition $requisition, User $user): ?int
@@ -197,18 +197,63 @@ final class RequisitionWorkflow
         if ($nextStageId !== null) {
             $nextSequence = self::sequenceForStageId($nextStageId, $pipelineId);
 
+            // 1. Update the requisition record itself
             $requisition->update([
                 'status_id'              => self::pendingStatusId() ?? $requisition->status_id,
                 'stage_id'               => $nextStageId,
                 'current_stage_sequence' => $nextSequence,
             ]);
 
+            // 2. 🔄 Sync the database table for the next group of approvers
+            self::syncUserStagesForNextStep($requisition, $nextStageId);
+
             return;
         }
+
+        // 3. Final Step Approved: Clear out any remaining active permissions for this form
+        DB::connection('porsql')->table('user_stages')
+            ->where('stage_id', $actingStageId)
+            ->delete();
 
         $requisition->update([
             'status_id' => self::approvedStatusId() ?? $requisition->status_id,
         ]);
+    }
+
+    /**
+     * Clear old stage allocations and populate the user_stages map for the next step.
+     */
+    private static function syncUserStagesForNextStep(Requisition $requisition, int $nextStageId): void
+    {
+        // Wipe permissions linked to the old stage step
+        DB::connection('porsql')->table('user_stages')
+            ->where('stage_id', $requisition->getOriginal('stage_id'))
+            ->delete();
+
+        // Establish your application's Stage ID to Role mapping
+        $roleMapping = [
+            3 => 'budget-officer',
+            4 => 'vice-president',
+            5 => 'director-of-finance',
+            6 => 'purchase-officer',
+        ];
+
+        if (isset($roleMapping[$nextStageId])) {
+            $targetRole = $roleMapping[$nextStageId];
+
+            // Fetch IDs of users who possess this system role
+            $usersWithRole = User::whereHas('roles', function ($query) use ($targetRole) {
+                $query->where('role_name', $targetRole);
+            })->pluck('id');
+
+            // Grant active permission rows to the targeted users for the current workflow step
+            foreach ($usersWithRole as $userId) {
+                DB::connection('porsql')->table('user_stages')->updateOrInsert(
+                    ['user_id' => $userId, 'stage_id' => $nextStageId],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
+            }
+        }
     }
 
     public static function applyRejection(Requisition $requisition): void

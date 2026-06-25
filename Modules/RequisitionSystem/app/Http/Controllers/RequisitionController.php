@@ -531,6 +531,38 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
+        // 🔄 TABLE UPDATING SYNC LAYER FOR INITIAL SUBMISSION
+        if ($shouldSubmit) {
+            // 1. Get ALL director user IDs assigned to this Cost Center
+            $directorUserIds = DB::connection('porsql')
+                ->table('user_cost_center')
+                ->where('cost_center_id', $requisition->cost_center_id)
+                ->pluck('user_id') // 👈 Pluck returns an array/collection of all IDs
+                ->toArray();
+
+            // 2. Loop through every authorized manager and unlock Stage 2 for them
+            foreach ($directorUserIds as $directorUserId) {
+                // Double-check the user actually exists in the main users table
+                $userExists = DB::connection('pgsql')
+                    ->table('users')
+                    ->where('id', $directorUserId)
+                    ->exists();
+
+                if ($userExists) {
+                    DB::connection('porsql')->table('user_stages')->updateOrInsert(
+                        [
+                            'user_id'  => $directorUserId,
+                            'stage_id' => 2 // Stage 2 = Director Review
+                        ],
+                        [
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                }
+            }
+        }
+
         foreach ($items as $item) {
             Item::create([
                 'description'      => $item['description'],

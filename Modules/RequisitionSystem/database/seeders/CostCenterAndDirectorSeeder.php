@@ -73,11 +73,17 @@ class CostCenterAndDirectorSeeder extends Seeder
                 $assignedRoleId = $requesterRole->id;
             }
 
-            // Create or resolve core base authorization account identity on pgsql
-            $userAccount = User::firstOrCreate(
-                ['email' => $row['email']],
-                ['name' => $name]
-            );
+            // 1. Check if user already exists on 'pgsql' by email to preserve real UUIDs
+            $userAccount = User::where('email', $row['email'])->first();
+
+            // 2. Fallback to registration if account does not exist
+            if (!$userAccount) {
+                $userAccount = User::create([
+                    'name'     => $name,
+                    'email'    => $row['email'],
+                    'password' => bcrypt('password'), // Add placeholder authentication password
+                ]);
+            }
 
             // Assign the dynamically verified operational role link
             DB::connection('pgsql')->table('user_roles')->updateOrInsert(
@@ -92,9 +98,10 @@ class CostCenterAndDirectorSeeder extends Seeder
                 'name' => $row['cc']
             ]);
 
+            // 3. Link utilizing the matching UUID securely across the connections
             DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
                 [
-                    'user_id' => $userAccount->id,
+                    'user_id'        => $userAccount->id,
                     'cost_center_id' => $costCenter->id
                 ],
                 [
