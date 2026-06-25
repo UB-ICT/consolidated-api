@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             \Modules\Auth\Database\Seeders\AuthDatabaseSeeder::class,
-            \Modules\RequisitionSystem\Database\Seeders\PipelineSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\StageSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CountrySeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CurrencySeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
