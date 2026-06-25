@@ -15,6 +15,7 @@ class StageSeeder extends Seeder
             'Budget Officer',
             'VP approval',
             'Finance Approval',
+            'Purchase Officer Approval'
         ];
 
         foreach ($stages as $name) {

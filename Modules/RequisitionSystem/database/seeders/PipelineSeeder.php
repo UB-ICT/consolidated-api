@@ -10,7 +10,6 @@ class PipelineSeeder extends Seeder
     public function run(): void
     {
         Pipeline::insert([
-            ['name' => 'academic'],
             ['name' => 'operations'],
         ]);
     }

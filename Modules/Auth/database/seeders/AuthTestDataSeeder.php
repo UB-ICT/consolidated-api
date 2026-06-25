@@ -195,8 +195,7 @@ class AuthTestDataSeeder extends Seeder
 
         // 9. Define testing users
         $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
-            ['email' => 'zariya.obi@ub.edu.bz', 'name' => 'Zariya Obi', 'role' => 'super-admin'],
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'requester'],
             ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
         ];
 
