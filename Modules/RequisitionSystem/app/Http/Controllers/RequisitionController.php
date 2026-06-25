@@ -710,4 +710,55 @@ class RequisitionController extends Controller
         }
         return ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'draft' => 0];
     }
+
+    /**
+     * Fetch all respective forms scoped by user session role and cost center constraints.
+     * Maps to: GET /api/requisitionSystem/requisitions/recent
+     */
+    public function recent(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Resolve what operational layout role this request represents
+        $currentRole = $user->roles()->first()?->role_name ?? 'requester';
+
+        // Start a query on your Requisition model with status and stage relations loaded
+        $query = \Modules\RequisitionSystem\Models\Requisition::with(['status', 'stage'])
+            ->select([
+                'requisitions.*',
+                'suppliers.name as dynamic_supplier_name'
+            ])
+            // Left join pivot table to isolate the recommended supplier assigned to the form
+            ->leftJoin('requisition_suppliers', function ($join) {
+                $join->on('requisitions.id', '=', 'requisition_suppliers.requisition_id')
+                    ->where('requisition_suppliers.is_recommended', true);
+            })
+            // Left join core suppliers details container table
+            ->leftJoin('suppliers', 'requisition_suppliers.supplier_id', '=', 'suppliers.id');
+
+        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers
+        if (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+            $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+            $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
+        }
+
+        // 🚀 REMOVED take() constraint: Retrieve ALL matching forms sorted by newest date
+        $allRequisitions = $query->latest('requisitions.date_prepared')
+            ->get()
+            ->map(function ($requisition) {
+                return [
+                    'id' => $requisition->id,
+                    'number' => $requisition->number,
+                    'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
+                    'date_prepared' => $requisition->date_prepared,
+                    'total' => (float) $requisition->total,
+                    'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $allRequisitions
+        ]);
+    }
 }

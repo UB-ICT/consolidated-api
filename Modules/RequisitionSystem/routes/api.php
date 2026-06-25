@@ -44,6 +44,7 @@ Route::group([
     Route::apiResource('pipelines', PipelineController::class);
 
     Route::get('requisitions/dashboard-metrics', [RequisitionController::class, '__invoke']);
+    Route::get('requisitions/recent', [RequisitionController::class, 'recent']);
     Route::apiResource('requisitions', RequisitionController::class);
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
