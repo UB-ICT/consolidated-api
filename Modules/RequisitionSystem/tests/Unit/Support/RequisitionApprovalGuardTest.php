@@ -8,6 +8,7 @@ use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\UserStage;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Tests\Support\CreatesRequisitionWorkflowSchema;
+
 use Tests\TestCase;
 
 class RequisitionApprovalGuardTest extends TestCase
@@ -23,6 +24,9 @@ class RequisitionApprovalGuardTest extends TestCase
     {
         parent::setUp();
 
+        // 1. Load the Auth module tables (users, roles, user_roles) first
+
+        // 2. Run your existing workflow schema builder
         $this->setUpRequisitionWorkflowSchema();
     }
 

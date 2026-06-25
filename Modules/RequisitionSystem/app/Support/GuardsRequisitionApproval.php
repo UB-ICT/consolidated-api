@@ -56,11 +56,22 @@ trait GuardsRequisitionApproval
             return false;
         }
 
-        // 🔒 2. STRICT ROLE ENFORCEMENT:
-        // Even if the user's ID exists in user_stages for Stage 2, 
-        // reject them immediately if they do not possess the 'director-dean' role.
-        if ($matchingStageId === 2 && !$user->hasAnyRole('director-dean')) {
-            return false;
+        // 🎯 2. Map Stage IDs directly to their required roles
+        $stageRoleMap = [
+            2 => 'director-dean',
+            3 => 'budget-officer',
+            4 => 'vice-president',
+            5 => 'director-of-finance',
+            6 => 'purchase-officer',
+        ];
+
+        // Dynamic Strict Role Enforcement
+        if (array_key_exists($matchingStageId, $stageRoleMap)) {
+            $requiredRole = $stageRoleMap[$matchingStageId];
+
+            if (!$user->hasAnyRole($requiredRole)) {
+                return false;
+            }
         }
 
         return true;

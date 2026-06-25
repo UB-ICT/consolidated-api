@@ -250,6 +250,44 @@ class RequisitionController extends Controller
                 $requisition->refresh(),
                 $actingStageId
             );
+
+            // 🔄 AUTOMATED STAGE PERMISSION SYNCHRONIZER
+            // Get the freshly updated stage ID from the requisition model
+            $nextStageId = $requisition->fresh()->stage_id;
+
+            // Map each sequential stage ID to its target corporate role slug
+            $stageRoleMap = [
+                3 => 'budget-officer',
+                4 => 'vice-president',
+                5 => 'director-of-finance',
+                6 => 'purchase-officer',
+            ];
+
+            if (array_key_exists($nextStageId, $stageRoleMap)) {
+                $targetRoleSlug = $stageRoleMap[$nextStageId];
+
+                // 🔍 Query the pgsql database to find users assigned to this role
+                $nextAuthorizedUserIds = DB::connection('pgsql')
+                    ->table('user_roles')
+                    ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+                    ->where('roles.role_name', $targetRoleSlug)
+                    ->pluck('user_roles.user_id')
+                    ->toArray();
+
+                // 📝 Append entry records inside user_stages for the next level authorities
+                foreach ($nextAuthorizedUserIds as $nextUserId) {
+                    DB::connection('porsql')->table('user_stages')->updateOrInsert(
+                        [
+                            'user_id'  => $nextUserId,
+                            'stage_id' => $nextStageId
+                        ],
+                        [
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                }
+            }
         });
 
         $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
