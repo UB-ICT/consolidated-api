@@ -210,9 +210,9 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '11111111-1111-1111-1111-111111111111';
         $user->exists = true;
 
-        // 🔒 Seed context roles
-        $this->attachRoleToUserInTestContext($user->id, 'director-dean');
-        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
+        // 🔒 Seed context roles and guarantee user footprint
+        $this->attachRoleToUserInTestContext($user, 'director-dean');
+        $this->attachRoleToUserInTestContext($user, 'budget-officer');
 
         UserStage::create([
             'user_id'  => $user->id,
@@ -240,7 +240,7 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '22222222-2222-2222-2222-222222222222';
         $user->exists = true;
 
-        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
+        $this->attachRoleToUserInTestContext($user, 'budget-officer');
 
         UserStage::create([
             'user_id'  => $user->id,
@@ -262,8 +262,8 @@ class RequisitionWorkflowTest extends TestCase
         $user->exists = true;
 
         // 🔒 Seed sequential context roles for this user
-        $this->attachRoleToUserInTestContext($user->id, 'director-dean');
-        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
+        $this->attachRoleToUserInTestContext($user, 'director-dean');
+        $this->attachRoleToUserInTestContext($user, 'budget-officer');
 
         UserStage::create([
             'user_id'  => $user->id,
@@ -307,10 +307,21 @@ class RequisitionWorkflowTest extends TestCase
     }
 
     /**
-     * Helper to link testing roles inside the in-memory database workspace.
+     * Helper to link testing roles and write user entries inside the in-memory database workspace.
      */
-    private function attachRoleToUserInTestContext(string $userId, string $roleName): void
+    private function attachRoleToUserInTestContext(User $user, string $roleName): void
     {
+        // Ensure the base user record exists in the mocked pgsql users table
+        DB::connection('pgsql')->table('users')->updateOrInsert(
+            ['id' => $user->id],
+            [
+                'name' => $user->name ?? 'Test User',
+                'email' => $user->email ?? 'test@example.com',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+
         $roleId = (string) Str::uuid();
 
         DB::connection('pgsql')->table('roles')->insert([
@@ -321,7 +332,7 @@ class RequisitionWorkflowTest extends TestCase
         ]);
 
         DB::connection('pgsql')->table('user_roles')->insert([
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'role_id' => $roleId,
         ]);
     }
