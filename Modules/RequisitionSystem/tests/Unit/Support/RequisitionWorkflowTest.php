@@ -3,6 +3,7 @@
 namespace Modules\RequisitionSystem\Tests\Unit\Support;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\UserStage;
@@ -209,6 +210,10 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '11111111-1111-1111-1111-111111111111';
         $user->exists = true;
 
+        // 🔒 Seed context roles
+        $this->attachRoleToUserInTestContext($user->id, 'director-dean');
+        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
+
         UserStage::create([
             'user_id'  => $user->id,
             'stage_id' => $this->stageIds["Director's Approval"],
@@ -235,6 +240,8 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '22222222-2222-2222-2222-222222222222';
         $user->exists = true;
 
+        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
+
         UserStage::create([
             'user_id'  => $user->id,
             'stage_id' => $this->stageIds['Budget Officer'],
@@ -253,6 +260,10 @@ class RequisitionWorkflowTest extends TestCase
         $user = new User(['name' => 'Multi Approver', 'email' => 'multi@ub.edu.bz']);
         $user->id = '33333333-3333-3333-3333-333333333333';
         $user->exists = true;
+
+        // 🔒 Seed sequential context roles for this user
+        $this->attachRoleToUserInTestContext($user->id, 'director-dean');
+        $this->attachRoleToUserInTestContext($user->id, 'budget-officer');
 
         UserStage::create([
             'user_id'  => $user->id,
@@ -293,5 +304,25 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertFalse(RequisitionWorkflow::userCanActAtCurrentStage($requisition, $user));
         $this->assertSame($this->stageIds['VP Approval'], $requisition->stage_id);
         $this->assertSame($this->statusIds['Pending'], $requisition->status_id);
+    }
+
+    /**
+     * Helper to link testing roles inside the in-memory database workspace.
+     */
+    private function attachRoleToUserInTestContext(string $userId, string $roleName): void
+    {
+        $roleId = (string) Str::uuid();
+
+        DB::connection('pgsql')->table('roles')->insert([
+            'id' => $roleId,
+            'role_name' => $roleName,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::connection('pgsql')->table('user_roles')->insert([
+            'user_id' => $userId,
+            'role_id' => $roleId,
+        ]);
     }
 }

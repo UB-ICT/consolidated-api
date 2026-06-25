@@ -2,6 +2,8 @@
 
 namespace Modules\RequisitionSystem\Tests\Unit\Support;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Requisition;
@@ -24,9 +26,7 @@ class RequisitionApprovalGuardTest extends TestCase
     {
         parent::setUp();
 
-        // 1. Load the Auth module tables (users, roles, user_roles) first
-
-        // 2. Run your existing workflow schema builder
+        // 1. Run your existing workflow schema builder (which now sets up both porsql and pgsql)
         $this->setUpRequisitionWorkflowSchema();
     }
 
@@ -130,6 +130,20 @@ class RequisitionApprovalGuardTest extends TestCase
         $user = new User(['name' => 'Director', 'email' => 'director@ub.edu.bz']);
         $user->id = '44444444-4444-4444-4444-444444444444';
         $user->exists = true;
+
+        // 🔒 Seed the required role structure into your pgsql schema context for the guard checks
+        $roleId = (string) Str::uuid();
+        DB::connection('pgsql')->table('roles')->insert([
+            'id' => $roleId,
+            'role_name' => 'director-dean',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::connection('pgsql')->table('user_roles')->insert([
+            'user_id' => $user->id,
+            'role_id' => $roleId,
+        ]);
 
         UserStage::create([
             'user_id'  => $user->id,
