@@ -49,7 +49,21 @@ trait GuardsRequisitionApproval
             return false;
         }
 
-        return RequisitionWorkflow::matchingUserStageId($requisition, $user) !== null;
+        // 1. Resolve what stage this user matches in user_stages
+        $matchingStageId = RequisitionWorkflow::matchingUserStageId($requisition, $user);
+
+        if ($matchingStageId === null) {
+            return false;
+        }
+
+        // 🔒 2. STRICT ROLE ENFORCEMENT:
+        // Even if the user's ID exists in user_stages for Stage 2, 
+        // reject them immediately if they do not possess the 'director-dean' role.
+        if ($matchingStageId === 2 && !$user->hasAnyRole('director-dean')) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function canUserApproveRequisition(Requisition $requisition, ?User $user): bool
