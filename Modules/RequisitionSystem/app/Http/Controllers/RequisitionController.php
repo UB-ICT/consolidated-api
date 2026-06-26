@@ -296,7 +296,7 @@ class RequisitionController extends Controller
                 'requisition_id' => $requisition->id,
                 'user_id'        => $user->id,
                 'stage_id'       => $actingStageId,
-                'status'         => 'rejected',
+                'status'         => 'approved',
                 'comments'       => $comments,
                 'signed_at'      => now(),
             ]);
