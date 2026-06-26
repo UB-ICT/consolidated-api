@@ -56,22 +56,11 @@ trait GuardsRequisitionApproval
             return false;
         }
 
-        // 🎯 2. Map Stage IDs directly to their required roles
-        $stageRoleMap = [
-            2 => 'director-dean',
-            3 => 'budget-officer',
-            4 => 'vice-president',
-            5 => 'director-of-finance',
-            6 => 'purchase-officer',
-        ];
+        // 2. Map the matched stage to its required role
+        $requiredRole = RequisitionWorkflow::requiredRoleForStageId($matchingStageId);
 
-        // Dynamic Strict Role Enforcement
-        if (array_key_exists($matchingStageId, $stageRoleMap)) {
-            $requiredRole = $stageRoleMap[$matchingStageId];
-
-            if (!$user->hasAnyRole($requiredRole)) {
-                return false;
-            }
+        if ($requiredRole !== null && !$user->hasAnyRole($requiredRole)) {
+            return false;
         }
 
         return true;
