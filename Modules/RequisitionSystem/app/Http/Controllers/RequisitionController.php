@@ -117,8 +117,8 @@ class RequisitionController extends Controller
         $shouldSubmit = $request->shouldSubmit();
         unset($validated['submit']);
 
-        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $shouldSubmit) {
-            $requisition = $this->persistRequisition($validated, null, $shouldSubmit);
+        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $shouldSubmit, $user) {
+            $requisition = $this->persistRequisition($validated, null, $shouldSubmit, $user);
             $this->syncSuppliers($requisition, $validated['suppliers'] ?? []);
 
             return $requisition;
@@ -490,7 +490,8 @@ class RequisitionController extends Controller
     private function persistRequisition(
         array $data,
         ?Requisition $requisition = null,
-        bool $shouldSubmit = false
+        bool $shouldSubmit = false,
+        ?\Modules\Auth\Models\User $creator = null
     ): Requisition {
         $items = $data['items'];
         unset($data['items'], $data['suppliers'], $data['submit']);
@@ -503,8 +504,19 @@ class RequisitionController extends Controller
             ?? $this->generateRequisitionNumber();
 
         if (!$requisition) {
+            // A creator who themselves holds an approver role doesn't need their
+            // own form routed through stages below their authority -- it starts
+            // (and, if rejected, returns to) their own stage instead of Draft.
+            $originStageId = $creator ? RequisitionWorkflow::originStageIdForUser($creator) : null;
+            $data['created_by'] = $creator?->id;
+            $data['origin_stage_id'] = $originStageId;
+
             if ($shouldSubmit) {
-                RequisitionWorkflow::applySubmitState($data);
+                RequisitionWorkflow::applySubmitState(
+                    $data,
+                    null,
+                    RequisitionWorkflow::startStageIdFromOrigin($originStageId)
+                );
             } else {
                 RequisitionWorkflow::applyDraftState($data);
             }
@@ -514,7 +526,13 @@ class RequisitionController extends Controller
             } elseif ($requisition->status?->name === 'Rejected') {
                 RequisitionWorkflow::applyResubmitFromRejection($data, $requisition);
             } else {
-                RequisitionWorkflow::applySubmitState($data);
+                // First-time submit of a previously-saved Draft: still honor
+                // the creator's origin stage, captured back when it was created.
+                RequisitionWorkflow::applySubmitState(
+                    $data,
+                    null,
+                    RequisitionWorkflow::startStageIdFromOrigin($requisition->origin_stage_id)
+                );
             }
         } else {
             unset($data['status_id'], $data['stage_id'], $data['current_stage_sequence']);
@@ -642,11 +660,17 @@ class RequisitionController extends Controller
         // 1. Determine active role context
         $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
 
+        // A user can hold an approver role AND submit their own forms. ?view=submitted
+        // lets them explicitly ask for the "my submissions" metrics instead of having
+        // it inferred from role, and forces cost-center scoping even for global roles
+        // (the global bypass is for the approval queue, not for one's own submissions).
+        $isSubmittedView = $request->get('view') === 'submitted';
+
         $query = Requisition::query();
 
         // 2. Data Boundary Isolation
         // Global roles (Budget Officer, VP, Finance Director, Purchase Officer) skip this and view all departments
-        if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+        if ($isSubmittedView || !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
             if ($assignedCostCenterIds->isEmpty()) {
@@ -666,7 +690,7 @@ class RequisitionController extends Controller
         $stageMapping = $this->workflowStageMapping();
 
         // 4. 🔀 Strategy Split: If it's a management workflow role, run the pipeline aggregation cards
-        if (array_key_exists($currentRole, $stageMapping)) {
+        if (!$isSubmittedView && array_key_exists($currentRole, $stageMapping)) {
             $targetStage = $stageMapping[$currentRole];
 
             $metricsResult = $query->select(
@@ -710,13 +734,7 @@ class RequisitionController extends Controller
      */
     private function workflowStageMapping(): array
     {
-        return [
-            'director-dean'       => 2,
-            'budget-officer'      => 3,
-            'vice-president'      => 4,
-            'director-of-finance' => 5,
-            'purchase-officer'    => 6,
-        ];
+        return RequisitionWorkflow::roleStageMapping();
     }
 
     /**
@@ -801,7 +819,12 @@ class RequisitionController extends Controller
 
         // Workflow roles only care about how long a form sat at their own stage;
         // the requester view cares about totals across the whole pipeline.
-        $targetStageId = $this->workflowStageMapping()[$currentRole] ?? null;
+        // A user can hold an approver role AND submit their own forms, so
+        // ?view=submitted lets them explicitly ask for the "my submissions"
+        // view instead of having it inferred (and possibly wrong) from role.
+        $targetStageId = $request->get('view') === 'submitted'
+            ? null
+            : $this->workflowStageMapping()[$currentRole] ?? null;
         $previousStageId = $targetStageId !== null
             ? RequisitionWorkflow::previousStageIdForStage($targetStageId)
             : null;
@@ -836,8 +859,12 @@ class RequisitionController extends Controller
             });
         }
 
-        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers
-        if (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers.
+        // The global-access bypass is for reviewing the approval queue across departments; it shouldn't
+        // apply when someone explicitly asked for their own "submitted" view.
+        $isSubmittedView = $request->get('view') === 'submitted';
+
+        if ($isSubmittedView || (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole))) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
             $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
         }

@@ -80,7 +80,9 @@ trait CreatesRequisitionWorkflowSchema
 
         Schema::connection('porsql')->create('requisitions', function (Blueprint $table) {
             $table->id();
+            $table->uuid('created_by')->nullable();
             $table->unsignedBigInteger('stage_id');
+            $table->unsignedBigInteger('origin_stage_id')->nullable();
             $table->unsignedBigInteger('status_id');
             $table->unsignedInteger('current_stage_sequence')->nullable();
             $table->timestamps();
@@ -156,10 +158,15 @@ trait CreatesRequisitionWorkflowSchema
         }
     }
 
-    protected function createTestRequisition(int $stageId, int $statusId, int $sequence): int
-    {
+    protected function createTestRequisition(
+        int $stageId,
+        int $statusId,
+        int $sequence,
+        ?int $originStageId = null
+    ): int {
         return DB::connection('porsql')->table('requisitions')->insertGetId([
             'stage_id'               => $stageId,
+            'origin_stage_id'        => $originStageId,
             'status_id'              => $statusId,
             'current_stage_sequence' => $sequence,
             'created_at'             => now(),
