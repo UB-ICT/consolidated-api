@@ -88,6 +88,23 @@ final class RequisitionWorkflow
         return self::stageIdForSequence($currentSequence + 1, $pipelineId);
     }
 
+    /**
+     * The stage immediately before the given one, or null if it's the first
+     * approver stage (in which case the requisition's date_prepared is the
+     * relevant "arrival" timestamp instead of a prior stage's approval).
+     */
+    public static function previousStageIdForStage(int $stageId, ?int $pipelineId = null): ?int
+    {
+        $pipelineId ??= self::defaultPipelineId();
+        $currentSequence = self::sequenceForStageId($stageId, $pipelineId);
+
+        if ($currentSequence === null || $currentSequence <= self::SUBMITTED_STAGE_SEQUENCE) {
+            return null;
+        }
+
+        return self::stageIdForSequence($currentSequence - 1, $pipelineId);
+    }
+
     public static function isLastPipelineStage(int $stageId, ?int $pipelineId = null): bool
     {
         $pipelineId ??= self::defaultPipelineId();
@@ -283,10 +300,21 @@ final class RequisitionWorkflow
         }
     }
 
-    public static function applyRejection(Requisition $requisition): void
+    /**
+     * A rejection kicks the requisition back to the requester's draft stage
+     * for review and resubmission, rather than leaving it parked at whichever
+     * approver stage rejected it.
+     */
+    public static function applyRejection(Requisition $requisition, ?int $pipelineId = null): void
     {
+        $pipelineId ??= self::defaultPipelineId();
+        $draftStageId = self::stageIdForSequence(self::DRAFT_STAGE_SEQUENCE, $pipelineId)
+            ?? Stage::query()->value('id');
+
         $requisition->update([
-            'status_id' => self::rejectedStatusId() ?? $requisition->status_id,
+            'status_id'              => self::rejectedStatusId() ?? $requisition->status_id,
+            'stage_id'               => $draftStageId ?? $requisition->stage_id,
+            'current_stage_sequence' => self::DRAFT_STAGE_SEQUENCE,
         ]);
     }
 

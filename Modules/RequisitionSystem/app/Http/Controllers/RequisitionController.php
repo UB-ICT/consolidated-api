@@ -296,7 +296,7 @@ class RequisitionController extends Controller
                 'requisition_id' => $requisition->id,
                 'user_id'        => $user->id,
                 'stage_id'       => $actingStageId,
-                'status'         => 'approved',
+                'status'         => 'rejected',
                 'comments'       => $comments,
                 'signed_at'      => now(),
             ]);
@@ -661,13 +661,7 @@ class RequisitionController extends Controller
         $now = Carbon::now();
 
         // 3. Define Stage Mapping based on the active role
-        $stageMapping = [
-            'director-dean'       => 2,
-            'budget-officer'      => 3,
-            'vice-president'      => 4,
-            'director-of-finance' => 5,
-            'purchase-officer'    => 6,
-        ];
+        $stageMapping = $this->workflowStageMapping();
 
         // 4. 🔀 Strategy Split: If it's a management workflow role, run the pipeline aggregation cards
         if (array_key_exists($currentRole, $stageMapping)) {
@@ -707,6 +701,20 @@ class RequisitionController extends Controller
                 'metrics' => $this->buildMetricsPayload($metricsResult, false)
             ]);
         }
+    }
+
+    /**
+     * Maps workflow roles to the pipeline stage_id they act on.
+     */
+    private function workflowStageMapping(): array
+    {
+        return [
+            'director-dean'       => 2,
+            'budget-officer'      => 3,
+            'vice-president'      => 4,
+            'director-of-finance' => 5,
+            'purchase-officer'    => 6,
+        ];
     }
 
     /**
@@ -789,11 +797,18 @@ class RequisitionController extends Controller
         // Resolve what operational layout role this request represents
         $currentRole = $user->roles()->first()?->role_name ?? 'requester';
 
+        // Workflow roles only care about how long a form sat at their own stage;
+        // the requester view cares about totals across the whole pipeline.
+        $targetStageId = $this->workflowStageMapping()[$currentRole] ?? null;
+        $previousStageId = $targetStageId !== null
+            ? RequisitionWorkflow::previousStageIdForStage($targetStageId)
+            : null;
+
         // Start a query on your Requisition model with status and stage relations loaded
         $query = \Modules\RequisitionSystem\Models\Requisition::with([
                 'status',
                 'stage',
-                'approvals' => fn ($q) => $q->where('status', 'approved')->orderByDesc('signed_at'),
+                'approvals' => fn ($q) => $q->orderByDesc('signed_at'),
             ])
             ->select([
                 'requisitions.*',
@@ -816,29 +831,61 @@ class RequisitionController extends Controller
         // 🚀 REMOVED take() constraint: Retrieve ALL matching forms sorted by newest date
         $allRequisitions = $query->latest('requisitions.date_prepared')
             ->get()
-            ->map(function ($requisition) {
-                $latestApproval = $requisition->approvals->first();
-
-                $processingTimeHours = in_array($requisition->status_id, [3, 4], true)
-                    ? round(($requisition->updated_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
-                    : null;
-
-                $approvalTimeHours = $latestApproval
-                    ? round(($latestApproval->signed_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
-                    : null;
-
-                return [
+            ->map(function ($requisition) use ($targetStageId, $previousStageId) {
+                $base = [
                     'id' => $requisition->id,
                     'number' => $requisition->number,
                     'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
                     'date_prepared' => $requisition->date_prepared,
                     'total' => (float) $requisition->total,
                     'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
-                    'processing_time_hours' => $processingTimeHours,
-                    'processing_time_display' => $this->formatDurationHours($processingTimeHours),
-                    'approval_time_hours' => $approvalTimeHours,
-                    'approval_time_display' => $this->formatDurationHours($approvalTimeHours),
                 ];
+
+                if ($targetStageId !== null) {
+                    // Workflow role: processing/approval time scoped to their own stage,
+                    // not the whole pipeline (arrival = previous stage's approval, or
+                    // date_prepared if this is the first approver stage).
+                    $arrivalAt = $previousStageId === null
+                        ? $requisition->date_prepared
+                        : $requisition->approvals
+                            ->first(fn ($a) => (int) $a->stage_id === $previousStageId && $a->status === 'approved')
+                            ?->signed_at;
+
+                    $ownAction = $requisition->approvals->first(fn ($a) => (int) $a->stage_id === $targetStageId);
+
+                    $processingTimeHours = ($arrivalAt && $ownAction)
+                        ? round(($ownAction->signed_at->timestamp - $arrivalAt->timestamp) / 3600, 2)
+                        : null;
+
+                    $approvalTimeHours = ($arrivalAt && $ownAction?->status === 'approved')
+                        ? round(($ownAction->signed_at->timestamp - $arrivalAt->timestamp) / 3600, 2)
+                        : null;
+
+                    $base['processing_time_hours'] = $processingTimeHours;
+                    $base['processing_time_display'] = $this->formatDurationHours($processingTimeHours);
+                    $base['approval_time_hours'] = $approvalTimeHours;
+                    $base['approval_time_display'] = $this->formatDurationHours($approvalTimeHours);
+
+                    return $base;
+                }
+
+                // Requester (or unmapped role): totals across the whole pipeline.
+                $latestApprovedApproval = $requisition->approvals->first(fn ($a) => $a->status === 'approved');
+
+                $processingTimeHours = in_array($requisition->status_id, [3, 4], true)
+                    ? round(($requisition->updated_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
+                $approvalTimeHours = $latestApprovedApproval
+                    ? round(($latestApprovedApproval->signed_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
+                $base['processing_time_hours'] = $processingTimeHours;
+                $base['processing_time_display'] = $this->formatDurationHours($processingTimeHours);
+                $base['approval_time_hours'] = $approvalTimeHours;
+                $base['approval_time_display'] = $this->formatDurationHours($approvalTimeHours);
+
+                return $base;
             });
 
         return response()->json([

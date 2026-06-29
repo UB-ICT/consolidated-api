@@ -166,7 +166,7 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertSame(2, $requisition->current_stage_sequence);
     }
 
-    public function test_apply_rejection_sets_rejected_status_without_changing_stage(): void
+    public function test_apply_rejection_sets_rejected_status_and_returns_to_draft_stage(): void
     {
         $requisitionId = $this->createTestRequisition(
             $this->stageIds['VP Approval'],
@@ -176,13 +176,13 @@ class RequisitionWorkflowTest extends TestCase
 
         $requisition = Requisition::findOrFail($requisitionId);
 
-        RequisitionWorkflow::applyRejection($requisition);
+        RequisitionWorkflow::applyRejection($requisition, $this->pipelineId);
 
         $requisition->refresh();
 
         $this->assertSame($this->statusIds['Rejected'], $requisition->status_id);
-        $this->assertSame($this->stageIds['VP Approval'], $requisition->stage_id);
-        $this->assertSame(4, $requisition->current_stage_sequence);
+        $this->assertSame($this->stageIds['Draft'], $requisition->stage_id);
+        $this->assertSame(RequisitionWorkflow::DRAFT_STAGE_SEQUENCE, $requisition->current_stage_sequence);
     }
 
     public function test_apply_cost_center_review_sets_status_without_changing_stage(): void
