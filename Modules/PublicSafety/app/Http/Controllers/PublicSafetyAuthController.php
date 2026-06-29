@@ -81,6 +81,7 @@ class PublicSafetyAuthController extends Controller
                 [
                     'name' => $googleUser->name,
                     'google_id' => $googleUser->id,
+                    'profile_picture' => $googleUser->avatar,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
                 ]
@@ -158,6 +159,7 @@ class PublicSafetyAuthController extends Controller
             'id'    => $user->id,
             'email' => $user->email,
             'name'  => $user->name,
+            'profile_picture' => $user->profile_picture,
             'roles' => $user->roles()->pluck('role_name')
         ]);
     }
@@ -184,7 +186,8 @@ class PublicSafetyAuthController extends Controller
                 'name' => $user->name,
                 'status' => $user->status,
                 'domain' => $user->domain,
-                'email_verified_at' => $user->email_verified_at
+                'email_verified_at' => $user->email_verified_at,
+                'profile_picture' => $user->profile_picture
             ]
         ]);
     }
