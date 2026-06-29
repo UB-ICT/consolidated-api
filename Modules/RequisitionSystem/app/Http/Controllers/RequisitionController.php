@@ -795,7 +795,7 @@ class RequisitionController extends Controller
         $user = $request->user();
 
         // Resolve what operational layout role this request represents
-        $currentRole = $user->roles()->first()?->role_name ?? 'requester';
+        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
 
         // Workflow roles only care about how long a form sat at their own stage;
         // the requester view cares about totals across the whole pipeline.
@@ -821,6 +821,18 @@ class RequisitionController extends Controller
             })
             // Left join core suppliers details container table
             ->leftJoin('suppliers', 'requisition_suppliers.supplier_id', '=', 'suppliers.id');
+
+        // Workflow roles should only see forms that have actually reached their stage
+        // (or that they've already acted on, e.g. a rejection that bounced back to Draft)
+        // -- not everything still sitting at an earlier approver's desk.
+        if ($targetStageId !== null) {
+            $query->where(function ($q) use ($targetStageId) {
+                $q->where('requisitions.stage_id', '>=', $targetStageId)
+                    ->orWhereHas('approvals', function ($approvalQuery) use ($targetStageId) {
+                        $approvalQuery->where('stage_id', $targetStageId);
+                    });
+            });
+        }
 
         // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers
         if (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
