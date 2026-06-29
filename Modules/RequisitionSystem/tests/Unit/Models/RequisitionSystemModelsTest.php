@@ -116,6 +116,8 @@ class RequisitionSystemModelsTest extends TestCase
             'priority',
             'expected_delivery_date',
             'stage_id',
+            'origin_stage_id',
+            'created_by',
             'date_prepared',
             'is_recurring',
             'reminder_date',
