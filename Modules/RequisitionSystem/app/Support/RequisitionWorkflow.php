@@ -5,6 +5,7 @@ namespace Modules\RequisitionSystem\Support;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
+use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
@@ -222,6 +223,31 @@ final class RequisitionWorkflow
         $data['status_id'] = self::pendingStatusId() ?? $requisition->status_id;
         $data['stage_id'] = $requisition->stage_id;
         $data['current_stage_sequence'] = $requisition->current_stage_sequence;
+    }
+
+    /**
+     * After a rejection, the requester edits and resubmits from the Draft
+     * stage. Send it back to whichever stage actually rejected it, rather
+     * than restarting the whole pipeline from the first approver.
+     */
+    public static function applyResubmitFromRejection(array &$data, Requisition $requisition, ?int $pipelineId = null): void
+    {
+        $pipelineId ??= self::defaultPipelineId();
+
+        $rejectingStageId = Approval::where('requisition_id', $requisition->id)
+            ->where('status', 'rejected')
+            ->orderByDesc('signed_at')
+            ->value('stage_id');
+
+        if ($rejectingStageId === null) {
+            self::applySubmitState($data, $pipelineId);
+            return;
+        }
+
+        $data['status_id'] = self::pendingStatusId() ?? $requisition->status_id;
+        $data['stage_id'] = (int) $rejectingStageId;
+        $data['current_stage_sequence'] = self::sequenceForStageId((int) $rejectingStageId, $pipelineId)
+            ?? self::SUBMITTED_STAGE_SEQUENCE;
     }
 
     /**

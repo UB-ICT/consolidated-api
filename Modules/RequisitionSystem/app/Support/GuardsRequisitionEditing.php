@@ -10,7 +10,7 @@ trait GuardsRequisitionEditing
 {
     protected function costCenterEditableStatuses(): array
     {
-        return ['Draft', 'Cost Center Review'];
+        return ['Draft', 'Cost Center Review', 'Rejected'];
     }
 
     /**

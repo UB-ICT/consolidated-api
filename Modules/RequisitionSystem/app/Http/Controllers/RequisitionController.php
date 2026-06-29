@@ -511,6 +511,8 @@ class RequisitionController extends Controller
         } elseif ($shouldSubmit) {
             if ($requisition->status?->name === 'Cost Center Review') {
                 RequisitionWorkflow::applyResubmitFromCostCenterReview($data, $requisition);
+            } elseif ($requisition->status?->name === 'Rejected') {
+                RequisitionWorkflow::applyResubmitFromRejection($data, $requisition);
             } else {
                 RequisitionWorkflow::applySubmitState($data);
             }
