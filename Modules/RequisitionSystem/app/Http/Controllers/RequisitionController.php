@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
@@ -47,7 +48,6 @@ class RequisitionController extends Controller
     public function index(Request $request)
     {
         $query = Requisition::with(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status']);
-
         if ($request->get('scope') === 'cost_center') {
             /** @var \Modules\Auth\Models\User $user */
             $user = Auth::user();
@@ -56,7 +56,11 @@ class RequisitionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
             }
 
-            if (!$this->userHasGlobalRequisitionAccess($user)) {
+            // 1. Get the current role context (allows overrides from Postman/Frontend query strings too!)
+            $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+
+            // 2. Pass BOTH the user object and the role string here ✅
+            if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
                 $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
                 if ($assignedCostCenterIds->isEmpty()) {
@@ -95,7 +99,7 @@ class RequisitionController extends Controller
             'success' => true,
             'count'   => $requisitions->count(),
             'data'    => $requisitions->map(
-                fn (Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
+                fn(Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
             ),
         ]);
     }
@@ -242,6 +246,7 @@ class RequisitionController extends Controller
                 'signed_at'      => now(),
             ]);
 
+            // ✨ Let the dedicated workflow engine handle the database updates and user sync cleanly
             RequisitionWorkflow::advanceAfterApproval(
                 $requisition->refresh(),
                 $actingStageId
@@ -291,7 +296,7 @@ class RequisitionController extends Controller
                 'requisition_id' => $requisition->id,
                 'user_id'        => $user->id,
                 'stage_id'       => $actingStageId,
-                'status'         => 'rejected',
+                'status'         => 'approved',
                 'comments'       => $comments,
                 'signed_at'      => now(),
             ]);
@@ -491,7 +496,7 @@ class RequisitionController extends Controller
         unset($data['items'], $data['suppliers'], $data['submit']);
 
         $data['total'] = collect($items)->sum(
-            fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
+            fn(array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
         );
 
         $data['number'] = $data['number']
@@ -525,6 +530,38 @@ class RequisitionController extends Controller
             $requisition->items()->delete();
         } else {
             $requisition = Requisition::create($data);
+        }
+
+        // 🔄 TABLE UPDATING SYNC LAYER FOR INITIAL SUBMISSION
+        if ($shouldSubmit) {
+            // 1. Get ALL director user IDs assigned to this Cost Center
+            $directorUserIds = DB::connection('porsql')
+                ->table('user_cost_center')
+                ->where('cost_center_id', $requisition->cost_center_id)
+                ->pluck('user_id') // 👈 Pluck returns an array/collection of all IDs
+                ->toArray();
+
+            // 2. Loop through every authorized manager and unlock Stage 2 for them
+            foreach ($directorUserIds as $directorUserId) {
+                // Double-check the user actually exists in the main users table
+                $userExists = DB::connection('pgsql')
+                    ->table('users')
+                    ->where('id', $directorUserId)
+                    ->exists();
+
+                if ($userExists) {
+                    DB::connection('porsql')->table('user_stages')->updateOrInsert(
+                        [
+                            'user_id'  => $directorUserId,
+                            'stage_id' => 2 // Stage 2 = Director Review
+                        ],
+                        [
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                }
+            }
         }
 
         foreach ($items as $item) {
@@ -569,5 +606,192 @@ class RequisitionController extends Controller
         $count = Requisition::whereYear('created_at', $year)->count() + 1;
 
         return sprintf('REQ-%s-%04d', $year, $count);
+    }
+
+    /**
+     * Define visible statuses for each user role.
+     */
+    private function getVisibleStatusesForRole(string $role): array
+    {
+        return match (strtolower($role)) {
+            'requester' => ['Pending', 'Approved', 'Rejected'],
+            'budget-officer', 'vice-president', 'president', 'director-of-finance' => [
+                'Pending',
+                'Approved',
+                'Rejected',
+                'Cost Center Review'
+            ],
+            default => ['Pending', 'Approved', 'Rejected'],
+        };
+    }
+
+    /**
+     * Handle the dashboard metrics request.
+     */
+    public function __invoke(Request $request): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // 1. Determine active role context
+        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+
+        $query = Requisition::query();
+
+        // 2. Data Boundary Isolation
+        // Global roles (Budget Officer, VP, Finance Director, Purchase Officer) skip this and view all departments
+        if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+            $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+
+            if ($assignedCostCenterIds->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'role_context' => $currentRole,
+                    'metrics' => $this->getEmptyMetricsResponse($currentRole)
+                ]);
+            }
+
+            $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
+        }
+
+        $now = Carbon::now();
+
+        // 3. Define Stage Mapping based on the active role
+        $stageMapping = [
+            'director-dean'       => 2,
+            'budget-officer'      => 3,
+            'vice-president'      => 4,
+            'director-of-finance' => 5,
+            'purchase-officer'    => 6,
+        ];
+
+        // 4. 🔀 Strategy Split: If it's a management workflow role, run the pipeline aggregation cards
+        if (array_key_exists($currentRole, $stageMapping)) {
+            $targetStage = $stageMapping[$currentRole];
+
+            $metricsResult = $query->select(
+                // Card 1: Awaiting My Action (Sitting at their specific stage step AND Status is Pending [2])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id = {$targetStage} AND requisitions.status_id = 2 THEN 1 ELSE 0 END) as awaiting_my_action"),
+
+                // Card 2: In Pipeline (At or past their step review stage, but not fully Approved [3] or Rejected [4])
+                DB::raw("SUM(CASE WHEN requisitions.stage_id >= {$targetStage} AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
+
+                // Card 3: Approved This Month (Fully Approved [3] system-wide within current month)
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
+
+                // Card 4: Supplier Requests / Under Review (Forms marked as Under Review [5])
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
+            )->first();
+
+            return response()->json([
+                'success' => true,
+                'role_context' => $currentRole,
+                'metrics' => $this->buildMetricsPayload($metricsResult, true)
+            ]);
+        } else {
+            // --- 📝 BASIC REQUESTER METRICS (Default Fallback) ---
+            $metricsResult = $query->select(
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 2 THEN 1 ELSE 0 END) as pending"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 THEN 1 ELSE 0 END) as approved"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 4 THEN 1 ELSE 0 END) as rejected"),
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 1 THEN 1 ELSE 0 END) as draft")
+            )->first();
+
+            return response()->json([
+                'success' => true,
+                'role_context' => $currentRole,
+                'metrics' => $this->buildMetricsPayload($metricsResult, false)
+            ]);
+        }
+    }
+
+    /**
+     * Map database row aggregation to cleanly typecast integers.
+     */
+    private function buildMetricsPayload($result, bool $isWorkflowLayout): array
+    {
+        if ($isWorkflowLayout) {
+            return [
+                'awaiting_my_action'  => (int) ($result->awaiting_my_action ?? 0),
+                'in_pipeline'         => (int) ($result->in_pipeline ?? 0),
+                'approved_this_month' => (int) ($result->approved_this_month ?? 0),
+                'supplier_requests'   => (int) ($result->supplier_requests ?? 0),
+            ];
+        }
+
+        return [
+            'pending'  => (int) ($result->pending ?? 0),
+            'approved' => (int) ($result->approved ?? 0),
+            'rejected' => (int) ($result->rejected ?? 0),
+            'draft'    => (int) ($result->draft ?? 0),
+        ];
+    }
+
+    /**
+     * Return structural fallback zeroes when relations are unassigned.
+     */
+    private function getEmptyMetricsResponse(string $role): array
+    {
+        $workflowRoles = ['director-dean', 'budget-officer', 'vice-president', 'director-of-finance', 'purchase-officer'];
+
+        if (in_array($role, $workflowRoles)) {
+            return ['awaiting_my_action' => 0, 'in_pipeline' => 0, 'approved_this_month' => 0, 'supplier_requests' => 0];
+        }
+        return ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'draft' => 0];
+    }
+
+    /**
+     * Fetch all respective forms scoped by user session role and cost center constraints.
+     * Maps to: GET /api/requisitionSystem/requisitions/recent
+     */
+    public function recent(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Resolve what operational layout role this request represents
+        $currentRole = $user->roles()->first()?->role_name ?? 'requester';
+
+        // Start a query on your Requisition model with status and stage relations loaded
+        $query = \Modules\RequisitionSystem\Models\Requisition::with(['status', 'stage'])
+            ->select([
+                'requisitions.*',
+                'suppliers.name as dynamic_supplier_name'
+            ])
+            // Left join pivot table to isolate the recommended supplier assigned to the form
+            ->leftJoin('requisition_suppliers', function ($join) {
+                $join->on('requisitions.id', '=', 'requisition_suppliers.requisition_id')
+                    ->where('requisition_suppliers.is_recommended', true);
+            })
+            // Left join core suppliers details container table
+            ->leftJoin('suppliers', 'requisition_suppliers.supplier_id', '=', 'suppliers.id');
+
+        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers
+        if (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+            $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+            $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
+        }
+
+        // 🚀 REMOVED take() constraint: Retrieve ALL matching forms sorted by newest date
+        $allRequisitions = $query->latest('requisitions.date_prepared')
+            ->get()
+            ->map(function ($requisition) {
+                return [
+                    'id' => $requisition->id,
+                    'number' => $requisition->number,
+                    'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
+                    'date_prepared' => $requisition->date_prepared,
+                    'total' => (float) $requisition->total,
+                    'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $allRequisitions
+        ]);
     }
 }

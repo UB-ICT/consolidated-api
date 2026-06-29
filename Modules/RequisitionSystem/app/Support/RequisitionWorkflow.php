@@ -10,6 +10,7 @@ use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\UserStage;
+use Illuminate\Support\Facades\Auth;
 
 final class RequisitionWorkflow
 {
@@ -18,6 +19,19 @@ final class RequisitionWorkflow
     public const DRAFT_STAGE_SEQUENCE = 1;
 
     public const SUBMITTED_STAGE_SEQUENCE = 2;
+
+    private const STAGE_ROLE_MAP = [
+        2 => 'director-dean',
+        3 => 'budget-officer',
+        4 => 'vice-president',
+        5 => 'director-of-finance',
+        6 => 'purchase-officer',
+    ];
+
+    public static function requiredRoleForStageId(int $stageId): ?string
+    {
+        return self::STAGE_ROLE_MAP[$stageId] ?? null;
+    }
 
     public static function defaultPipelineId(): int
     {
@@ -95,7 +109,7 @@ final class RequisitionWorkflow
         return UserStage::query()
             ->where('user_id', $user->id)
             ->pluck('stage_id')
-            ->map(fn ($stageId) => (int) $stageId);
+            ->map(fn($stageId) => (int) $stageId);
     }
 
     public static function matchingUserStageId(Requisition $requisition, User $user): ?int
@@ -104,13 +118,29 @@ final class RequisitionWorkflow
             return null;
         }
 
+        $stageId = (int) $requisition->stage_id;
         $assignedStageIds = self::assignedStageIdsForUser($user);
 
-        if (!$assignedStageIds->contains((int) $requisition->stage_id)) {
-            return null;
+        if ($assignedStageIds->contains($stageId)) {
+            return $stageId;
         }
 
-        return (int) $requisition->stage_id;
+        // The user_stages snapshot for this stage is only populated once, when the
+        // previous stage was approved, for whoever held the required role at that
+        // moment. A user who acquires the role afterward (e.g. a role change) would
+        // otherwise be permanently locked out even though they're now qualified.
+        $requiredRole = self::requiredRoleForStageId($stageId);
+
+        if ($requiredRole !== null && $user->hasAnyRole($requiredRole)) {
+            UserStage::query()->updateOrInsert(
+                ['user_id' => $user->id, 'stage_id' => $stageId],
+                ['created_at' => now(), 'updated_at' => now()]
+            );
+
+            return $stageId;
+        }
+
+        return null;
     }
 
     public static function userCanActAtCurrentStage(Requisition $requisition, User $user): bool
@@ -197,18 +227,60 @@ final class RequisitionWorkflow
         if ($nextStageId !== null) {
             $nextSequence = self::sequenceForStageId($nextStageId, $pipelineId);
 
+            // 1. Update the requisition record itself
             $requisition->update([
                 'status_id'              => self::pendingStatusId() ?? $requisition->status_id,
                 'stage_id'               => $nextStageId,
                 'current_stage_sequence' => $nextSequence,
             ]);
 
+            // 2. 🔄 Sync the database table for the next group of approvers
+            self::syncUserStagesForNextStep($requisition, $nextStageId);
+
             return;
         }
+
+        // 3. Final Step Approved: Clear out any remaining active permissions for this form
+        DB::connection('porsql')->table('user_stages')
+            ->where('stage_id', $actingStageId)
+            ->delete();
 
         $requisition->update([
             'status_id' => self::approvedStatusId() ?? $requisition->status_id,
         ]);
+    }
+
+    private static function syncUserStagesForNextStep(Requisition $requisition, int $nextStageId): void
+    {
+        // ✅ FIX 1: Only remove the current logged-in user who performed the action 
+        // to stop wiping out the entire system's access list!
+        if (Auth::check()) {
+            DB::connection('porsql')->table('user_stages')
+                ->where('user_id', Auth::id())
+                ->where('stage_id', $requisition->getOriginal('stage_id'))
+                ->delete();
+        }
+
+        $targetRole = self::requiredRoleForStageId($nextStageId);
+
+        if ($targetRole !== null) {
+
+            // ✅ FIX 2: Explicitly query the 'pgsql' connection to guarantee users are found
+            $usersWithRole = DB::connection('pgsql')
+                ->table('user_roles')
+                ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+                ->where('roles.role_name', $targetRole)
+                ->pluck('user_roles.user_id')
+                ->toArray();
+
+            // Grant active permission rows to the targeted users
+            foreach ($usersWithRole as $userId) {
+                DB::connection('porsql')->table('user_stages')->updateOrInsert(
+                    ['user_id' => $userId, 'stage_id' => $nextStageId],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
+            }
+        }
     }
 
     public static function applyRejection(Requisition $requisition): void

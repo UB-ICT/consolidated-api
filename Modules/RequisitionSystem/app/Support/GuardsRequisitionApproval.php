@@ -49,7 +49,21 @@ trait GuardsRequisitionApproval
             return false;
         }
 
-        return RequisitionWorkflow::matchingUserStageId($requisition, $user) !== null;
+        // 1. Resolve what stage this user matches in user_stages
+        $matchingStageId = RequisitionWorkflow::matchingUserStageId($requisition, $user);
+
+        if ($matchingStageId === null) {
+            return false;
+        }
+
+        // 2. Map the matched stage to its required role
+        $requiredRole = RequisitionWorkflow::requiredRoleForStageId($matchingStageId);
+
+        if ($requiredRole !== null && !$user->hasAnyRole($requiredRole)) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function canUserApproveRequisition(Requisition $requisition, ?User $user): bool

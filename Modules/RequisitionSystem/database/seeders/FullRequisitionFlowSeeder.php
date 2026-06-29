@@ -53,7 +53,7 @@ class FullRequisitionFlowSeeder extends Seeder
             );
 
             $stephanie = User::firstOrCreate(
-                ['email' => 'stephanie.windsor@ub.edu.bz'],
+                ['email' => 'swindsor@ub.edu.bz'],
                 ['name' => 'Stephanie Windsor', 'password' => bcrypt('password')]
             );
 
@@ -63,12 +63,12 @@ class FullRequisitionFlowSeeder extends Seeder
             );
 
             $daren = User::firstOrCreate(
-                ['email' => 'daren.brown@ub.edu.bz'],
+                ['email' => 'dbrown@ub.edu.bz'],
                 ['name' => 'Daren Brown', 'password' => bcrypt('password')]
             );
 
             $justina = User::firstOrCreate(
-                ['email' => 'justina.oh@ub.edu.bz'],
+                ['email' => 'joh@ub.edu.bz'],
                 ['name' => 'Justina Oh', 'password' => bcrypt('password')]
             );
 
@@ -177,13 +177,15 @@ class FullRequisitionFlowSeeder extends Seeder
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
             $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
             $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
+            $purchaseApproval = Stage::firstOrCreate(['name' => 'Purchase Officer Approval']);
 
             $pipeline->stages()->syncWithoutDetaching([
                 $draft->id => ['sequence' => 1],
                 $directorApproval->id => ['sequence' => 2],
                 $stageBudgetOfficer->id => ['sequence' => 3],
                 $vpApproval->id => ['sequence' => 4],
-                $financeApproval->id => ['sequence' => 5]
+                $financeApproval->id => ['sequence' => 5],
+                $purchaseApproval->id => ['sequence' => 6]
             ]);
 
             // ==============================================================

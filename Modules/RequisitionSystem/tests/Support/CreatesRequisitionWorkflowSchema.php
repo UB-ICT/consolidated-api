@@ -18,6 +18,32 @@ trait CreatesRequisitionWorkflowSchema
 
     protected function setUpRequisitionWorkflowSchema(): void
     {
+        // 🔒 1. Mock central authentication tables inside pgsql connection context
+        Schema::connection('pgsql')->dropIfExists('user_roles');
+        Schema::connection('pgsql')->dropIfExists('roles');
+        Schema::connection('pgsql')->dropIfExists('users');
+
+        Schema::connection('pgsql')->create('users', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamps();
+        });
+
+        Schema::connection('pgsql')->create('roles', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('role_name');
+            $table->string('description')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::connection('pgsql')->create('user_roles', function (Blueprint $table) {
+            $table->uuid('user_id');
+            $table->uuid('role_id');
+            $table->primary(['user_id', 'role_id']);
+        });
+
+        // ⚙️ 2. Clean and provision your local porsql workflow tables
         Schema::connection('porsql')->dropIfExists('user_stages');
         Schema::connection('porsql')->dropIfExists('approvals');
         Schema::connection('porsql')->dropIfExists('requisitions');

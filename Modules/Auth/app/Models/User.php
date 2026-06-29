@@ -46,6 +46,21 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     * Check if the user has any of the given role slugs.
+     *
+     * @param array|string $roles
+     * @return bool
+     */
+    public function hasAnyRole(array|string $roles): bool
+    {
+        $roles = is_array($roles) ? $roles : [$roles];
+
+        return $this->roles()
+            ->whereIn('role_name', $roles)
+            ->exists();
+    }
+
+    /**
      * The roles belonging to the user.
      */
     public function roles(): BelongsToMany

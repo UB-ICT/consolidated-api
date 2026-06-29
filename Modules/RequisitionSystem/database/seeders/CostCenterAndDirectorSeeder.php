@@ -13,7 +13,7 @@ class CostCenterAndDirectorSeeder extends Seeder
 {
     public function run(): void
     {
-        // Dataset with explicit individual emails mapped manually
+        // Dataset containing both directors/deans and standard requesters
         $matrix = [
             ['cc' => 'Admissions', 'director-dean' => 'Saddith Torres', 'email' => 'saddith.torres@ub.edu.bz'],
             ['cc' => 'Belize Policy Research Institute', 'director-dean' => 'Dylan Vernon', 'email' => 'dvernon@ub.edu.bz'],
@@ -28,6 +28,7 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'Faculty of Science and Technology', 'director-dean' => 'Apolonio Aguilar', 'email' => 'aaguilar@ub.edu.bz'],
             ['cc' => 'Human Resources', 'director-dean' => 'Gilroy Middleton Jr', 'email' => 'gilroy.middleton.jr@ub.edu.bz'],
             ['cc' => 'Information and Communication Technology', 'director-dean' => 'Luis Herrera', 'email' => 'luis.herrera@ub.edu.bz'],
+            ['cc' => 'Information and Communication Technology', 'requester' => 'James Faber', 'email' => 'james.faber@ub.edu.bz'], // Requisition Profile
             ['cc' => 'Institute of Banking and Finance', 'director-dean' => 'Derrick Conorqui', 'email' => 'dconorqui@ub.edu.bz'],
             ['cc' => 'Intercultural Indigenous Language Institute', 'director-dean' => 'Delmer Tzib', 'email' => 'delmer.tzib@ub.edu.bz'],
             ['cc' => 'Institutional Advancement', 'director-dean' => 'Egbert Irving', 'email' => 'egbert.irving@ub.edu.bz'],
@@ -51,35 +52,56 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'Wellness', 'director-dean' => 'Martin Cuellar', 'email' => 'mcuellar@ub.edu.bz'],
         ];
 
+        // Ensure both authorization roles exist up-front
         $directorDeanRole = Role::firstOrCreate(
             ['role_name' => 'director-dean'],
             ['id' => (string) Str::uuid(), 'description' => 'Head of Cost Center / Dean of Faculty']
         );
 
-        foreach ($matrix as $row) {
-            // Users live on pgsql; pivots on porsql. Do not wrap both in one
-            // default-connection transaction or FK checks cannot see new users.
-            $userAccount = User::firstOrCreate(
-                ['email' => $row['email']],
-                [
-                    'name' => $row['director-dean'],
-                ]
-            );
+        $requesterRole = Role::firstOrCreate(
+            ['role_name' => 'requester'],
+            ['id' => (string) Str::uuid(), 'description' => 'Standard Cost Center Requisition Submitter']
+        );
 
+        foreach ($matrix as $row) {
+            // 💡 Dynamic Check: Determine name string and exact role mapping context 
+            if (isset($row['director-dean'])) {
+                $name = $row['director-dean'];
+                $assignedRoleId = $directorDeanRole->id;
+            } else {
+                $name = $row['requester'] ?? 'Unknown User';
+                $assignedRoleId = $requesterRole->id;
+            }
+
+            // 1. Check if user already exists on 'pgsql' by email to preserve real UUIDs
+            $userAccount = User::where('email', $row['email'])->first();
+
+            // 2. Fallback to registration if account does not exist
+            if (!$userAccount) {
+                $userAccount = User::create([
+                    'name'     => $name,
+                    'email'    => $row['email'],
+                    'password' => bcrypt('password'), // Add placeholder authentication password
+                ]);
+            }
+
+            // Assign the dynamically verified operational role link
             DB::connection('pgsql')->table('user_roles')->updateOrInsert(
                 [
                     'user_id' => $userAccount->id,
-                    'role_id' => $directorDeanRole->id
+                    'role_id' => $assignedRoleId
                 ]
             );
 
+            // Seed organizational operational structures inside porsql
             $costCenter = CostCenter::firstOrCreate([
                 'name' => $row['cc']
             ]);
 
+            // 3. Link utilizing the matching UUID securely across the connections
             DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
                 [
-                    'user_id' => $userAccount->id,
+                    'user_id'        => $userAccount->id,
                     'cost_center_id' => $costCenter->id
                 ],
                 [
