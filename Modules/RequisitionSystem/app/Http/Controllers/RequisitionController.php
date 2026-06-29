@@ -745,6 +745,40 @@ class RequisitionController extends Controller
     }
 
     /**
+     * Render a decimal hours value (e.g. 0.1) as a human-readable duration (e.g. "6 minutes").
+     */
+    private function formatDurationHours(?float $hours): ?string
+    {
+        if ($hours === null) {
+            return null;
+        }
+
+        $totalMinutes = (int) round($hours * 60);
+
+        if ($totalMinutes < 60) {
+            return $totalMinutes . ' minute' . ($totalMinutes === 1 ? '' : 's');
+        }
+
+        $days = intdiv($totalMinutes, 1440);
+        $hoursRemainder = intdiv($totalMinutes % 1440, 60);
+        $minutesRemainder = $totalMinutes % 60;
+
+        if ($days > 0) {
+            $parts = [$days . 'd'];
+            if ($hoursRemainder > 0) {
+                $parts[] = $hoursRemainder . 'h';
+            }
+            return implode(' ', $parts);
+        }
+
+        $parts = [$hoursRemainder . 'h'];
+        if ($minutesRemainder > 0) {
+            $parts[] = $minutesRemainder . 'm';
+        }
+        return implode(' ', $parts);
+    }
+
+    /**
      * Fetch all respective forms scoped by user session role and cost center constraints.
      * Maps to: GET /api/requisitionSystem/requisitions/recent
      */
@@ -756,7 +790,11 @@ class RequisitionController extends Controller
         $currentRole = $user->roles()->first()?->role_name ?? 'requester';
 
         // Start a query on your Requisition model with status and stage relations loaded
-        $query = \Modules\RequisitionSystem\Models\Requisition::with(['status', 'stage'])
+        $query = \Modules\RequisitionSystem\Models\Requisition::with([
+                'status',
+                'stage',
+                'approvals' => fn ($q) => $q->where('status', 'approved')->orderByDesc('signed_at'),
+            ])
             ->select([
                 'requisitions.*',
                 'suppliers.name as dynamic_supplier_name'
@@ -779,6 +817,16 @@ class RequisitionController extends Controller
         $allRequisitions = $query->latest('requisitions.date_prepared')
             ->get()
             ->map(function ($requisition) {
+                $latestApproval = $requisition->approvals->first();
+
+                $processingTimeHours = in_array($requisition->status_id, [3, 4], true)
+                    ? round(($requisition->updated_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
+                $approvalTimeHours = $latestApproval
+                    ? round(($latestApproval->signed_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
                 return [
                     'id' => $requisition->id,
                     'number' => $requisition->number,
@@ -786,6 +834,10 @@ class RequisitionController extends Controller
                     'date_prepared' => $requisition->date_prepared,
                     'total' => (float) $requisition->total,
                     'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
+                    'processing_time_hours' => $processingTimeHours,
+                    'processing_time_display' => $this->formatDurationHours($processingTimeHours),
+                    'approval_time_hours' => $approvalTimeHours,
+                    'approval_time_display' => $this->formatDurationHours($approvalTimeHours),
                 ];
             });
 

@@ -87,6 +87,11 @@ class Requisition extends Model
         return $this->hasMany(Logs::class, 'requisition_id');
     }
 
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class, 'requisition_id');
+    }
+
     /**
      * Scope a query to only include upcoming scheduled or expiring recurring requisitions.
      */
