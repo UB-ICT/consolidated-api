@@ -28,7 +28,7 @@ trait GuardsSupplierReview
         if (!$this->userCanReviewSuppliers($user)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
-                'message' => 'Only the finance director can approve or reject suppliers.',
+                'message' => 'Only the director of finance can approve or reject suppliers.',
             ], 403));
         }
     }

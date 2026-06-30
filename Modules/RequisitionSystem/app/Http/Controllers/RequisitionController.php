@@ -14,6 +14,7 @@ use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
+use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
@@ -701,16 +702,16 @@ class RequisitionController extends Controller
                 DB::raw("SUM(CASE WHEN requisitions.stage_id >= {$targetStage} AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
 
                 // Card 3: Approved This Month (Fully Approved [3] system-wide within current month)
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
-
-                // Card 4: Supplier Requests / Under Review (Forms marked as Under Review [5])
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month")
             )->first();
+
+            // Card 4: Supplier Requests (suppliers awaiting approve/reject by this workflow role)
+            $pendingSupplierRequests = Supplier::pending()->count();
 
             return response()->json([
                 'success' => true,
                 'role_context' => $currentRole,
-                'metrics' => $this->buildMetricsPayload($metricsResult, true)
+                'metrics' => $this->buildMetricsPayload($metricsResult, true, $pendingSupplierRequests)
             ]);
         } else {
             // --- 📝 BASIC REQUESTER METRICS (Default Fallback) ---
@@ -740,14 +741,14 @@ class RequisitionController extends Controller
     /**
      * Map database row aggregation to cleanly typecast integers.
      */
-    private function buildMetricsPayload($result, bool $isWorkflowLayout): array
+    private function buildMetricsPayload($result, bool $isWorkflowLayout, int $pendingSupplierRequests = 0): array
     {
         if ($isWorkflowLayout) {
             return [
                 'awaiting_my_action'  => (int) ($result->awaiting_my_action ?? 0),
                 'in_pipeline'         => (int) ($result->in_pipeline ?? 0),
                 'approved_this_month' => (int) ($result->approved_this_month ?? 0),
-                'supplier_requests'   => (int) ($result->supplier_requests ?? 0),
+                'supplier_requests'   => $pendingSupplierRequests,
             ];
         }
 

@@ -4,6 +4,10 @@ namespace Modules\RequisitionSystem\Support;
 
 final class SupplierStatus
 {
+    public const PENDING = 'Pending';
+
+    public const PENDING_ID = 2;
+
     public const APPROVED = 'Approved';
 
     public const APPROVED_ID = 3;
