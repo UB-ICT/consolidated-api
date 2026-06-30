@@ -329,7 +329,9 @@ final class RequisitionWorkflow
             ]);
 
             // 2. 🔄 Sync the database table for the next group of approvers
-            self::syncUserStagesForNextStep($requisition, $nextStageId);
+            // Pass actingStageId explicitly — getOriginal('stage_id') would return
+            // $nextStageId after the update() call above, targeting the wrong row.
+            self::syncUserStagesForNextStep($actingStageId, $nextStageId);
 
             return;
         }
@@ -344,14 +346,13 @@ final class RequisitionWorkflow
         ]);
     }
 
-    private static function syncUserStagesForNextStep(Requisition $requisition, int $nextStageId): void
+    private static function syncUserStagesForNextStep(int $actingStageId, int $nextStageId): void
     {
-        // ✅ FIX 1: Only remove the current logged-in user who performed the action 
-        // to stop wiping out the entire system's access list!
+        // Remove the approver who just acted so they no longer see this stage in their queue.
         if (Auth::check()) {
             DB::connection('porsql')->table('user_stages')
                 ->where('user_id', Auth::id())
-                ->where('stage_id', $requisition->getOriginal('stage_id'))
+                ->where('stage_id', $actingStageId)
                 ->delete();
         }
 

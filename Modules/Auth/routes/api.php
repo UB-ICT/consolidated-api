@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\GoogleAuthController;
 use Modules\Auth\Http\Controllers\MenuController;
+use Modules\Auth\Http\Controllers\NotificationController;
 use Modules\Auth\Http\Controllers\PermissionController;
 use Modules\Auth\Http\Controllers\RoleController;
 use Modules\Auth\Http\Controllers\RolePermissionController;
@@ -87,4 +88,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Replace one role-permission assignment.
     Route::patch('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Partially replace one role-permission assignment.
     Route::delete('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'destroy']); // Delete one role-permission assignment.
+
+    // Notification endpoints (header bell): role-routed alerts for requisition & supplier-request submissions.
+    Route::get('/notifications', [NotificationController::class, 'index']); // List the authenticated user's notifications.
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']); // Lightweight badge count.
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']); // Mark one notification read.
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']); // Mark all notifications read.
 });

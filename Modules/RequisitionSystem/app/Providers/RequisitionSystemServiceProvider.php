@@ -43,7 +43,9 @@ class RequisitionSystemServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\RequisitionSystem\Console\Commands\BackfillRequisitionNotifications::class,
+        ]);
     }
 
     /**

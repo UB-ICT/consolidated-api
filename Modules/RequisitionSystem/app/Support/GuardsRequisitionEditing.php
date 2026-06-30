@@ -14,13 +14,12 @@ trait GuardsRequisitionEditing
     }
 
     /**
-     * Check if a user/role combination bypasses Cost Center isolation sandboxing.
-     * Centralized to accept both single argument calls and dynamic role overrides.
+     * Roles that review requisitions system-wide rather than within a single
+     * cost center (e.g. director-dean is scoped to their own cost center).
      */
-    protected function userHasGlobalRequisitionAccess(User $user, ?string $currentRole = null): bool
+    protected function globalRequisitionRoles(): array
     {
-        // 1. Define the authorized administrative corporate roles bypass layout
-        $globalRoles = [
+        return [
             'budget-officer',
             'vice-president',
             'director-of-finance',
@@ -28,13 +27,22 @@ trait GuardsRequisitionEditing
             'payroll-officer',
             'super-admin'
         ];
+    }
 
-        // 2. If an explicit runtime role override was requested (like via dashboard or query string), validate it
+    /**
+     * Check if a user/role combination bypasses Cost Center isolation sandboxing.
+     * Centralized to accept both single argument calls and dynamic role overrides.
+     */
+    protected function userHasGlobalRequisitionAccess(User $user, ?string $currentRole = null): bool
+    {
+        $globalRoles = $this->globalRequisitionRoles();
+
+        // 1. If an explicit runtime role override was requested (like via dashboard or query string), validate it
         if ($currentRole && in_array($currentRole, $globalRoles, true)) {
             return true;
         }
 
-        // 3. Otherwise, fallback to checking if the user holds any of these administrative profiles in the database
+        // 2. Otherwise, fallback to checking if the user holds any of these administrative profiles in the database
         return $user->roles()
             ->whereIn('roles.role_name', $globalRoles)
             ->exists();

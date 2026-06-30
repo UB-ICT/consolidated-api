@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Carbon;
+use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
@@ -18,6 +20,7 @@ use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
+use Modules\RequisitionSystem\Notifications\RequisitionSubmittedNotification;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
@@ -127,6 +130,7 @@ class RequisitionController extends Controller
 
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
+            $this->notifyRequisitionSubmitted($requisition, $user);
         } else {
             $this->logService->recordCreation($requisition, $user);
         }
@@ -196,6 +200,7 @@ class RequisitionController extends Controller
                 $activityComment,
                 $changeSummary
             );
+            $this->notifyRequisitionSubmitted($requisition, $user);
         } else {
             $this->logService->recordUpdate(
                 $requisition,
@@ -440,6 +445,40 @@ class RequisitionController extends Controller
         ]);
     }
 
+    /**
+     * Notify whoever holds the role responsible for the requisition's current
+     * stage that it now needs their attention.
+     */
+    private function notifyRequisitionSubmitted(Requisition $requisition, ?User $submitter): void
+    {
+        $role = RequisitionWorkflow::requiredRoleForStageId((int) $requisition->stage_id);
+
+        if ($role === null) {
+            return;
+        }
+
+        $recipientsQuery = User::whereHas('roles', fn($query) => $query->where('role_name', $role));
+
+        // Cost-center-scoped roles (e.g. director-dean) only review their own
+        // department; global roles (budget-officer, VP, etc.) see everything.
+        // user_cost_center lives on the 'porsql' connection (different schema
+        // than User's 'pgsql' connection), so it can't be joined via whereHas.
+        if (!in_array($role, $this->globalRequisitionRoles(), true)) {
+            $costCenterUserIds = DB::connection('porsql')
+                ->table('user_cost_center')
+                ->where('cost_center_id', $requisition->cost_center_id)
+                ->pluck('user_id');
+
+            $recipientsQuery->whereIn('id', $costCenterUserIds);
+        }
+
+        $recipients = $recipientsQuery->get();
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new RequisitionSubmittedNotification($requisition, $submitter));
+        }
+    }
+
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
         $requisition->loadMissing('status', 'stage');
@@ -553,33 +592,23 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
-        // 🔄 TABLE UPDATING SYNC LAYER FOR INITIAL SUBMISSION
+        // Populate user_stages for whoever is responsible for the submitted stage.
         if ($shouldSubmit) {
-            // 1. Get ALL director user IDs assigned to this Cost Center
-            $directorUserIds = DB::connection('porsql')
-                ->table('user_cost_center')
-                ->where('cost_center_id', $requisition->cost_center_id)
-                ->pluck('user_id') // 👈 Pluck returns an array/collection of all IDs
-                ->toArray();
+            $submittedStageId = (int) $requisition->stage_id;
+            $targetRole = RequisitionWorkflow::requiredRoleForStageId($submittedStageId);
 
-            // 2. Loop through every authorized manager and unlock Stage 2 for them
-            foreach ($directorUserIds as $directorUserId) {
-                // Double-check the user actually exists in the main users table
-                $userExists = DB::connection('pgsql')
-                    ->table('users')
-                    ->where('id', $directorUserId)
-                    ->exists();
+            if ($targetRole !== null) {
+                $userIds = DB::connection('pgsql')
+                    ->table('user_roles')
+                    ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+                    ->where('roles.role_name', $targetRole)
+                    ->pluck('user_roles.user_id')
+                    ->toArray();
 
-                if ($userExists) {
+                foreach ($userIds as $userId) {
                     DB::connection('porsql')->table('user_stages')->updateOrInsert(
-                        [
-                            'user_id'  => $directorUserId,
-                            'stage_id' => 2 // Stage 2 = Director Review
-                        ],
-                        [
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]
+                        ['user_id' => $userId, 'stage_id' => $submittedStageId],
+                        ['created_at' => now(), 'updated_at' => now()]
                     );
                 }
             }
