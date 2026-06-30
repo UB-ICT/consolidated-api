@@ -26,7 +26,8 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'Faculty of Health Sciences', 'director-dean' => 'Lydia Thurton', 'email' => 'lthurton@ub.edu.bz'],
             ['cc' => 'Faculty of Management and Social Sciences', 'director-dean' => 'Bernard Watler', 'email' => 'bwatler@ub.edu.bz'],
             ['cc' => 'Faculty of Science and Technology', 'director-dean' => 'Apolonio Aguilar', 'email' => 'aaguilar@ub.edu.bz'],
-            ['cc' => 'Human Resources', 'director-dean' => 'Gilroy Middleton Jr', 'email' => 'gilroy.middleton.jr@ub.edu.bz'],
+            ['cc' => 'Human Resources', 'director-dean' => 'Dareth Cayetano-Obermayer', 'email' => 'dareth.obermayer@ub.edu.bz'],
+            ['cc' => 'Human Resources', 'director-dean' => 'Sheridan Petillo-Arzu', 'email' => 'sheridan.arzu@ub.edu.bz'],
             ['cc' => 'Information and Communication Technology', 'director-dean' => 'Luis Herrera', 'email' => 'luis.herrera@ub.edu.bz'],
             ['cc' => 'Information and Communication Technology', 'requester' => 'James Faber', 'email' => 'james.faber@ub.edu.bz', 'password' => 'Kingjames_x2'], // Preserved custom password
             ['cc' => 'Institute of Banking and Finance', 'director-dean' => 'Derrick Conorqui', 'email' => 'dconorqui@ub.edu.bz'],
