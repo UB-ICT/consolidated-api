@@ -81,14 +81,23 @@ class GoogleAuthController extends Controller
                 [
                     'name' => $user->name,
                     'google_id' => $user->id,
+                    'profile_picture' => $user->avatar,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
                 ]
             );
         } else {
-            // Update existing user with google_id if not set
+            // Update existing user with google_id if not set, and keep the avatar in sync
+            $dirty = false;
             if (empty($_user->google_id)) {
                 $_user->google_id = $user->id;
+                $dirty = true;
+            }
+            if ($user->avatar && $_user->profile_picture !== $user->avatar) {
+                $_user->profile_picture = $user->avatar;
+                $dirty = true;
+            }
+            if ($dirty) {
                 $_user->save();
             }
         }
@@ -112,6 +121,7 @@ class GoogleAuthController extends Controller
             'system' => $system,
             'email' => $_user->email,
             'name' => $_user->name,
+            'picture' => $_user->profile_picture,
         ]);
         $separator = str_contains($callerDomain, '?') ? '&' : '?';
 
@@ -407,6 +417,7 @@ class GoogleAuthController extends Controller
             'name' => $resolved->name,
             'email' => $resolved->email,
             'email_verified_at' => $resolved->email_verified_at,
+            'profile_picture' => $resolved->profile_picture,
         ]);
     }
 
