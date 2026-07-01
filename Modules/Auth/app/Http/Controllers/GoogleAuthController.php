@@ -70,7 +70,17 @@ class GoogleAuthController extends Controller
         }
 
         // Get Google user
-        $user = Socialite::driver('google')->stateless()->user();
+        try {
+            $user = Socialite::driver('google')->stateless()->user();
+        } catch (\Throwable $e) {
+            // Most commonly a stale/already-consumed authorization code (e.g. duplicate
+            // callback request) causing Google to reject the exchange with invalid_grant.
+            Log::error('Google OAuth callback failed to exchange authorization code', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect($callerDomain . '?error=invalid_grant');
+        }
 
         // Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
