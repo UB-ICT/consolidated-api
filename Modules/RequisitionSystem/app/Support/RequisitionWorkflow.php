@@ -5,6 +5,7 @@ namespace Modules\RequisitionSystem\Support;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
+use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
@@ -31,6 +32,50 @@ final class RequisitionWorkflow
     public static function requiredRoleForStageId(int $stageId): ?string
     {
         return self::STAGE_ROLE_MAP[$stageId] ?? null;
+    }
+
+    /**
+     * @return array<string, int> role_name => stage_id
+     */
+    public static function roleStageMapping(): array
+    {
+        return array_flip(self::STAGE_ROLE_MAP);
+    }
+
+    /**
+     * The stage a requisition created by this user should start at / return to
+     * on rejection. If the creator themselves holds an approver role, that's
+     * their own stage (no point routing their own form through stages below
+     * their authority); otherwise it's the Draft stage, same as a plain requester.
+     */
+    public static function originStageIdForUser(User $user, ?int $pipelineId = null): int
+    {
+        $pipelineId ??= self::defaultPipelineId();
+        $roleName = $user->roles()->first()?->role_name;
+        $roleStageMap = self::roleStageMapping();
+
+        if ($roleName !== null && isset($roleStageMap[$roleName])) {
+            return $roleStageMap[$roleName];
+        }
+
+        return self::stageIdForSequence(self::DRAFT_STAGE_SEQUENCE, $pipelineId) ?? Stage::query()->value('id');
+    }
+
+    /**
+     * Translate an origin stage into a submit-time override: null means "use
+     * the standard first-approver stage" (the origin was just the Draft stage,
+     * i.e. a plain requester); a stage id means "start there instead".
+     */
+    public static function startStageIdFromOrigin(?int $originStageId, ?int $pipelineId = null): ?int
+    {
+        if ($originStageId === null) {
+            return null;
+        }
+
+        $pipelineId ??= self::defaultPipelineId();
+        $draftStageId = self::stageIdForSequence(self::DRAFT_STAGE_SEQUENCE, $pipelineId) ?? Stage::query()->value('id');
+
+        return $originStageId !== $draftStageId ? $originStageId : null;
     }
 
     public static function defaultPipelineId(): int
@@ -86,6 +131,23 @@ final class RequisitionWorkflow
         }
 
         return self::stageIdForSequence($currentSequence + 1, $pipelineId);
+    }
+
+    /**
+     * The stage immediately before the given one, or null if it's the first
+     * approver stage (in which case the requisition's date_prepared is the
+     * relevant "arrival" timestamp instead of a prior stage's approval).
+     */
+    public static function previousStageIdForStage(int $stageId, ?int $pipelineId = null): ?int
+    {
+        $pipelineId ??= self::defaultPipelineId();
+        $currentSequence = self::sequenceForStageId($stageId, $pipelineId);
+
+        if ($currentSequence === null || $currentSequence <= self::SUBMITTED_STAGE_SEQUENCE) {
+            return null;
+        }
+
+        return self::stageIdForSequence($currentSequence - 1, $pipelineId);
     }
 
     public static function isLastPipelineStage(int $stageId, ?int $pipelineId = null): bool
@@ -189,15 +251,22 @@ final class RequisitionWorkflow
         $data['current_stage_sequence'] = self::DRAFT_STAGE_SEQUENCE;
     }
 
-    public static function applySubmitState(array &$data, ?int $pipelineId = null): void
+    /**
+     * @param int|null $startStageId Override the default first-approver stage,
+     *        e.g. when the creator themselves holds an approver role and the
+     *        form should start at their own stage instead.
+     */
+    public static function applySubmitState(array &$data, ?int $pipelineId = null, ?int $startStageId = null): void
     {
         $pipelineId ??= self::defaultPipelineId();
-        $submittedStageId = self::stageIdForSequence(self::SUBMITTED_STAGE_SEQUENCE, $pipelineId)
+        $submittedStageId = $startStageId
+            ?? self::stageIdForSequence(self::SUBMITTED_STAGE_SEQUENCE, $pipelineId)
             ?? Stage::query()->value('id');
 
         $data['status_id'] = self::pendingStatusId() ?? $data['status_id'] ?? Status::query()->value('id');
         $data['stage_id'] = $submittedStageId;
-        $data['current_stage_sequence'] = self::SUBMITTED_STAGE_SEQUENCE;
+        $data['current_stage_sequence'] = self::sequenceForStageId($submittedStageId, $pipelineId)
+            ?? self::SUBMITTED_STAGE_SEQUENCE;
     }
 
     public static function applyResubmitFromCostCenterReview(array &$data, Requisition $requisition): void
@@ -205,6 +274,31 @@ final class RequisitionWorkflow
         $data['status_id'] = self::pendingStatusId() ?? $requisition->status_id;
         $data['stage_id'] = $requisition->stage_id;
         $data['current_stage_sequence'] = $requisition->current_stage_sequence;
+    }
+
+    /**
+     * After a rejection, the requester edits and resubmits from the Draft
+     * stage. Send it back to whichever stage actually rejected it, rather
+     * than restarting the whole pipeline from the first approver.
+     */
+    public static function applyResubmitFromRejection(array &$data, Requisition $requisition, ?int $pipelineId = null): void
+    {
+        $pipelineId ??= self::defaultPipelineId();
+
+        $rejectingStageId = Approval::where('requisition_id', $requisition->id)
+            ->where('status', 'rejected')
+            ->orderByDesc('signed_at')
+            ->value('stage_id');
+
+        if ($rejectingStageId === null) {
+            self::applySubmitState($data, $pipelineId);
+            return;
+        }
+
+        $data['status_id'] = self::pendingStatusId() ?? $requisition->status_id;
+        $data['stage_id'] = (int) $rejectingStageId;
+        $data['current_stage_sequence'] = self::sequenceForStageId((int) $rejectingStageId, $pipelineId)
+            ?? self::SUBMITTED_STAGE_SEQUENCE;
     }
 
     /**
@@ -235,7 +329,9 @@ final class RequisitionWorkflow
             ]);
 
             // 2. 🔄 Sync the database table for the next group of approvers
-            self::syncUserStagesForNextStep($requisition, $nextStageId);
+            // Pass actingStageId explicitly — getOriginal('stage_id') would return
+            // $nextStageId after the update() call above, targeting the wrong row.
+            self::syncUserStagesForNextStep($actingStageId, $nextStageId);
 
             return;
         }
@@ -250,14 +346,13 @@ final class RequisitionWorkflow
         ]);
     }
 
-    private static function syncUserStagesForNextStep(Requisition $requisition, int $nextStageId): void
+    private static function syncUserStagesForNextStep(int $actingStageId, int $nextStageId): void
     {
-        // ✅ FIX 1: Only remove the current logged-in user who performed the action 
-        // to stop wiping out the entire system's access list!
+        // Remove the approver who just acted so they no longer see this stage in their queue.
         if (Auth::check()) {
             DB::connection('porsql')->table('user_stages')
                 ->where('user_id', Auth::id())
-                ->where('stage_id', $requisition->getOriginal('stage_id'))
+                ->where('stage_id', $actingStageId)
                 ->delete();
         }
 
@@ -283,10 +378,25 @@ final class RequisitionWorkflow
         }
     }
 
-    public static function applyRejection(Requisition $requisition): void
+    /**
+     * A rejection kicks the requisition back to its creator's home stage for
+     * review and resubmission, rather than leaving it parked at whichever
+     * approver stage rejected it. For a plain requester that's the Draft
+     * stage; for a creator who themselves holds an approver role, it's their
+     * own stage.
+     */
+    public static function applyRejection(Requisition $requisition, ?int $pipelineId = null): void
     {
+        $pipelineId ??= self::defaultPipelineId();
+        $draftStageId = self::stageIdForSequence(self::DRAFT_STAGE_SEQUENCE, $pipelineId)
+            ?? Stage::query()->value('id');
+        $returnStageId = $requisition->origin_stage_id ?? $draftStageId;
+
         $requisition->update([
-            'status_id' => self::rejectedStatusId() ?? $requisition->status_id,
+            'status_id'              => self::rejectedStatusId() ?? $requisition->status_id,
+            'stage_id'               => $returnStageId ?? $requisition->stage_id,
+            'current_stage_sequence' => self::sequenceForStageId((int) $returnStageId, $pipelineId)
+                ?? self::DRAFT_STAGE_SEQUENCE,
         ]);
     }
 

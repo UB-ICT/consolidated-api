@@ -24,6 +24,14 @@ class Supplier extends Model
         'approved_by_user_id',
     ];
 
+    public function scopePending(Builder $query): Builder
+    {
+        $pendingStatusId = Status::where('name', SupplierStatus::PENDING)->value('id')
+            ?? SupplierStatus::PENDING_ID;
+
+        return $query->where('status_id', $pendingStatusId);
+    }
+
     public function scopeSelectable(Builder $query): Builder
     {
         $excludedStatusIds = Status::query()

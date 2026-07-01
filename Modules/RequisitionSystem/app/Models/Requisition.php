@@ -22,6 +22,8 @@ class Requisition extends Model
         'priority',
         'expected_delivery_date',
         'stage_id',
+        'origin_stage_id',
+        'created_by',
         'date_prepared',
         'is_recurring',
         'reminder_date',
@@ -72,6 +74,16 @@ class Requisition extends Model
         return $this->belongsTo(Stage::class, 'stage_id');
     }
 
+    public function originStage(): BelongsTo
+    {
+        return $this->belongsTo(Stage::class, 'origin_stage_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Auth\Models\User::class, 'created_by');
+    }
+
     public function status(): BelongsTo
     {
         return $this->belongsTo(Status::class, 'status_id');
@@ -85,6 +97,11 @@ class Requisition extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(Logs::class, 'requisition_id');
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class, 'requisition_id');
     }
 
     /**

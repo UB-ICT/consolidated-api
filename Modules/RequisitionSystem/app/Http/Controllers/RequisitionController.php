@@ -7,16 +7,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Carbon;
+use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
+use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
+use Modules\RequisitionSystem\Notifications\RequisitionSubmittedNotification;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
@@ -117,8 +121,8 @@ class RequisitionController extends Controller
         $shouldSubmit = $request->shouldSubmit();
         unset($validated['submit']);
 
-        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $shouldSubmit) {
-            $requisition = $this->persistRequisition($validated, null, $shouldSubmit);
+        $requisition = DB::connection('porsql')->transaction(function () use ($validated, $shouldSubmit, $user) {
+            $requisition = $this->persistRequisition($validated, null, $shouldSubmit, $user);
             $this->syncSuppliers($requisition, $validated['suppliers'] ?? []);
 
             return $requisition;
@@ -126,6 +130,7 @@ class RequisitionController extends Controller
 
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
+            $this->notifyRequisitionSubmitted($requisition, $user);
         } else {
             $this->logService->recordCreation($requisition, $user);
         }
@@ -195,6 +200,7 @@ class RequisitionController extends Controller
                 $activityComment,
                 $changeSummary
             );
+            $this->notifyRequisitionSubmitted($requisition, $user);
         } else {
             $this->logService->recordUpdate(
                 $requisition,
@@ -296,7 +302,7 @@ class RequisitionController extends Controller
                 'requisition_id' => $requisition->id,
                 'user_id'        => $user->id,
                 'stage_id'       => $actingStageId,
-                'status'         => 'approved',
+                'status'         => 'rejected',
                 'comments'       => $comments,
                 'signed_at'      => now(),
             ]);
@@ -439,6 +445,40 @@ class RequisitionController extends Controller
         ]);
     }
 
+    /**
+     * Notify whoever holds the role responsible for the requisition's current
+     * stage that it now needs their attention.
+     */
+    private function notifyRequisitionSubmitted(Requisition $requisition, ?User $submitter): void
+    {
+        $role = RequisitionWorkflow::requiredRoleForStageId((int) $requisition->stage_id);
+
+        if ($role === null) {
+            return;
+        }
+
+        $recipientsQuery = User::whereHas('roles', fn($query) => $query->where('role_name', $role));
+
+        // Cost-center-scoped roles (e.g. director-dean) only review their own
+        // department; global roles (budget-officer, VP, etc.) see everything.
+        // user_cost_center lives on the 'porsql' connection (different schema
+        // than User's 'pgsql' connection), so it can't be joined via whereHas.
+        if (!in_array($role, $this->globalRequisitionRoles(), true)) {
+            $costCenterUserIds = DB::connection('porsql')
+                ->table('user_cost_center')
+                ->where('cost_center_id', $requisition->cost_center_id)
+                ->pluck('user_id');
+
+            $recipientsQuery->whereIn('id', $costCenterUserIds);
+        }
+
+        $recipients = $recipientsQuery->get();
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new RequisitionSubmittedNotification($requisition, $submitter));
+        }
+    }
+
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
         $requisition->loadMissing('status', 'stage');
@@ -490,7 +530,8 @@ class RequisitionController extends Controller
     private function persistRequisition(
         array $data,
         ?Requisition $requisition = null,
-        bool $shouldSubmit = false
+        bool $shouldSubmit = false,
+        ?\Modules\Auth\Models\User $creator = null
     ): Requisition {
         $items = $data['items'];
         unset($data['items'], $data['suppliers'], $data['submit']);
@@ -503,16 +544,35 @@ class RequisitionController extends Controller
             ?? $this->generateRequisitionNumber();
 
         if (!$requisition) {
+            // A creator who themselves holds an approver role doesn't need their
+            // own form routed through stages below their authority -- it starts
+            // (and, if rejected, returns to) their own stage instead of Draft.
+            $originStageId = $creator ? RequisitionWorkflow::originStageIdForUser($creator) : null;
+            $data['created_by'] = $creator?->id;
+            $data['origin_stage_id'] = $originStageId;
+
             if ($shouldSubmit) {
-                RequisitionWorkflow::applySubmitState($data);
+                RequisitionWorkflow::applySubmitState(
+                    $data,
+                    null,
+                    RequisitionWorkflow::startStageIdFromOrigin($originStageId)
+                );
             } else {
                 RequisitionWorkflow::applyDraftState($data);
             }
         } elseif ($shouldSubmit) {
             if ($requisition->status?->name === 'Cost Center Review') {
                 RequisitionWorkflow::applyResubmitFromCostCenterReview($data, $requisition);
+            } elseif ($requisition->status?->name === 'Rejected') {
+                RequisitionWorkflow::applyResubmitFromRejection($data, $requisition);
             } else {
-                RequisitionWorkflow::applySubmitState($data);
+                // First-time submit of a previously-saved Draft: still honor
+                // the creator's origin stage, captured back when it was created.
+                RequisitionWorkflow::applySubmitState(
+                    $data,
+                    null,
+                    RequisitionWorkflow::startStageIdFromOrigin($requisition->origin_stage_id)
+                );
             }
         } else {
             unset($data['status_id'], $data['stage_id'], $data['current_stage_sequence']);
@@ -532,33 +592,23 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
-        // 🔄 TABLE UPDATING SYNC LAYER FOR INITIAL SUBMISSION
+        // Populate user_stages for whoever is responsible for the submitted stage.
         if ($shouldSubmit) {
-            // 1. Get ALL director user IDs assigned to this Cost Center
-            $directorUserIds = DB::connection('porsql')
-                ->table('user_cost_center')
-                ->where('cost_center_id', $requisition->cost_center_id)
-                ->pluck('user_id') // 👈 Pluck returns an array/collection of all IDs
-                ->toArray();
+            $submittedStageId = (int) $requisition->stage_id;
+            $targetRole = RequisitionWorkflow::requiredRoleForStageId($submittedStageId);
 
-            // 2. Loop through every authorized manager and unlock Stage 2 for them
-            foreach ($directorUserIds as $directorUserId) {
-                // Double-check the user actually exists in the main users table
-                $userExists = DB::connection('pgsql')
-                    ->table('users')
-                    ->where('id', $directorUserId)
-                    ->exists();
+            if ($targetRole !== null) {
+                $userIds = DB::connection('pgsql')
+                    ->table('user_roles')
+                    ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+                    ->where('roles.role_name', $targetRole)
+                    ->pluck('user_roles.user_id')
+                    ->toArray();
 
-                if ($userExists) {
+                foreach ($userIds as $userId) {
                     DB::connection('porsql')->table('user_stages')->updateOrInsert(
-                        [
-                            'user_id'  => $directorUserId,
-                            'stage_id' => 2 // Stage 2 = Director Review
-                        ],
-                        [
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]
+                        ['user_id' => $userId, 'stage_id' => $submittedStageId],
+                        ['created_at' => now(), 'updated_at' => now()]
                     );
                 }
             }
@@ -640,11 +690,17 @@ class RequisitionController extends Controller
         // 1. Determine active role context
         $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
 
+        // A user can hold an approver role AND submit their own forms. ?view=submitted
+        // lets them explicitly ask for the "my submissions" metrics instead of having
+        // it inferred from role, and forces cost-center scoping even for global roles
+        // (the global bypass is for the approval queue, not for one's own submissions).
+        $isSubmittedView = $request->get('view') === 'submitted';
+
         $query = Requisition::query();
 
         // 2. Data Boundary Isolation
         // Global roles (Budget Officer, VP, Finance Director, Purchase Officer) skip this and view all departments
-        if (!$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+        if ($isSubmittedView || !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
             if ($assignedCostCenterIds->isEmpty()) {
@@ -661,16 +717,10 @@ class RequisitionController extends Controller
         $now = Carbon::now();
 
         // 3. Define Stage Mapping based on the active role
-        $stageMapping = [
-            'director-dean'       => 2,
-            'budget-officer'      => 3,
-            'vice-president'      => 4,
-            'director-of-finance' => 5,
-            'purchase-officer'    => 6,
-        ];
+        $stageMapping = $this->workflowStageMapping();
 
         // 4. 🔀 Strategy Split: If it's a management workflow role, run the pipeline aggregation cards
-        if (array_key_exists($currentRole, $stageMapping)) {
+        if (!$isSubmittedView && array_key_exists($currentRole, $stageMapping)) {
             $targetStage = $stageMapping[$currentRole];
 
             $metricsResult = $query->select(
@@ -681,16 +731,16 @@ class RequisitionController extends Controller
                 DB::raw("SUM(CASE WHEN requisitions.stage_id >= {$targetStage} AND requisitions.status_id NOT IN (3, 4) THEN 1 ELSE 0 END) as in_pipeline"),
 
                 // Card 3: Approved This Month (Fully Approved [3] system-wide within current month)
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month"),
-
-                // Card 4: Supplier Requests / Under Review (Forms marked as Under Review [5])
-                DB::raw("SUM(CASE WHEN requisitions.status_id = 5 THEN 1 ELSE 0 END) as supplier_requests")
+                DB::raw("SUM(CASE WHEN requisitions.status_id = 3 AND requisitions.updated_at >= '{$now->startOfMonth()->toDateTimeString()}' THEN 1 ELSE 0 END) as approved_this_month")
             )->first();
+
+            // Card 4: Supplier Requests (suppliers awaiting approve/reject by this workflow role)
+            $pendingSupplierRequests = Supplier::pending()->count();
 
             return response()->json([
                 'success' => true,
                 'role_context' => $currentRole,
-                'metrics' => $this->buildMetricsPayload($metricsResult, true)
+                'metrics' => $this->buildMetricsPayload($metricsResult, true, $pendingSupplierRequests)
             ]);
         } else {
             // --- 📝 BASIC REQUESTER METRICS (Default Fallback) ---
@@ -710,16 +760,24 @@ class RequisitionController extends Controller
     }
 
     /**
+     * Maps workflow roles to the pipeline stage_id they act on.
+     */
+    private function workflowStageMapping(): array
+    {
+        return RequisitionWorkflow::roleStageMapping();
+    }
+
+    /**
      * Map database row aggregation to cleanly typecast integers.
      */
-    private function buildMetricsPayload($result, bool $isWorkflowLayout): array
+    private function buildMetricsPayload($result, bool $isWorkflowLayout, int $pendingSupplierRequests = 0): array
     {
         if ($isWorkflowLayout) {
             return [
                 'awaiting_my_action'  => (int) ($result->awaiting_my_action ?? 0),
                 'in_pipeline'         => (int) ($result->in_pipeline ?? 0),
                 'approved_this_month' => (int) ($result->approved_this_month ?? 0),
-                'supplier_requests'   => (int) ($result->supplier_requests ?? 0),
+                'supplier_requests'   => $pendingSupplierRequests,
             ];
         }
 
@@ -745,6 +803,40 @@ class RequisitionController extends Controller
     }
 
     /**
+     * Render a decimal hours value (e.g. 0.1) as a human-readable duration (e.g. "6 minutes").
+     */
+    private function formatDurationHours(?float $hours): ?string
+    {
+        if ($hours === null) {
+            return null;
+        }
+
+        $totalMinutes = (int) round($hours * 60);
+
+        if ($totalMinutes < 60) {
+            return $totalMinutes . ' minute' . ($totalMinutes === 1 ? '' : 's');
+        }
+
+        $days = intdiv($totalMinutes, 1440);
+        $hoursRemainder = intdiv($totalMinutes % 1440, 60);
+        $minutesRemainder = $totalMinutes % 60;
+
+        if ($days > 0) {
+            $parts = [$days . 'd'];
+            if ($hoursRemainder > 0) {
+                $parts[] = $hoursRemainder . 'h';
+            }
+            return implode(' ', $parts);
+        }
+
+        $parts = [$hoursRemainder . 'h'];
+        if ($minutesRemainder > 0) {
+            $parts[] = $minutesRemainder . 'm';
+        }
+        return implode(' ', $parts);
+    }
+
+    /**
      * Fetch all respective forms scoped by user session role and cost center constraints.
      * Maps to: GET /api/requisitionSystem/requisitions/recent
      */
@@ -753,10 +845,26 @@ class RequisitionController extends Controller
         $user = $request->user();
 
         // Resolve what operational layout role this request represents
-        $currentRole = $user->roles()->first()?->role_name ?? 'requester';
+        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+
+        // Workflow roles only care about how long a form sat at their own stage;
+        // the requester view cares about totals across the whole pipeline.
+        // A user can hold an approver role AND submit their own forms, so
+        // ?view=submitted lets them explicitly ask for the "my submissions"
+        // view instead of having it inferred (and possibly wrong) from role.
+        $targetStageId = $request->get('view') === 'submitted'
+            ? null
+            : $this->workflowStageMapping()[$currentRole] ?? null;
+        $previousStageId = $targetStageId !== null
+            ? RequisitionWorkflow::previousStageIdForStage($targetStageId)
+            : null;
 
         // Start a query on your Requisition model with status and stage relations loaded
-        $query = \Modules\RequisitionSystem\Models\Requisition::with(['status', 'stage'])
+        $query = \Modules\RequisitionSystem\Models\Requisition::with([
+                'status',
+                'stage',
+                'approvals' => fn ($q) => $q->orderByDesc('signed_at'),
+            ])
             ->select([
                 'requisitions.*',
                 'suppliers.name as dynamic_supplier_name'
@@ -769,8 +877,24 @@ class RequisitionController extends Controller
             // Left join core suppliers details container table
             ->leftJoin('suppliers', 'requisition_suppliers.supplier_id', '=', 'suppliers.id');
 
-        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers
-        if (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+        // Workflow roles should only see forms that have actually reached their stage
+        // (or that they've already acted on, e.g. a rejection that bounced back to Draft)
+        // -- not everything still sitting at an earlier approver's desk.
+        if ($targetStageId !== null) {
+            $query->where(function ($q) use ($targetStageId) {
+                $q->where('requisitions.stage_id', '>=', $targetStageId)
+                    ->orWhereHas('approvals', function ($approvalQuery) use ($targetStageId) {
+                        $approvalQuery->where('stage_id', $targetStageId);
+                    });
+            });
+        }
+
+        // If they aren't a global administrative role, isolate records strictly to their assigned Cost Centers.
+        // The global-access bypass is for reviewing the approval queue across departments; it shouldn't
+        // apply when someone explicitly asked for their own "submitted" view.
+        $isSubmittedView = $request->get('view') === 'submitted';
+
+        if ($isSubmittedView || (method_exists($this, 'userHasGlobalRequisitionAccess') && !$this->userHasGlobalRequisitionAccess($user, $currentRole))) {
             $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
             $query->whereIn('requisitions.cost_center_id', $assignedCostCenterIds);
         }
@@ -778,8 +902,8 @@ class RequisitionController extends Controller
         // 🚀 REMOVED take() constraint: Retrieve ALL matching forms sorted by newest date
         $allRequisitions = $query->latest('requisitions.date_prepared')
             ->get()
-            ->map(function ($requisition) {
-                return [
+            ->map(function ($requisition) use ($targetStageId, $previousStageId) {
+                $base = [
                     'id' => $requisition->id,
                     'number' => $requisition->number,
                     'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
@@ -787,6 +911,52 @@ class RequisitionController extends Controller
                     'total' => (float) $requisition->total,
                     'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
                 ];
+
+                if ($targetStageId !== null) {
+                    // Workflow role: processing/approval time scoped to their own stage,
+                    // not the whole pipeline (arrival = previous stage's approval, or
+                    // date_prepared if this is the first approver stage).
+                    $arrivalAt = $previousStageId === null
+                        ? $requisition->date_prepared
+                        : $requisition->approvals
+                            ->first(fn ($a) => (int) $a->stage_id === $previousStageId && $a->status === 'approved')
+                            ?->signed_at;
+
+                    $ownAction = $requisition->approvals->first(fn ($a) => (int) $a->stage_id === $targetStageId);
+
+                    $processingTimeHours = ($arrivalAt && $ownAction)
+                        ? round(($ownAction->signed_at->timestamp - $arrivalAt->timestamp) / 3600, 2)
+                        : null;
+
+                    $approvalTimeHours = ($arrivalAt && $ownAction?->status === 'approved')
+                        ? round(($ownAction->signed_at->timestamp - $arrivalAt->timestamp) / 3600, 2)
+                        : null;
+
+                    $base['processing_time_hours'] = $processingTimeHours;
+                    $base['processing_time_display'] = $this->formatDurationHours($processingTimeHours);
+                    $base['approval_time_hours'] = $approvalTimeHours;
+                    $base['approval_time_display'] = $this->formatDurationHours($approvalTimeHours);
+
+                    return $base;
+                }
+
+                // Requester (or unmapped role): totals across the whole pipeline.
+                $latestApprovedApproval = $requisition->approvals->first(fn ($a) => $a->status === 'approved');
+
+                $processingTimeHours = in_array($requisition->status_id, [3, 4], true)
+                    ? round(($requisition->updated_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
+                $approvalTimeHours = $latestApprovedApproval
+                    ? round(($latestApprovedApproval->signed_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
+                    : null;
+
+                $base['processing_time_hours'] = $processingTimeHours;
+                $base['processing_time_display'] = $this->formatDurationHours($processingTimeHours);
+                $base['approval_time_hours'] = $approvalTimeHours;
+                $base['approval_time_display'] = $this->formatDurationHours($approvalTimeHours);
+
+                return $base;
             });
 
         return response()->json([
