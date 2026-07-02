@@ -31,67 +31,71 @@ Route::get('/v1/publicSafety/user', [GoogleAuthController::class, 'getPublicSafe
 Route::get('/user', [GoogleAuthController::class, 'user']);
 
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
-    // User CRUD endpoints.
-    Route::get('/users', [UserController::class, 'index']); // List all users with groups/roles.
-    Route::post('/users', [UserController::class, 'store']); // Create a new user.
-    Route::get('/users/{user}', [UserController::class, 'show']); // Get one user by route-model binding.
-    Route::put('/users/{user}', [UserController::class, 'update']); // Replace/update user fields.
-    Route::patch('/users/{user}', [UserController::class, 'update']); // Partially update user fields.
-    Route::delete('/users/{user}', [UserController::class, 'destroy']); // Delete a user.
-
-    // Role CRUD endpoints.
-    Route::get('/roles', [RoleController::class, 'index']); // List all roles and related data.
-    Route::post('/roles', [RoleController::class, 'store']); // Create a new role.
-    Route::get('/roles/{role}', [RoleController::class, 'show']); // Get one role with permissions/menu items.
-    Route::put('/roles/{role}', [RoleController::class, 'update']); // Replace/update role fields.
-    Route::patch('/roles/{role}', [RoleController::class, 'update']); // Partially update role fields.
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy']); // Delete a role.
-
-    // Role-permission helpers on RoleController.
-    Route::post('/roles/{role}/permissions/attach', [RoleController::class, 'attachPermissions']); // Add permission(s) without detaching existing ones.
-    Route::put('/roles/{role}/permissions/sync', [RoleController::class, 'syncPermissions']); // Replace all role permissions with provided list.
-    Route::delete('/roles/{role}/permissions/{permission}', [RoleController::class, 'detachPermission']); // Remove one permission from role.
-
-    // Permission CRUD endpoints.
-    Route::get('/permissions', [PermissionController::class, 'index']); // List all permissions.
-    Route::post('/permissions', [PermissionController::class, 'store']); // Create a new permission.
-    Route::get('/permissions/{permission}', [PermissionController::class, 'show']); // Get one permission with roles.
-    Route::put('/permissions/{permission}', [PermissionController::class, 'update']); // Replace/update permission fields.
-    Route::patch('/permissions/{permission}', [PermissionController::class, 'update']); // Partially update permission fields.
-    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']); // Delete a permission.
-
-    // Menu item CRUD endpoints.
+    // Menu endpoints consumed by every logged-in user (already role-filtered server-side).
     Route::get('/menu/profile', [MenuController::class, 'profileMenu']); // Hydrates user info cards, user links, and external links footer.
     Route::get('/menu/applications', [MenuController::class, 'applications']); // Global dashboard grid listing every registered root app module.
     Route::get('/menu/my-applications', [MenuController::class, 'myApplications']); // Filtered landing deck displaying only apps accessible to the user's roles (with Super Admin bypass).
     Route::get('/menu/my-application', [MenuController::class, 'getActiveApplicationMenu']); // Fetch the complete, nested menu tree for a SPECIFIC application filtered dynamically by the logged-in user's roles.
-    Route::get('/menu', [MenuController::class, 'index']); // List top-level menu items with children.
-    Route::post('/menu', [MenuController::class, 'store']); // Create a menu item.
-    Route::patch('/menu/{menu}', [MenuController::class, 'update']); // Partially update menu item.
-    Route::delete('/menu/{menu}', [MenuController::class, 'destroy']); // Delete a menu item.
-
-
-    // User-role pivot CRUD endpoints (composite key: userId + roleId).
-    Route::get('/user-roles', [UserRoleController::class, 'index']); // List all user-role assignments.
-    Route::post('/user-roles', [UserRoleController::class, 'store']); // Create one user-role assignment.
-    Route::get('/user-roles/{userId}', [UserRoleController::class, 'show']); // Get user with all assigned roles.
-    Route::get('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'show']); // Get one specific user-role assignment.
-    Route::put('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'update']); // Replace one user-role assignment.
-    Route::patch('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'update']); // Partially replace one user-role assignment.
-    Route::delete('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'destroy']); // Delete one user-role assignment.
-
-    // Role-permission pivot CRUD endpoints (composite key: roleId + permissionId).
-    Route::get('/role-permissions', [RolePermissionController::class, 'index']); // List all role-permission assignments.
-    Route::post('/role-permissions', [RolePermissionController::class, 'store']); // Create one role-permission assignment.
-    Route::get('/role-permissions/{roleId}', [RolePermissionController::class, 'show']); // Get role with all assigned permissions.
-    Route::get('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'show']); // Get one specific role-permission assignment.
-    Route::put('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Replace one role-permission assignment.
-    Route::patch('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Partially replace one role-permission assignment.
-    Route::delete('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'destroy']); // Delete one role-permission assignment.
 
     // Notification endpoints (header bell): role-routed alerts for requisition & supplier-request submissions.
     Route::get('/notifications', [NotificationController::class, 'index']); // List the authenticated user's notifications.
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']); // Lightweight badge count.
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']); // Mark one notification read.
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']); // Mark all notifications read.
+
+    // Admin Console endpoints: restricted to super-admin/developer roles.
+    Route::middleware('has.role:super-admin,developer')->group(function () {
+        // User CRUD endpoints.
+        Route::get('/users', [UserController::class, 'index']); // List all users with groups/roles.
+        Route::post('/users', [UserController::class, 'store']); // Create a new user.
+        Route::get('/users/{user}', [UserController::class, 'show']); // Get one user by route-model binding.
+        Route::put('/users/{user}', [UserController::class, 'update']); // Replace/update user fields.
+        Route::patch('/users/{user}', [UserController::class, 'update']); // Partially update user fields.
+        Route::delete('/users/{user}', [UserController::class, 'destroy']); // Delete a user.
+
+        // Role CRUD endpoints.
+        Route::get('/roles', [RoleController::class, 'index']); // List all roles and related data.
+        Route::post('/roles', [RoleController::class, 'store']); // Create a new role.
+        Route::get('/roles/{role}', [RoleController::class, 'show']); // Get one role with permissions/menu items.
+        Route::put('/roles/{role}', [RoleController::class, 'update']); // Replace/update role fields.
+        Route::patch('/roles/{role}', [RoleController::class, 'update']); // Partially update role fields.
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy']); // Delete a role.
+
+        // Role-permission helpers on RoleController.
+        Route::post('/roles/{role}/permissions/attach', [RoleController::class, 'attachPermissions']); // Add permission(s) without detaching existing ones.
+        Route::put('/roles/{role}/permissions/sync', [RoleController::class, 'syncPermissions']); // Replace all role permissions with provided list.
+        Route::delete('/roles/{role}/permissions/{permission}', [RoleController::class, 'detachPermission']); // Remove one permission from role.
+
+        // Permission CRUD endpoints.
+        Route::get('/permissions', [PermissionController::class, 'index']); // List all permissions.
+        Route::post('/permissions', [PermissionController::class, 'store']); // Create a new permission.
+        Route::get('/permissions/{permission}', [PermissionController::class, 'show']); // Get one permission with roles.
+        Route::put('/permissions/{permission}', [PermissionController::class, 'update']); // Replace/update permission fields.
+        Route::patch('/permissions/{permission}', [PermissionController::class, 'update']); // Partially update permission fields.
+        Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']); // Delete a permission.
+
+        // Menu item CRUD endpoints (managing the nav tree itself, not consuming it).
+        Route::get('/menu', [MenuController::class, 'index']); // List top-level menu items with children.
+        Route::post('/menu', [MenuController::class, 'store']); // Create a menu item.
+        Route::patch('/menu/{menu}', [MenuController::class, 'update']); // Partially update menu item.
+        Route::delete('/menu/{menu}', [MenuController::class, 'destroy']); // Delete a menu item.
+
+        // User-role pivot CRUD endpoints (composite key: userId + roleId).
+        Route::get('/user-roles', [UserRoleController::class, 'index']); // List all user-role assignments.
+        Route::post('/user-roles', [UserRoleController::class, 'store']); // Create one user-role assignment.
+        Route::get('/user-roles/{userId}', [UserRoleController::class, 'show']); // Get user with all assigned roles.
+        Route::get('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'show']); // Get one specific user-role assignment.
+        Route::put('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'update']); // Replace one user-role assignment.
+        Route::patch('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'update']); // Partially replace one user-role assignment.
+        Route::delete('/user-roles/{userId}/{roleId}', [UserRoleController::class, 'destroy']); // Delete one user-role assignment.
+
+        // Role-permission pivot CRUD endpoints (composite key: roleId + permissionId).
+        Route::get('/role-permissions', [RolePermissionController::class, 'index']); // List all role-permission assignments.
+        Route::post('/role-permissions', [RolePermissionController::class, 'store']); // Create one role-permission assignment.
+        Route::get('/role-permissions/{roleId}', [RolePermissionController::class, 'show']); // Get role with all assigned permissions.
+        Route::get('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'show']); // Get one specific role-permission assignment.
+        Route::put('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Replace one role-permission assignment.
+        Route::patch('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Partially replace one role-permission assignment.
+        Route::delete('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'destroy']); // Delete one role-permission assignment.
+    });
 });

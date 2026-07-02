@@ -28,6 +28,7 @@ class AuthTestDataSeeder extends Seeder
             'director-dean',
             'requester',
             'purchase-officer',
+            'developer',
         ];
 
         // Guarantee roles exist and capture their database UUIDs safely
@@ -142,16 +143,17 @@ class AuthTestDataSeeder extends Seeder
 
         // 7. Seed Profile Dropdown Cards (type = 'user-menu')
         $profileDropdownItems = [
-            ['label' => 'View profile', 'path' => '/profile', 'icon' => 'user', 'role_id' => null, 'sort_order' => 1],
-            ['label' => 'Settings', 'path' => '/settings', 'icon' => 'cog', 'role_id' => null, 'sort_order' => 2],
             ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
-            ['label' => 'Admin tools', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
+            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
+            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['developer'], 'sort_order' => 4],
         ];
 
         foreach ($profileDropdownItems as $item) {
+            // Keyed on role_id too, since a menu item can have one role-scoped row per role.
             $userMenu = Menu::firstOrNew([
                 'path' => $item['path'],
-                'type' => 'user-menu'
+                'type' => 'user-menu',
+                'role_id' => $item['role_id'],
             ]);
 
             if (!$userMenu->exists) {
@@ -161,41 +163,14 @@ class AuthTestDataSeeder extends Seeder
             $userMenu->fill([
                 'label' => $item['label'],
                 'icon' => $item['icon'],
-                'role_id' => $item['role_id'],
                 'parent_id' => null,
                 'sort_order' => $item['sort_order'],
             ])->save();
         }
 
-        // 8. Seed Horizontal External Link Footers (type = 'external-link')
-        $externalLinks = [
-            ['label' => 'External Tools', 'path' => '/external-tools', 'icon' => 'wrench', 'sort_order' => 5],
-            ['label' => 'Library Docs', 'path' => '/docs', 'icon' => 'book-open', 'sort_order' => 6],
-            ['label' => 'University Website', 'path' => 'https://www.ub.edu.bz', 'icon' => 'globe-alt', 'sort_order' => 7],
-        ];
-
-        foreach ($externalLinks as $link) {
-            $extLink = Menu::firstOrNew([
-                'path' => $link['path'],
-                'type' => 'external-link'
-            ]);
-
-            if (!$extLink->exists) {
-                $extLink->id = Str::uuid()->toString();
-            }
-
-            $extLink->fill([
-                'label' => $link['label'],
-                'icon' => $link['icon'],
-                'role_id' => null,
-                'parent_id' => null,
-                'sort_order' => $link['sort_order'],
-            ])->save();
-        }
-
         // 9. Define testing users
         $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'requester'],
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
             ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
         ];
 
