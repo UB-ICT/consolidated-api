@@ -147,12 +147,12 @@ class AuthTestDataSeeder extends Seeder
 
         // 7. Seed Profile Dropdown Cards (type = 'user-menu')
         $profileDropdownItems = [
-            ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
-            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
-            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
+            'sign_out' => ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
+            'admin_console' => ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
         ];
 
-        foreach ($profileDropdownItems as $item) {
+        $userMenuIds = [];
+        foreach ($profileDropdownItems as $key => $item) {
             // Keyed on role_id too, since a menu item can have one role-scoped row per role.
             $userMenu = Menu::firstOrNew([
                 'path' => $item['path'],
@@ -168,6 +168,41 @@ class AuthTestDataSeeder extends Seeder
                 'label' => $item['label'],
                 'icon' => $item['icon'],
                 'parent_id' => null,
+                'sort_order' => $item['sort_order'],
+            ])->save();
+
+            $userMenuIds[$key] = $userMenu->id;
+        }
+
+        // 8. Seed submenu layout nested under the Admin Console user-menu item.
+        // getActiveApplicationMenu() only needs the root menu's id and loads its
+        // type=submenu children — it doesn't require the root to be type=application,
+        // so Admin Console can stay a super-admin-only profile link and still drive
+        // the sidebar via the same endpoint the other apps use.
+        $adminConsoleMenuItems = [
+            ['label' => 'Overview', 'path' => '/admin', 'icon' => 'squares-2x2', 'sort_order' => 1],
+            ['label' => 'Users', 'path' => '/admin/users', 'icon' => 'users', 'sort_order' => 2],
+            ['label' => 'Apps', 'path' => '/admin/apps', 'icon' => 'shield-check', 'sort_order' => 3],
+            ['label' => 'Roles', 'path' => '/admin/roles', 'icon' => 'shield-check', 'sort_order' => 4],
+            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'shield-check', 'sort_order' => 5],
+            ['label' => 'Audit log', 'path' => '/admin/audit-log', 'icon' => 'shield-check', 'sort_order' => 6],
+        ];
+
+        foreach ($adminConsoleMenuItems as $item) {
+            $subMenu = Menu::firstOrNew([
+                'path' => $item['path'],
+                'role_id' => $roleMap['super-admin'],
+                'parent_id' => $userMenuIds['admin_console'],
+            ]);
+
+            if (!$subMenu->exists) {
+                $subMenu->id = Str::uuid()->toString();
+            }
+
+            $subMenu->fill([
+                'label' => $item['label'],
+                'icon' => $item['icon'],
+                'type' => 'submenu',
                 'sort_order' => $item['sort_order'],
             ])->save();
         }
