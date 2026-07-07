@@ -27,8 +27,7 @@ class AuthTestDataSeeder extends Seeder
             'senior-account',
             'director-dean',
             'requester',
-            'purchase-officer',
-            'developer',
+            'purchase-officer'
         ];
 
         // Guarantee roles exist and capture their database UUIDs safely
@@ -46,6 +45,11 @@ class AuthTestDataSeeder extends Seeder
 
         // 2. Define the Level 1 Applications as root menus (parent_id = null, type = 'application')
         $apps = [
+            'ub_portal' => [
+                'label' => 'UB Portal',
+                'path' => '/',
+                'icon' => 'squares-plus',
+            ],
             'requisition' => [
                 'label' => 'Requisition System',
                 'path' => '/requisitions',
@@ -145,7 +149,7 @@ class AuthTestDataSeeder extends Seeder
         $profileDropdownItems = [
             ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
             ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
-            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['developer'], 'sort_order' => 4],
+            ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
         ];
 
         foreach ($profileDropdownItems as $item) {

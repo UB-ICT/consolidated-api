@@ -44,7 +44,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']); // Mark all notifications read.
 
     // Admin Console endpoints: restricted to super-admin/developer roles.
-    Route::middleware('has.role:super-admin,developer')->group(function () {
+    Route::middleware('has.role:super-admin')->group(function () {
         // User CRUD endpoints.
         Route::get('/users', [UserController::class, 'index']); // List all users with groups/roles.
         Route::post('/users', [UserController::class, 'store']); // Create a new user.
