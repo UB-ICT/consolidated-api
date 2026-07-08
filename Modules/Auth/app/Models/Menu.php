@@ -19,6 +19,10 @@ class Menu extends Model
 
     use HasUuids;
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_MAINTENANCE = 'maintenance';
+    public const STATUS_DISABLED = 'disabled';
+
     /**
      * Mass-assignable attributes.
      *
@@ -29,6 +33,9 @@ class Menu extends Model
         'path',
         'icon',
         'type',
+        'status',
+        'description',
+        'category',
         'role_id',
         'parent_id',
         'sort_order'

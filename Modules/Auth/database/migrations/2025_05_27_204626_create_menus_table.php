@@ -24,6 +24,10 @@ return new class extends Migration
             $table->string('type')->default('application'); // e.g., 'application', 'user-menu'
             $table->string('icon')->nullable();
 
+            $table->string('status')->default('active');
+            $table->string('description')->nullable();
+            $table->string('category')->nullable();
+
             // Optional role-based visibility for the menu item.
             $table->foreignUuid('role_id')->nullable()->constrained('roles')->onDelete('set null');
 

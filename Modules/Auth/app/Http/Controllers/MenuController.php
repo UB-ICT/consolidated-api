@@ -5,6 +5,7 @@ namespace Modules\Auth\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 use Modules\Auth\Models\Menu;
 
 /**
@@ -63,6 +64,7 @@ class MenuController extends Controller
     public function applications(): JsonResponse
     {
         $allApps = Menu::whereNull('parent_id')
+            ->where('status', Menu::STATUS_ACTIVE)
             ->select('id', 'label', 'path', 'icon', 'sort_order')
             ->orderBy('sort_order')
             ->get();
@@ -84,6 +86,7 @@ class MenuController extends Controller
         if ($roles->contains('role_name', 'super-admin')) {
             $allApps = Menu::whereNull('parent_id')
                 ->where('type', 'application') // 👈 CRITICAL: Must be an application type!
+                ->where('status', Menu::STATUS_ACTIVE)
                 ->select('id', 'label', 'path', 'icon', 'sort_order')
                 ->orderBy('sort_order')
                 ->get();
@@ -95,6 +98,7 @@ class MenuController extends Controller
         $myApps = Menu::query()
             ->whereNull('parent_id')
             ->where('type', 'application') // 👈 CRITICAL: Excludes 'user-menu' items with null parents!
+            ->where('status', Menu::STATUS_ACTIVE)
             ->whereHas('children', function ($query) use ($roleIds) {
                 if (!empty($roleIds)) {
                     $query->whereIn('role_id', $roleIds);
@@ -122,17 +126,38 @@ class MenuController extends Controller
     }
 
     /**
+     * GET /api/menus/catalog
+     * Admin view of the full applications catalog (every status) for the Applications management page.
+     */
+    public function catalog(): JsonResponse
+    {
+        $applications = Menu::whereNull('parent_id')
+            ->where('type', 'application')
+            ->select('id', 'label', 'path', 'icon', 'status', 'description', 'category', 'sort_order')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'total'        => $applications->count(),
+            'applications' => $applications,
+        ]);
+    }
+
+    /**
      * Store a newly created menu item.
      */
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'label'      => 'required|string|max:255',
-            'path'       => 'required|string|max:255',
-            'icon'       => 'nullable|string|max:255',
-            'role_id'    => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'  => 'nullable|uuid|exists:pgsql.menus,id',
-            'sort_order' => 'nullable|integer|min:0',
+            'label'       => 'required|string|max:255',
+            'path'        => 'required|string|max:255',
+            'icon'        => 'nullable|string|max:255',
+            'status'      => ['nullable', 'string', Rule::in([Menu::STATUS_ACTIVE, Menu::STATUS_MAINTENANCE, Menu::STATUS_DISABLED])],
+            'description' => 'nullable|string',
+            'category'    => 'nullable|string|max:255',
+            'role_id'     => 'nullable|uuid|exists:pgsql.roles,id',
+            'parent_id'   => 'nullable|uuid|exists:pgsql.menus,id',
+            'sort_order'  => 'nullable|integer|min:0',
         ]);
 
         $menu = Menu::create($data);
@@ -163,12 +188,15 @@ class MenuController extends Controller
         }
 
         $data = validator($payload, [
-            'label'      => 'sometimes|required|string|max:255',
-            'path'       => 'sometimes|required|string|max:255',
-            'icon'       => 'nullable|string|max:255',
-            'role_id'    => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'  => 'nullable|uuid|exists:pgsql.menus,id',
-            'sort_order' => 'nullable|integer|min:0',
+            'label'       => 'sometimes|required|string|max:255',
+            'path'        => 'sometimes|required|string|max:255',
+            'icon'        => 'nullable|string|max:255',
+            'status'      => ['nullable', 'string', Rule::in([Menu::STATUS_ACTIVE, Menu::STATUS_MAINTENANCE, Menu::STATUS_DISABLED])],
+            'description' => 'nullable|string',
+            'category'    => 'nullable|string|max:255',
+            'role_id'     => 'nullable|uuid|exists:pgsql.roles,id',
+            'parent_id'   => 'nullable|uuid|exists:pgsql.menus,id',
+            'sort_order'  => 'nullable|integer|min:0',
         ])->validate();
 
         $menu->update($data);

@@ -49,21 +49,29 @@ class AuthTestDataSeeder extends Seeder
                 'label' => 'UB Portal',
                 'path' => '/',
                 'icon' => 'squares-plus',
+                'description' => 'Central hub for university applications and services.',
+                'category' => 'Administrative',
             ],
             'requisition' => [
                 'label' => 'Requisition System',
                 'path' => '/requisitions',
                 'icon' => 'briefcase',
+                'description' => 'Submit and track purchase requisitions and approvals.',
+                'category' => 'Finance',
             ],
             'public_safety' => [
                 'label' => 'Public Safety',
                 'path' => '/public-safety',
                 'icon' => 'shield-check',
+                'description' => 'Campus safety alerts, incident reporting, and resources.',
+                'category' => 'Administrative',
             ],
             'ub_forms' => [
                 'label' => 'UB Annual Reports',
                 'path' => '/ub-annual-reports',
                 'icon' => 'clipboard-document-list',
+                'description' => 'View and submit university annual reports.',
+                'category' => 'Academic',
             ],
         ];
 
@@ -80,6 +88,9 @@ class AuthTestDataSeeder extends Seeder
                 'label' => $appData['label'],
                 'icon' => $appData['icon'],
                 'type' => 'application',
+                'status' => Menu::STATUS_ACTIVE,
+                'description' => $appData['description'],
+                'category' => $appData['category'],
                 'sort_order' => 1,
             ])->save();
 
