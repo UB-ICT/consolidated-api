@@ -77,6 +77,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         // Menu item CRUD endpoints (managing the nav tree itself, not consuming it).
         Route::get('/menu', [MenuController::class, 'index']); // List top-level menu items with children.
         Route::get('/menu/catalog', [MenuController::class, 'catalog']); // Full applications catalog (every status) for the Applications admin page.
+        Route::post('/menu/icon', [MenuController::class, 'uploadIcon']); // Upload an icon image for an app/menu entry; returns a public URL.
         Route::post('/menu', [MenuController::class, 'store']); // Create a menu item.
         Route::patch('/menu/{menu}', [MenuController::class, 'update']); // Partially update menu item.
         Route::delete('/menu/{menu}', [MenuController::class, 'destroy']); // Delete a menu item.

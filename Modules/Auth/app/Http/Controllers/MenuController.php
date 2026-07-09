@@ -5,6 +5,7 @@ namespace Modules\Auth\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Modules\Auth\Models\Menu;
 
@@ -140,6 +141,25 @@ class MenuController extends Controller
         return response()->json([
             'total'        => $applications->count(),
             'applications' => $applications,
+        ]);
+    }
+
+    /**
+     * POST /api/menu/icon
+     * Upload an icon image for an application/menu entry and return its public URL.
+     * Used by the Applications admin page's Connect/Edit app dialog; the returned
+     * URL is then submitted as the `icon` field on the store/update endpoints.
+     */
+    public function uploadIcon(Request $request): JsonResponse
+    {
+        $request->validate([
+            'icon' => 'required|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
+        ]);
+
+        $path = $request->file('icon')->store('menu-icons', 'public');
+
+        return response()->json([
+            'url' => Storage::disk('public')->url($path),
         ]);
     }
 
