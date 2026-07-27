@@ -12,6 +12,7 @@ use Illuminate\Auth\AuthenticationException;
 use App\Http\Middleware\Cors;
 use Modules\UBForms\Http\Middleware\CheckUBFormsAccess;
 use Modules\Auth\Http\Middleware\EnsureUserHasRole;
+use Modules\Auth\Http\Middleware\EnsureUserHasPermission;
 use Illuminate\Http\Request;
 
 
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'ubforms.user' => CheckUBFormsAccess::class,
             'has.role' => EnsureUserHasRole::class,
+            'has.permission' => EnsureUserHasPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

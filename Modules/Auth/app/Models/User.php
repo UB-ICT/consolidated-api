@@ -61,6 +61,21 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if the user has the given permission, either directly through one
+     * of their roles or implicitly via the super-admin bypass.
+     */
+    public function hasPermission(string $actionName): bool
+    {
+        if ($this->hasAnyRole(['super-admin'])) {
+            return true;
+        }
+
+        return $this->roles()
+            ->whereHas('permissions', fn ($query) => $query->where('action_name', $actionName))
+            ->exists();
+    }
+
+    /**
      * The roles belonging to the user.
      */
     public function roles(): BelongsToMany
