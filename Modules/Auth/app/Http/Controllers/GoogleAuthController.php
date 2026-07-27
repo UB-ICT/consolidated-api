@@ -119,6 +119,10 @@ class GoogleAuthController extends Controller
 
         Auth::login($_user);
 
+        // Stamp last_active so the admin console's "Last active" column reflects
+        // real sign-ins instead of staying null forever.
+        $_user->forceFill(['last_active' => now()])->save();
+
         // Default Sanctum ability so token checks behave like a normal PAT (empty [] can confuse tooling).
         $token = $_user->createToken('google-login', ['*'])->plainTextToken;
 
@@ -529,7 +533,7 @@ class GoogleAuthController extends Controller
                 return null;
             }
 
-            return $accessToken->tokenable;
+            return $this->touchLastActive($accessToken->tokenable);
         }
 
         $googlePayload = $this->verifyGoogleIdToken($raw);
@@ -568,6 +572,17 @@ class GoogleAuthController extends Controller
             $user->google_id = $googleSub;
             $user->save();
         }
+
+        return $this->touchLastActive($user);
+    }
+
+    /**
+     * Stamps last_active on every resolved session (login or session check) so
+     * the admin console's "Last active" column reflects real activity.
+     */
+    private function touchLastActive(User $user): User
+    {
+        $user->forceFill(['last_active' => now()])->save();
 
         return $user;
     }
@@ -651,6 +666,7 @@ class GoogleAuthController extends Controller
 
         // Bypass group checks for testing or implement them if needed
         Auth::login($_user);
+        $_user->forceFill(['last_active' => now()])->save();
         $token = $_user->createToken('postman-login')->plainTextToken;
 
         // // Instantiate courseMonitoring record for the user
