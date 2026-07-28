@@ -45,6 +45,7 @@ Route::group([
 
     Route::get('requisitions/dashboard-metrics', [RequisitionController::class, '__invoke']);
     Route::get('requisitions/recent', [RequisitionController::class, 'recent']);
+    Route::get('requisitions/summary-by-cost-center', [RequisitionController::class, 'byCostCenter']);
     Route::apiResource('requisitions', RequisitionController::class);
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
@@ -59,9 +60,6 @@ Route::group([
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show']);
     Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download']);
     Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy']);
-
-
-    Route::get('/cost-center', [RequisitionController::class, 'byCostCenter']);
 
     Route::apiResource('stages', StageController::class);
     Route::apiResource('statuses', StatusController::class);
