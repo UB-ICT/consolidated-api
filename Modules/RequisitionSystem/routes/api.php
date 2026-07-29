@@ -46,6 +46,7 @@ Route::group([
     Route::get('requisitions/dashboard-metrics', [RequisitionController::class, '__invoke']);
     Route::get('requisitions/recent', [RequisitionController::class, 'recent']);
     Route::get('requisitions/summary-by-cost-center', [RequisitionController::class, 'byCostCenter']);
+    Route::get('requisitions/report', [RequisitionController::class, 'exportReport']);
     Route::apiResource('requisitions', RequisitionController::class);
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);

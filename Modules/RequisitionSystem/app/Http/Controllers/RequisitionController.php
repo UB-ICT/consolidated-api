@@ -18,8 +18,10 @@ use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Supplier;
+use Modules\RequisitionSystem\Exports\RequisitionReportExport;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
+use Modules\RequisitionSystem\Http\Requests\RequisitionReportRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Notifications\RequisitionSubmittedNotification;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
@@ -27,9 +29,11 @@ use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
+use Modules\RequisitionSystem\Support\GuardsRequisitionReporting;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 use Modules\RequisitionSystem\Support\RequisitionWorkflow;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RequisitionController extends Controller
 {
@@ -37,6 +41,7 @@ class RequisitionController extends Controller
     use GuardsRequisitionApproval;
     use GuardsRequisitionCancellation;
     use GuardsRequisitionPurchaseOrder;
+    use GuardsRequisitionReporting;
 
     public function __construct(
         private readonly RequisitionLogService $logService
@@ -1048,5 +1053,41 @@ class RequisitionController extends Controller
                 'grand_total' => array_sum($stageTotals),
             ],
         ]);
+    }
+
+    /**
+     * Downloadable Excel report of requisitions, filterable by date range,
+     * supplier, cost center, requisition number, and amount.
+     * Restricted to Budget Officers, Directors of Finance, Purchase
+     * Officers, Vice Presidents, and Super Admins.
+     * Maps to: GET /api/requisitionSystem/requisitions/report
+     */
+    public function exportReport(RequisitionReportRequest $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // Checked against the user's actual DB role assignments, not a
+        // client-supplied override — mirrors byCostCenter()'s auth check.
+        $authorizedRole = $user->roles()
+            ->whereIn('role_name', $this->reportViewerRoles())
+            ->value('role_name');
+
+        if (!$authorizedRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only Budget Officers, Directors of Finance, Purchase Officers, Vice Presidents, and Super Admins may view this report.',
+            ], 403);
+        }
+
+        $filename = 'requisition-report_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(
+            new RequisitionReportExport($request->validated()),
+            $filename
+        );
     }
 }
