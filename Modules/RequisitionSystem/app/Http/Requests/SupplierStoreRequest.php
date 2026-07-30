@@ -35,11 +35,11 @@ class SupplierStoreRequest extends FormRequest
                 'max:255',
                 Rule::unique('porsql.suppliers', 'email')->ignore($supplier)
             ],
-            'TIN'            => [
+            'TAX'            => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('porsql.suppliers', 'TIN')->ignore($supplier)
+                Rule::unique('porsql.suppliers', 'TAX')->ignore($supplier)
             ],
 
             'notes'          => 'nullable|string|max:1000',

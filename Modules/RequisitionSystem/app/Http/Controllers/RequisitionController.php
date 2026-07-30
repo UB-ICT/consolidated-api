@@ -11,14 +11,17 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Carbon;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
+use Modules\RequisitionSystem\Models\CostCenter;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Pipeline;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Supplier;
+use Modules\RequisitionSystem\Exports\RequisitionReportExport;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
+use Modules\RequisitionSystem\Http\Requests\RequisitionReportRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Notifications\RequisitionSubmittedNotification;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
@@ -26,9 +29,11 @@ use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
+use Modules\RequisitionSystem\Support\GuardsRequisitionReporting;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 use Modules\RequisitionSystem\Support\RequisitionWorkflow;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RequisitionController extends Controller
 {
@@ -36,6 +41,7 @@ class RequisitionController extends Controller
     use GuardsRequisitionApproval;
     use GuardsRequisitionCancellation;
     use GuardsRequisitionPurchaseOrder;
+    use GuardsRequisitionReporting;
 
     public function __construct(
         private readonly RequisitionLogService $logService
@@ -616,13 +622,12 @@ class RequisitionController extends Controller
 
         foreach ($items as $item) {
             Item::create([
-                'description'      => $item['description'],
-                'quantity'         => (int) $item['quantity'],
-                'unit_cost'        => $item['unit_cost'],
-                'total'            => $item['quantity'] * $item['unit_cost'],
-                'comments'         => $item['comments'] ?? null,
-                'line_item_number' => $item['line_item_number'],
-                'requisition_id'   => $requisition->id,
+                'quantity'            => (int) $item['quantity'],
+                'unit_cost'           => $item['unit_cost'],
+                'total'               => $item['quantity'] * $item['unit_cost'],
+                'comments'            => $item['comments'] ?? null,
+                'chart_of_account_id' => $item['chart_of_account_id'],
+                'requisition_id'      => $requisition->id,
             ]);
         }
 
@@ -963,5 +968,125 @@ class RequisitionController extends Controller
             'success' => true,
             'data' => $allRequisitions
         ]);
+    }
+
+    /**
+     * Summary counts of requisitions grouped by Cost Center & current Stage,
+     * for the dashboard's "Summary Counts by Cost Center & Stage" grid.
+     * Restricted to Purchase Officers and Super Admins.
+     * Maps to: GET /api/requisitionSystem/requisitions/summary-by-cost-center
+     */
+    public function byCostCenter(Request $request): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // Checked against the user's actual DB role assignments (not the ?role=
+        // override other dashboard endpoints accept) so this can't be bypassed
+        // by a client simply passing a different role in the query string.
+        $authorizedRole = $user->roles()
+            ->whereIn('role_name', ['purchase-officer', 'super-admin'])
+            ->value('role_name');
+
+        if (!$authorizedRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only Purchase Officers and Super Admins may view this summary.',
+            ], 403);
+        }
+
+        $stages = Stage::orderBy('id')->get(['id', 'name']);
+
+        // Both authorized roles are system-wide (see RequisitionSystem\Support\GuardsRequisitionEditing::globalRequisitionRoles),
+        // so counts always cover every cost center — no per-user scoping needed here.
+        // Aliased as "requisition_count" rather than "total" — the Requisition model
+        // casts a "total" attribute (monetary total:decimal:2) which would otherwise
+        // silently mangle this aggregate count when hydrated.
+        $counts = Requisition::query()
+            ->select('cost_center_id', 'stage_id', DB::raw('COUNT(*) as requisition_count'))
+            ->groupBy('cost_center_id', 'stage_id')
+            ->get();
+
+        $costCenters = CostCenter::whereIn('id', $counts->pluck('cost_center_id')->unique())
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $data = $costCenters->map(function (CostCenter $costCenter) use ($counts, $stages) {
+            $stageCounts = [];
+            $total = 0;
+
+            foreach ($stages as $stage) {
+                $count = (int) $counts
+                    ->where('cost_center_id', $costCenter->id)
+                    ->where('stage_id', $stage->id)
+                    ->sum('requisition_count');
+
+                $stageCounts[$stage->id] = $count;
+                $total += $count;
+            }
+
+            return [
+                'cost_center_id' => $costCenter->id,
+                'cost_center_name' => $costCenter->name,
+                'total' => $total,
+                'stages' => $stageCounts,
+            ];
+        })->values();
+
+        $stageTotals = [];
+        foreach ($stages as $stage) {
+            $stageTotals[$stage->id] = (int) $counts->where('stage_id', $stage->id)->sum('requisition_count');
+        }
+
+        return response()->json([
+            'success' => true,
+            'role_context' => $authorizedRole,
+            'stages' => $stages,
+            'data' => $data,
+            'totals' => [
+                'by_stage' => $stageTotals,
+                'grand_total' => array_sum($stageTotals),
+            ],
+        ]);
+    }
+
+    /**
+     * Downloadable Excel report of requisitions, filterable by date range,
+     * supplier, cost center, requisition number, and amount.
+     * Restricted to Budget Officers, Directors of Finance, Purchase
+     * Officers, Vice Presidents, and Super Admins.
+     * Maps to: GET /api/requisitionSystem/requisitions/report
+     */
+    public function exportReport(RequisitionReportRequest $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // Checked against the user's actual DB role assignments, not a
+        // client-supplied override — mirrors byCostCenter()'s auth check.
+        $authorizedRole = $user->roles()
+            ->whereIn('role_name', $this->reportViewerRoles())
+            ->value('role_name');
+
+        if (!$authorizedRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only Budget Officers, Directors of Finance, Purchase Officers, Vice Presidents, and Super Admins may view this report.',
+            ], 403);
+        }
+
+        $filename = 'requisition-report_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(
+            new RequisitionReportExport($request->validated()),
+            $filename
+        );
     }
 }

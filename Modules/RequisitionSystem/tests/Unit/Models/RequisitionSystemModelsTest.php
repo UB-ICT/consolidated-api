@@ -88,13 +88,12 @@ class RequisitionSystemModelsTest extends TestCase
     public function test_item_model_configuration(): void
     {
         $this->assertModelFillable(Item::class, [
-            'description',
             'quantity',
-            'line_item_number',
             'unit_cost',
             'total',
             'comments',
             'requisition_id',
+            'chart_of_account_id',
         ]);
     }
 
@@ -149,7 +148,7 @@ class RequisitionSystemModelsTest extends TestCase
             'contact_person',
             'phone_number',
             'email',
-            'TIN',
+            'TAX',
             'status_id',
             'notes',
             'approved_by_user_id',

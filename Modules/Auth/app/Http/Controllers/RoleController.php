@@ -25,6 +25,7 @@ class RoleController extends Controller
      *
      * Also includes:
      * - permissions_count
+     * - users_count
      *
      * This helps the frontend display role summaries
      * without needing extra API calls.
@@ -36,8 +37,8 @@ class RoleController extends Controller
             'permissions',
             'menuItems'
         ])
-            // Adds permissions_count attribute automatically
-            ->withCount('permissions')
+            // Adds permissions_count and users_count attributes automatically
+            ->withCount(['permissions', 'users'])
 
             // Sort roles alphabetically
             ->orderBy('role_name')

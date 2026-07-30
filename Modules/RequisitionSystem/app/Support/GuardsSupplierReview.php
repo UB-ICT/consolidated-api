@@ -9,7 +9,7 @@ trait GuardsSupplierReview
 {
     protected function supplierReviewerRoles(): array
     {
-        return ['director-of-finance', 'super-admin'];
+        return ['director-of-finance', 'vice-president', 'super-admin'];
     }
 
     public function userCanReviewSuppliers(?User $user): bool
@@ -28,7 +28,7 @@ trait GuardsSupplierReview
         if (!$this->userCanReviewSuppliers($user)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
-                'message' => 'Only the director of finance can approve or reject suppliers.',
+                'message' => 'Only the director of finance or vice president can approve or reject suppliers.',
             ], 403));
         }
     }

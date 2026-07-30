@@ -27,7 +27,7 @@ class AuthTestDataSeeder extends Seeder
             'senior-account',
             'director-dean',
             'requester',
-            'purchase-officer',
+            'purchase-officer'
         ];
 
         // Guarantee roles exist and capture their database UUIDs safely
@@ -45,20 +45,33 @@ class AuthTestDataSeeder extends Seeder
 
         // 2. Define the Level 1 Applications as root menus (parent_id = null, type = 'application')
         $apps = [
+            'ub_portal' => [
+                'label' => 'UB Portal',
+                'path' => '/',
+                'icon' => 'squares-plus',
+                'description' => 'Central hub for university applications and services.',
+                'category' => 'Administrative',
+            ],
             'requisition' => [
                 'label' => 'Requisition System',
                 'path' => '/requisitions',
                 'icon' => 'briefcase',
+                'description' => 'Submit and track purchase requisitions and approvals.',
+                'category' => 'Finance',
             ],
             'public_safety' => [
                 'label' => 'Public Safety',
                 'path' => '/public-safety',
                 'icon' => 'shield-check',
+                'description' => 'Campus safety alerts, incident reporting, and resources.',
+                'category' => 'Administrative',
             ],
             'ub_forms' => [
                 'label' => 'UB Annual Reports',
                 'path' => '/ub-annual-reports',
                 'icon' => 'clipboard-document-list',
+                'description' => 'View and submit university annual reports.',
+                'category' => 'Academic',
             ],
         ];
 
@@ -75,6 +88,9 @@ class AuthTestDataSeeder extends Seeder
                 'label' => $appData['label'],
                 'icon' => $appData['icon'],
                 'type' => 'application',
+                'status' => Menu::STATUS_ACTIVE,
+                'description' => $appData['description'],
+                'category' => $appData['category'],
                 'sort_order' => 1,
             ])->save();
 
@@ -142,16 +158,17 @@ class AuthTestDataSeeder extends Seeder
 
         // 7. Seed Profile Dropdown Cards (type = 'user-menu')
         $profileDropdownItems = [
-            ['label' => 'View profile', 'path' => '/profile', 'icon' => 'user', 'role_id' => null, 'sort_order' => 1],
-            ['label' => 'Settings', 'path' => '/settings', 'icon' => 'cog', 'role_id' => null, 'sort_order' => 2],
-            ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
-            ['label' => 'Admin tools', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
+            'sign_out' => ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
+            'admin_console' => ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
         ];
 
-        foreach ($profileDropdownItems as $item) {
+        $userMenuIds = [];
+        foreach ($profileDropdownItems as $key => $item) {
+            // Keyed on role_id too, since a menu item can have one role-scoped row per role.
             $userMenu = Menu::firstOrNew([
                 'path' => $item['path'],
-                'type' => 'user-menu'
+                'type' => 'user-menu',
+                'role_id' => $item['role_id'],
             ]);
 
             if (!$userMenu->exists) {
@@ -161,41 +178,49 @@ class AuthTestDataSeeder extends Seeder
             $userMenu->fill([
                 'label' => $item['label'],
                 'icon' => $item['icon'],
-                'role_id' => $item['role_id'],
                 'parent_id' => null,
                 'sort_order' => $item['sort_order'],
             ])->save();
+
+            $userMenuIds[$key] = $userMenu->id;
         }
 
-        // 8. Seed Horizontal External Link Footers (type = 'external-link')
-        $externalLinks = [
-            ['label' => 'External Tools', 'path' => '/external-tools', 'icon' => 'wrench', 'sort_order' => 5],
-            ['label' => 'Library Docs', 'path' => '/docs', 'icon' => 'book-open', 'sort_order' => 6],
-            ['label' => 'University Website', 'path' => 'https://www.ub.edu.bz', 'icon' => 'globe-alt', 'sort_order' => 7],
+        // 8. Seed submenu layout nested under the Admin Console user-menu item.
+        // getActiveApplicationMenu() only needs the root menu's id and loads its
+        // type=submenu children — it doesn't require the root to be type=application,
+        // so Admin Console can stay a super-admin-only profile link and still drive
+        // the sidebar via the same endpoint the other apps use.
+        $adminConsoleMenuItems = [
+            ['label' => 'Overview', 'path' => '/admin', 'icon' => 'squares-2x2', 'sort_order' => 1],
+            ['label' => 'Users', 'path' => '/admin/users', 'icon' => 'users', 'sort_order' => 2],
+            ['label' => 'Apps', 'path' => '/admin/apps', 'icon' => 'shield-check', 'sort_order' => 3],
+            ['label' => 'Roles', 'path' => '/admin/roles', 'icon' => 'shield-check', 'sort_order' => 4],
+            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'shield-check', 'sort_order' => 5],
+            ['label' => 'Audit log', 'path' => '/admin/audit-log', 'icon' => 'shield-check', 'sort_order' => 6],
         ];
 
-        foreach ($externalLinks as $link) {
-            $extLink = Menu::firstOrNew([
-                'path' => $link['path'],
-                'type' => 'external-link'
+        foreach ($adminConsoleMenuItems as $item) {
+            $subMenu = Menu::firstOrNew([
+                'path' => $item['path'],
+                'role_id' => $roleMap['super-admin'],
+                'parent_id' => $userMenuIds['admin_console'],
             ]);
 
-            if (!$extLink->exists) {
-                $extLink->id = Str::uuid()->toString();
+            if (!$subMenu->exists) {
+                $subMenu->id = Str::uuid()->toString();
             }
 
-            $extLink->fill([
-                'label' => $link['label'],
-                'icon' => $link['icon'],
-                'role_id' => null,
-                'parent_id' => null,
-                'sort_order' => $link['sort_order'],
+            $subMenu->fill([
+                'label' => $item['label'],
+                'icon' => $item['icon'],
+                'type' => 'submenu',
+                'sort_order' => $item['sort_order'],
             ])->save();
         }
 
         // 9. Define testing users
         $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'requester'],
+            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
             ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
         ];
 

@@ -54,7 +54,7 @@ class SupplierController extends Controller
                 'supplier-%s@pending.local',
                 now()->format('YmdHis')
             ),
-            'TIN'            => $validated['TIN'] ?? null,
+            'TAX'            => $validated['TAX'] ?? null,
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => Status::where('name', 'Pending')->value('id') ?? 2,
         ]);
@@ -77,7 +77,7 @@ class SupplierController extends Controller
             'contact_person' => $validated['contact_person'],
             'phone_number'   => $validated['phone_number'],
             'email'          => $validated['email'],
-            'TIN'            => $validated['TIN'],
+            'TAX'            => $validated['TAX'],
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => $validated['status_id']
                 ?? Status::where('name', 'Pending')->value('id')
@@ -117,7 +117,7 @@ class SupplierController extends Controller
             'contact_person' => $validated['contact_person'],
             'phone_number'   => $validated['phone_number'],
             'email'          => $validated['email'],
-            'TIN'            => $validated['TIN'],
+            'TAX'            => $validated['TAX'],
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => $validated['status_id'] ?? $supplier->status_id,
         ]);
@@ -241,7 +241,7 @@ class SupplierController extends Controller
     }
 
     /**
-     * Notify whoever can review suppliers (currently the director of finance)
+     * Notify whoever can review suppliers (director of finance, vice president)
      * that a new supplier request is awaiting their decision.
      */
     private function notifySupplierRequestSubmitted(Supplier $supplier, ?User $submitter): void
