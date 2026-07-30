@@ -241,7 +241,7 @@ class SupplierController extends Controller
     }
 
     /**
-     * Notify whoever can review suppliers (currently the director of finance)
+     * Notify whoever can review suppliers (director of finance, vice president)
      * that a new supplier request is awaiting their decision.
      */
     private function notifySupplierRequestSubmitted(Supplier $supplier, ?User $submitter): void

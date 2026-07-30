@@ -26,6 +26,7 @@ class RequisitionSystemDatabaseSeeder extends Seeder
             CountrySeeder::class,
             AddressSeeder::class,
             RequisitionSeeder::class,
+            ChartOfAccountSeeder::class,
             ItemSeeder::class,
             AttachmentSeeder::class,
             ApprovalSeeder::class,

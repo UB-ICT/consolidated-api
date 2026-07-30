@@ -7,6 +7,7 @@ use Modules\RequisitionSystem\Http\Controllers\StatusController;
 use Modules\RequisitionSystem\Http\Controllers\CurrencyController;
 use Modules\RequisitionSystem\Http\Controllers\CountryController;
 use Modules\RequisitionSystem\Http\Controllers\CostCenterController;
+use Modules\RequisitionSystem\Http\Controllers\ChartOfAccountController;
 use Modules\RequisitionSystem\Http\Controllers\ItemController;
 use Modules\RequisitionSystem\Http\Controllers\PipelineController;
 use Modules\RequisitionSystem\Http\Controllers\SupplierController;
@@ -40,6 +41,7 @@ Route::group([
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('costCenters', CostCenterController::class);
+    Route::apiResource('chartOfAccounts', ChartOfAccountController::class);
     Route::apiResource('items', ItemController::class);
     Route::apiResource('pipelines', PipelineController::class);
 

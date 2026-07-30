@@ -55,8 +55,7 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
 
             'items' => 'required|array|min:1',
-            'items.*.line_item_number' => 'required|string|max:50',
-            'items.*.description' => 'required|string|max:255',
+            'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.comments' => 'nullable|string|max:1000',

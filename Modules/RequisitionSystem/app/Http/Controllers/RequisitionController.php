@@ -622,13 +622,12 @@ class RequisitionController extends Controller
 
         foreach ($items as $item) {
             Item::create([
-                'description'      => $item['description'],
-                'quantity'         => (int) $item['quantity'],
-                'unit_cost'        => $item['unit_cost'],
-                'total'            => $item['quantity'] * $item['unit_cost'],
-                'comments'         => $item['comments'] ?? null,
-                'line_item_number' => $item['line_item_number'],
-                'requisition_id'   => $requisition->id,
+                'quantity'            => (int) $item['quantity'],
+                'unit_cost'           => $item['unit_cost'],
+                'total'               => $item['quantity'] * $item['unit_cost'],
+                'comments'            => $item['comments'] ?? null,
+                'chart_of_account_id' => $item['chart_of_account_id'],
+                'requisition_id'      => $requisition->id,
             ]);
         }
 
