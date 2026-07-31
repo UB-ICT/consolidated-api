@@ -22,6 +22,7 @@ use Modules\RequisitionSystem\Models\{
     Item,
     Approval,
     UserStage,
+    ChartOfAccount,
 };
 
 class FullRequisitionFlowSeeder extends Seeder
@@ -396,18 +397,23 @@ class FullRequisitionFlowSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array{description: string, quantity: int|float, unit_cost: float}>  $items
+     * @param  array<int, array{description: string, quantity: int|float, unit_cost: float, account_no?: string}>  $items
      */
     private function seedLineItems(Requisition $requisition, array $items)
     {
         $requisition->items()->delete();
 
         return collect($items)->map(function (array $item, int $index) use ($requisition) {
+            $accountNo = $item['account_no'] ?? sprintf('9%04d', $index + 1);
+            $account = ChartOfAccount::query()->firstOrCreate(
+                ['account_no' => $accountNo],
+                ['description' => $item['description']]
+            );
+
             return Item::create([
-                'description' => $item['description'],
+                'chart_of_account_id' => $account->id,
                 'quantity' => $item['quantity'],
                 'unit_cost' => $item['unit_cost'],
-                'line_item_number' => (string) ($index + 1),
                 'total' => $item['quantity'] * $item['unit_cost'],
                 'requisition_id' => $requisition->id,
             ]);

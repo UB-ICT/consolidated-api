@@ -25,20 +25,23 @@ class Item extends Model
         'total' => 'decimal:2',
     ];
 
-    protected static function booted(): void
+    protected $appends = [
+        'line_item_number',
+        'description',
+    ];
+
+    protected $with = [
+        'chartOfAccount',
+    ];
+
+    public function getLineItemNumberAttribute(): ?string
     {
-        // line_item_number and description always mirror the linked chart of
-        // account so they can never drift from valid, centrally-managed values.
-        static::saving(function (Item $item) {
-            if (!$item->isDirty('chart_of_account_id')) {
-                return;
-            }
+        return $this->chartOfAccount?->account_no;
+    }
 
-            $chartOfAccount = $item->chartOfAccount()->first();
-
-            $item->line_item_number = $chartOfAccount?->account_no;
-            $item->description = $chartOfAccount?->description;
-        });
+    public function getDescriptionAttribute(): ?string
+    {
+        return $this->chartOfAccount?->description;
     }
 
     public function requisition(): BelongsTo

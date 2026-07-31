@@ -48,7 +48,15 @@ class RequisitionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Requisition::with(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status', 'tags']);
+        $query = Requisition::with([
+            'suppliers.status',
+            'items.chartOfAccount',
+            'costCenter',
+            'stage',
+            'status',
+            'attachments.supplier.status',
+            'tags',
+        ]);
 
         if ($request->get('scope') === 'cost_center') {
             /** @var \Modules\Auth\Models\User $user */
@@ -149,7 +157,7 @@ class RequisitionController extends Controller
         return response()->json([
             'success' => true,
             'data' => $this->formatRequisitionResponse(
-                $requisition->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status', 'attachments.supplier.status', 'tags']),
+                $requisition->load(['suppliers.status', 'items.chartOfAccount', 'costCenter', 'stage', 'status', 'attachments.supplier.status', 'tags']),
                 $user
             ),
         ]);
@@ -570,17 +578,21 @@ class RequisitionController extends Controller
 
         foreach ($items as $item) {
             Item::create([
-                'description'      => $item['description'],
-                'quantity'         => (int) $item['quantity'],
-                'unit_cost'        => $item['unit_cost'],
-                'total'            => $item['quantity'] * $item['unit_cost'],
-                'comments'         => $item['comments'] ?? null,
-                'line_item_number' => $item['line_item_number'],
-                'requisition_id'   => $requisition->id,
+                'chart_of_account_id' => (int) $item['chart_of_account_id'],
+                'quantity'            => (int) $item['quantity'],
+                'unit_cost'           => $item['unit_cost'],
+                'total'               => $item['quantity'] * $item['unit_cost'],
+                'comments'            => $item['comments'] ?? null,
+                'requisition_id'      => $requisition->id,
             ]);
         }
 
-        return $requisition->fresh(['items', 'costCenter', 'status', 'tags']);
+        return $requisition->fresh([
+            'items.chartOfAccount',
+            'costCenter',
+            'status',
+            'tags',
+        ]);
     }
 
     /**

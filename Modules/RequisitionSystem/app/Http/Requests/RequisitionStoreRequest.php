@@ -4,6 +4,7 @@ namespace Modules\RequisitionSystem\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\RequisitionSystem\Models\Budget;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
@@ -55,8 +56,7 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
 
             'items' => 'required|array|min:1',
-            'items.*.line_item_number' => 'required|string|max:50',
-            'items.*.description' => 'required|string|max:255',
+            'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.comments' => 'nullable|string|max:1000',
@@ -97,6 +97,44 @@ class RequisitionStoreRequest extends FormRequest
                         'tag_ids',
                         'All tags must belong to the requisition cost center.'
                     );
+                }
+            }
+
+            $itemAccountIds = collect($this->input('items', []))
+                ->pluck('chart_of_account_id')
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            if ($costCenterId && $itemAccountIds->isNotEmpty()) {
+                $activeBudget = Budget::query()
+                    ->operational()
+                    ->where('cost_center_id', $costCenterId)
+                    ->with('lineItems')
+                    ->first();
+
+                if (!$activeBudget) {
+                    $validator->errors()->add(
+                        'items',
+                        'There is no active budget for this cost center. Line items must come from an active budget.'
+                    );
+                } else {
+                    $allowedAccountIds = $activeBudget->lineItems
+                        ->pluck('chart_of_account_id')
+                        ->map(fn ($id) => (int) $id)
+                        ->all();
+
+                    foreach ($this->input('items', []) as $index => $item) {
+                        $accountId = (int) ($item['chart_of_account_id'] ?? 0);
+
+                        if ($accountId && !in_array($accountId, $allowedAccountIds, true)) {
+                            $validator->errors()->add(
+                                "items.{$index}.chart_of_account_id",
+                                'Selected account is not on the active budget for this cost center.'
+                            );
+                        }
+                    }
                 }
             }
 

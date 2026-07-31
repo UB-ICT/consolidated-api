@@ -91,6 +91,7 @@ Route::group([
     Route::post('budgetYears/{budget_year}/close-submissions', [BudgetYearController::class, 'closeSubmissions']);
     Route::apiResource('budgetYears', BudgetYearController::class);
 
+    Route::get('budgets/operational', [BudgetController::class, 'operational']);
     Route::get('budgets/{budget}/comparison', [BudgetController::class, 'comparison']);
     Route::post('budgets/import', [BudgetController::class, 'import']);
     Route::post('budgets/{budget}/submit', [BudgetController::class, 'submit']);

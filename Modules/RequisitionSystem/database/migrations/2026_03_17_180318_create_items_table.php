@@ -15,9 +15,7 @@ return new class extends Migration
     {
         $this->ensureTableWithTimestamps('items', function (Blueprint $table) {
             $table->id();
-            $table->string('description');
             $table->integer('quantity');
-            $table->string('line_item_number', 50);
             $table->decimal('unit_cost', 10, 2);
             $table->decimal('total', 10, 2);
             $table->string('comments')->nullable();

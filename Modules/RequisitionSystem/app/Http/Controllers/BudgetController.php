@@ -91,6 +91,75 @@ class BudgetController extends Controller
         ]);
     }
 
+    /**
+     * Active (in-force) budget line items for a cost center — used by POR forms.
+     */
+    public function operational(Request $request): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+        $this->assertAuthenticated($user);
+
+        $validated = $request->validate([
+            'cost_center_id' => 'required|integer|exists:porsql.cost_centers,id',
+        ]);
+
+        $costCenterId = (int) $validated['cost_center_id'];
+
+        if (
+            !$this->userIsBudgetFinanceEditor($user)
+            && !$user->costCenters()->where('cost_centers.id', $costCenterId)->exists()
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only view the active budget for your assigned cost center.',
+            ], 403);
+        }
+
+        $budget = Budget::query()
+            ->operational()
+            ->where('cost_center_id', $costCenterId)
+            ->with(['lineItems.chartOfAccount', 'budgetYear', 'status', 'costCenter'])
+            ->first();
+
+        if (!$budget) {
+            return response()->json([
+                'success' => true,
+                'data' => null,
+                'message' => 'No active budget found for this cost center.',
+            ]);
+        }
+
+        $lineItems = $budget->lineItems
+            ->sortBy(fn (BudgetLineItem $item) => $item->chartOfAccount?->account_no)
+            ->values()
+            ->map(fn (BudgetLineItem $item) => [
+                'id' => $item->id,
+                'chart_of_account_id' => $item->chart_of_account_id,
+                'amount' => $item->amount,
+                'notes' => $item->notes,
+                'chart_of_account' => $item->chartOfAccount
+                    ? [
+                        'id' => $item->chartOfAccount->id,
+                        'account_no' => $item->chartOfAccount->account_no,
+                        'description' => $item->chartOfAccount->description,
+                        'parent_id' => $item->chartOfAccount->parent_id,
+                    ]
+                    : null,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'budget_id' => $budget->id,
+                'cost_center_id' => $budget->cost_center_id,
+                'budget_year' => $budget->budgetYear?->label,
+                'status' => $budget->status?->name,
+                'line_items' => $lineItems,
+            ],
+        ]);
+    }
+
     public function import(BudgetImportRequest $request): JsonResponse
     {
         /** @var \Modules\Auth\Models\User|null $user */

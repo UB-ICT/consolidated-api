@@ -13,17 +13,19 @@ return new class extends Migration
     {
         $schema = Schema::connection($this->connection);
 
-        if (!$schema->hasTable('items') || $schema->hasColumn('items', 'chart_of_account_id')) {
+        if (!$schema->hasTable('items')) {
             return;
         }
 
-        $schema->table('items', function (Blueprint $table) {
-            $table->foreignId('chart_of_account_id')
-                ->nullable()
-                ->after('requisition_id')
-                ->constrained('chart_of_accounts')
-                ->onDelete('restrict');
-        });
+        if (!$schema->hasColumn('items', 'chart_of_account_id')) {
+            $schema->table('items', function (Blueprint $table) {
+                $table->foreignId('chart_of_account_id')
+                    ->nullable()
+                    ->after('requisition_id')
+                    ->constrained('chart_of_accounts')
+                    ->onDelete('restrict');
+            });
+        }
 
         $hasItemsNeedingBackfill = DB::connection($this->connection)
             ->table('items')
@@ -53,18 +55,41 @@ return new class extends Migration
         DB::connection($this->connection)->statement(
             'ALTER TABLE items ALTER COLUMN chart_of_account_id SET NOT NULL'
         );
+
+        // Free-text line # / description are replaced by the linked chart of account.
+        foreach (['line_item_number', 'description'] as $column) {
+            if ($schema->hasColumn('items', $column)) {
+                $schema->table('items', function (Blueprint $table) use ($column) {
+                    $table->dropColumn($column);
+                });
+            }
+        }
     }
 
     public function down(): void
     {
         $schema = Schema::connection($this->connection);
 
-        if (!$schema->hasTable('items') || !$schema->hasColumn('items', 'chart_of_account_id')) {
+        if (!$schema->hasTable('items')) {
             return;
         }
 
-        $schema->table('items', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('chart_of_account_id');
-        });
+        if (!$schema->hasColumn('items', 'description')) {
+            $schema->table('items', function (Blueprint $table) {
+                $table->string('description')->nullable();
+            });
+        }
+
+        if (!$schema->hasColumn('items', 'line_item_number')) {
+            $schema->table('items', function (Blueprint $table) {
+                $table->string('line_item_number', 50)->nullable();
+            });
+        }
+
+        if ($schema->hasColumn('items', 'chart_of_account_id')) {
+            $schema->table('items', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('chart_of_account_id');
+            });
+        }
     }
 };
