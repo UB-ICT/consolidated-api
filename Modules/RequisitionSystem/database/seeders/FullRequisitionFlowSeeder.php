@@ -20,7 +20,6 @@ use Modules\RequisitionSystem\Models\{
     Address,
     Requisition,
     Item,
-    ChartOfAccount,
     Approval,
     UserStage,
 };
@@ -54,7 +53,7 @@ class FullRequisitionFlowSeeder extends Seeder
             );
 
             $stephanie = User::firstOrCreate(
-                ['email' => 'swindsor@ub.edu.bz'],
+                ['email' => 'stephanie.windsor@ub.edu.bz'],
                 ['name' => 'Stephanie Windsor', 'password' => bcrypt('password')]
             );
 
@@ -64,12 +63,12 @@ class FullRequisitionFlowSeeder extends Seeder
             );
 
             $daren = User::firstOrCreate(
-                ['email' => 'dbrown@ub.edu.bz'],
+                ['email' => 'daren.brown@ub.edu.bz'],
                 ['name' => 'Daren Brown', 'password' => bcrypt('password')]
             );
 
             $justina = User::firstOrCreate(
-                ['email' => 'joh@ub.edu.bz'],
+                ['email' => 'justina.oh@ub.edu.bz'],
                 ['name' => 'Justina Oh', 'password' => bcrypt('password')]
             );
 
@@ -130,7 +129,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'name' => 'ABC Supplies Ltd',
                     'contact_person' => 'John Doe',
                     'phone_number' => '+5016000001',
-                    'TAX' => 'TAX-001'
+                    'TIN' => 'TIN-001'
                 ]
             );
 
@@ -140,7 +139,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'name' => 'XYZ Diagnostics & Tools',
                     'contact_person' => 'Jane Smith',
                     'phone_number' => '+5016159988',
-                    'TAX' => 'TAX-042'
+                    'TIN' => 'TIN-042'
                 ]
             );
 
@@ -178,15 +177,13 @@ class FullRequisitionFlowSeeder extends Seeder
             $stageBudgetOfficer = Stage::firstOrCreate(['name' => 'Budget Officer']);
             $vpApproval = Stage::firstOrCreate(['name' => 'VP Approval']);
             $financeApproval = Stage::firstOrCreate(['name' => 'Finance Approval']);
-            $purchaseApproval = Stage::firstOrCreate(['name' => 'Purchase Officer Approval']);
 
             $pipeline->stages()->syncWithoutDetaching([
                 $draft->id => ['sequence' => 1],
                 $directorApproval->id => ['sequence' => 2],
                 $stageBudgetOfficer->id => ['sequence' => 3],
                 $vpApproval->id => ['sequence' => 4],
-                $financeApproval->id => ['sequence' => 5],
-                $purchaseApproval->id => ['sequence' => 6]
+                $financeApproval->id => ['sequence' => 5]
             ]);
 
             // ==============================================================
@@ -301,7 +298,7 @@ class FullRequisitionFlowSeeder extends Seeder
             // ==============================================================
             // 13. LINE ITEMS
             // ==============================================================
-            $ictItems = $this->seedLineItems($requisition1, '70314', [
+            $ictItems = $this->seedLineItems($requisition1, [
                 ['description' => '27-inch 4K Development Monitors', 'quantity' => 5, 'unit_cost' => 350.00],
                 ['description' => 'Mechanical Keyboards (Hot-swappable)', 'quantity' => 10, 'unit_cost' => 85.00],
                 ['description' => 'Ergonomic Mesh Office Chairs', 'quantity' => 4, 'unit_cost' => 220.00],
@@ -315,7 +312,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
             $requisition1->update(['total' => $ictItems->sum('total')]);
 
-            $fstItems = $this->seedLineItems($requisition2, '70316', [
+            $fstItems = $this->seedLineItems($requisition2, [
                 ['description' => 'Digital Binocular Compound Microscopes', 'quantity' => 2, 'unit_cost' => 650.00],
                 ['description' => 'Borosilicate Glass Beakers Set (250ml/500ml)', 'quantity' => 12, 'unit_cost' => 15.00],
                 ['description' => 'Graduated Measuring Cylinders (100ml)', 'quantity' => 10, 'unit_cost' => 18.00],
@@ -329,7 +326,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
             $requisition2->update(['total' => $fstItems->sum('total')]);
 
-            $medItems = $this->seedLineItems($requisition3, '70303', [
+            $medItems = $this->seedLineItems($requisition3, [
                 ['description' => 'Automated External Defibrillator (AED)', 'quantity' => 1, 'unit_cost' => 1800.00],
                 ['description' => 'Digital Blood Pressure Monitors', 'quantity' => 6, 'unit_cost' => 75.00],
                 ['description' => 'Infrared Non-Contact Forehead Thermometers', 'quantity' => 10, 'unit_cost' => 45.00],
@@ -343,7 +340,7 @@ class FullRequisitionFlowSeeder extends Seeder
             ]);
             $requisition3->update(['total' => $medItems->sum('total')]);
 
-            $accItems = $this->seedLineItems($requisition4, '70301', [
+            $accItems = $this->seedLineItems($requisition4, [
                 ['description' => 'Heavy Duty Cross-Cut Paper Shredder', 'quantity' => 1, 'unit_cost' => 450.00],
                 ['description' => 'Desktop Financial Calculators', 'quantity' => 5, 'unit_cost' => 60.00],
                 ['description' => 'A4 Thermal Receipt Paper Rolls (Pack of 50)', 'quantity' => 5, 'unit_cost' => 90.00],
@@ -401,17 +398,16 @@ class FullRequisitionFlowSeeder extends Seeder
     /**
      * @param  array<int, array{description: string, quantity: int|float, unit_cost: float}>  $items
      */
-    private function seedLineItems(Requisition $requisition, string $accountNo, array $items)
+    private function seedLineItems(Requisition $requisition, array $items)
     {
         $requisition->items()->delete();
 
-        $chartOfAccountId = ChartOfAccount::where('account_no', $accountNo)->value('id');
-
-        return collect($items)->map(function (array $item) use ($requisition, $chartOfAccountId) {
+        return collect($items)->map(function (array $item, int $index) use ($requisition) {
             return Item::create([
+                'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit_cost' => $item['unit_cost'],
-                'chart_of_account_id' => $chartOfAccountId,
+                'line_item_number' => (string) ($index + 1),
                 'total' => $item['quantity'] * $item['unit_cost'],
                 'requisition_id' => $requisition->id,
             ]);

@@ -7,14 +7,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
-use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Http\Requests\SupplierQuickStoreRequest;
 use Modules\RequisitionSystem\Http\Requests\SupplierReviewRequest;
 use Modules\RequisitionSystem\Http\Requests\SupplierStoreRequest;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
-use Modules\RequisitionSystem\Notifications\SupplierRequestSubmittedNotification;
 use Modules\RequisitionSystem\Support\GuardsSupplierReview;
 use Modules\RequisitionSystem\Support\SupplierStatus;
 
@@ -54,12 +51,10 @@ class SupplierController extends Controller
                 'supplier-%s@pending.local',
                 now()->format('YmdHis')
             ),
-            'TAX'            => $validated['TAX'] ?? null,
+            'TIN'            => $validated['TIN'] ?? null,
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => Status::where('name', 'Pending')->value('id') ?? 2,
         ]);
-
-        $this->notifySupplierRequestSubmitted($supplier, Auth::user());
 
         return response()->json([
             'success' => true,
@@ -77,14 +72,12 @@ class SupplierController extends Controller
             'contact_person' => $validated['contact_person'],
             'phone_number'   => $validated['phone_number'],
             'email'          => $validated['email'],
-            'TAX'            => $validated['TAX'],
+            'TIN'            => $validated['TIN'],
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => $validated['status_id']
                 ?? Status::where('name', 'Pending')->value('id')
                 ?? 2,
         ]);
-
-        $this->notifySupplierRequestSubmitted($supplier, Auth::user());
 
         return response()->json([
             'success' => true,
@@ -117,7 +110,7 @@ class SupplierController extends Controller
             'contact_person' => $validated['contact_person'],
             'phone_number'   => $validated['phone_number'],
             'email'          => $validated['email'],
-            'TAX'            => $validated['TAX'],
+            'TIN'            => $validated['TIN'],
             'notes'          => $validated['notes'] ?? null,
             'status_id'      => $validated['status_id'] ?? $supplier->status_id,
         ]);
@@ -238,29 +231,6 @@ class SupplierController extends Controller
             'message' => 'Supplier set to active successfully.',
             'data'    => $supplier->refresh()->load('status'),
         ]);
-    }
-
-    /**
-     * Notify whoever can review suppliers (director of finance, vice president)
-     * that a new supplier request is awaiting their decision.
-     */
-    private function notifySupplierRequestSubmitted(Supplier $supplier, ?User $submitter): void
-    {
-        $pendingStatusId = Status::where('name', SupplierStatus::PENDING)->value('id')
-            ?? SupplierStatus::PENDING_ID;
-
-        if ((int) $supplier->status_id !== (int) $pendingStatusId) {
-            return;
-        }
-
-        $recipients = User::whereHas(
-            'roles',
-            fn($query) => $query->whereIn('role_name', $this->supplierReviewerRoles())
-        )->get();
-
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new SupplierRequestSubmittedNotification($supplier, $submitter));
-        }
     }
 
     public function getStatusCounts(): JsonResponse

@@ -144,5 +144,22 @@ class ChartOfAccountSeeder extends Seeder
         ];
 
         ChartOfAccount::upsert($accounts, ['account_no'], ['description']);
+
+        // Nest dotted child numbers under their parent account (e.g. 70103.1 → 70103).
+        $all = ChartOfAccount::query()->get(['id', 'account_no', 'parent_id']);
+        $byAccountNo = $all->keyBy('account_no');
+
+        foreach ($all as $account) {
+            if ($account->parent_id || !str_contains($account->account_no, '.')) {
+                continue;
+            }
+
+            $parentNo = substr($account->account_no, 0, strrpos($account->account_no, '.'));
+            $parent = $byAccountNo->get($parentNo);
+
+            if ($parent) {
+                $account->update(['parent_id' => $parent->id]);
+            }
+        }
     }
 }

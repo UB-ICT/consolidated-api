@@ -16,14 +16,13 @@ class Requisition extends Model
         'number',
         'purchase_order_number',
         'cost_center_id',
+        'pipeline_id',
         'status_id',
         'currency_id',
         'total',
         'priority',
         'expected_delivery_date',
         'stage_id',
-        'origin_stage_id',
-        'created_by',
         'date_prepared',
         'is_recurring',
         'reminder_date',
@@ -69,19 +68,14 @@ class Requisition extends Model
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
+    public function pipeline(): BelongsTo
+    {
+        return $this->belongsTo(Pipeline::class, 'pipeline_id');
+    }
+
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class, 'stage_id');
-    }
-
-    public function originStage(): BelongsTo
-    {
-        return $this->belongsTo(Stage::class, 'origin_stage_id');
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(\Modules\Auth\Models\User::class, 'created_by');
     }
 
     public function status(): BelongsTo
@@ -102,6 +96,17 @@ class Requisition extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class, 'requisition_id');
+    }
+
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Tag::class,
+            'requisition_tag',
+            'requisition_id',
+            'tag_id'
+        )->withTimestamps()->orderBy('tags.name');
     }
 
     /**

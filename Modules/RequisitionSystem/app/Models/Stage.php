@@ -4,8 +4,7 @@ namespace Modules\RequisitionSystem\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
-use Modules\RequisitionSystem\Models\Pipeline;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stage extends Model
 {
@@ -21,7 +20,12 @@ class Stage extends Model
     public function pipelines(): BelongsToMany
     {
         return $this->belongsToMany(Pipeline::class, 'pipeline_stages', 'stage_id', 'pipeline_id')
-            ->withPivot('sequence') // Allows you to access $pipeline->pivot->sequence
-            ->withTimestamps();     // Keeps pivot timestamps updated automatically
+            ->withPivot('sequence')
+            ->withTimestamps();
+    }
+
+    public function userStages(): HasMany
+    {
+        return $this->hasMany(UserStage::class);
     }
 }

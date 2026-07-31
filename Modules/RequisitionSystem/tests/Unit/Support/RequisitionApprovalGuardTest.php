@@ -2,15 +2,12 @@
 
 namespace Modules\RequisitionSystem\Tests\Unit\Support;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\UserStage;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Tests\Support\CreatesRequisitionWorkflowSchema;
-
 use Tests\TestCase;
 
 class RequisitionApprovalGuardTest extends TestCase
@@ -26,7 +23,6 @@ class RequisitionApprovalGuardTest extends TestCase
     {
         parent::setUp();
 
-        // 1. Run your existing workflow schema builder (which now sets up both porsql and pgsql)
         $this->setUpRequisitionWorkflowSchema();
     }
 
@@ -90,7 +86,28 @@ class RequisitionApprovalGuardTest extends TestCase
         );
     }
 
-    public function test_user_cannot_approve_after_requesting_cost_center_review_at_stage(): void
+    public function test_user_can_approve_after_cost_center_resubmits_following_review_request(): void
+    {
+        [$user, $requisition] = $this->makeAssignedRequisitionAtDirectorStage(
+            $this->statusIds['Pending']
+        );
+
+        Approval::create([
+            'requisition_id' => $requisition->id,
+            'user_id'        => $user->id,
+            'stage_id'       => $this->stageIds["Director's Approval"],
+            'status'         => 'cost_center_review',
+            'signed_at'      => now(),
+        ]);
+
+        $requisition->refresh();
+
+        $this->assertNull($this->findUserStageDecision($requisition, $user));
+        $this->assertTrue($this->canUserApproveRequisition($requisition, $user));
+        $this->assertTrue($this->userCanViewApprovalActions($requisition, $user));
+    }
+
+    public function test_user_cannot_approve_while_status_is_cost_center_review(): void
     {
         [$user, $requisition] = $this->makeAssignedRequisitionAtDirectorStage(
             $this->statusIds['Cost Center Review']
@@ -107,10 +124,7 @@ class RequisitionApprovalGuardTest extends TestCase
         $requisition->refresh();
 
         $this->assertFalse($this->canUserApproveRequisition($requisition, $user));
-        $this->assertSame(
-            'cost_center_review',
-            $this->findUserStageDecision($requisition, $user)?->status
-        );
+        $this->assertFalse($this->userCanViewApprovalActions($requisition, $user));
     }
 
     public function test_user_cannot_view_approval_actions_when_requisition_is_rejected(): void
@@ -130,20 +144,6 @@ class RequisitionApprovalGuardTest extends TestCase
         $user = new User(['name' => 'Director', 'email' => 'director@ub.edu.bz']);
         $user->id = '44444444-4444-4444-4444-444444444444';
         $user->exists = true;
-
-        // 🔒 Seed the required role structure into your pgsql schema context for the guard checks
-        $roleId = (string) Str::uuid();
-        DB::connection('pgsql')->table('roles')->insert([
-            'id' => $roleId,
-            'role_name' => 'director-dean',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::connection('pgsql')->table('user_roles')->insert([
-            'user_id' => $user->id,
-            'role_id' => $roleId,
-        ]);
 
         UserStage::create([
             'user_id'  => $user->id,

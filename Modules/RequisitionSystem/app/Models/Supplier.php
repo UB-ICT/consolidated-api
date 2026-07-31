@@ -18,19 +18,11 @@ class Supplier extends Model
         'contact_person',
         'phone_number',
         'email',
-        'TAX',
+        'TIN',
         'status_id',
         'notes',
         'approved_by_user_id',
     ];
-
-    public function scopePending(Builder $query): Builder
-    {
-        $pendingStatusId = Status::where('name', SupplierStatus::PENDING)->value('id')
-            ?? SupplierStatus::PENDING_ID;
-
-        return $query->where('status_id', $pendingStatusId);
-    }
 
     public function scopeSelectable(Builder $query): Builder
     {
@@ -45,6 +37,14 @@ class Supplier extends Model
         }
 
         return $query->whereNotIn('status_id', $excludedStatusIds);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        $pendingStatusId = Status::where('name', SupplierStatus::PENDING)->value('id')
+            ?? SupplierStatus::PENDING_ID;
+
+        return $query->where('status_id', $pendingStatusId);
     }
 
     public function isRejected(): bool

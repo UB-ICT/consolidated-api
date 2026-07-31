@@ -3,7 +3,6 @@
 namespace Modules\RequisitionSystem\Tests\Unit\Support;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\UserStage;
@@ -166,7 +165,7 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertSame(2, $requisition->current_stage_sequence);
     }
 
-    public function test_apply_rejection_sets_rejected_status_and_returns_to_draft_stage(): void
+    public function test_apply_rejection_sets_rejected_status_without_changing_stage(): void
     {
         $requisitionId = $this->createTestRequisition(
             $this->stageIds['VP Approval'],
@@ -176,76 +175,13 @@ class RequisitionWorkflowTest extends TestCase
 
         $requisition = Requisition::findOrFail($requisitionId);
 
-        RequisitionWorkflow::applyRejection($requisition, $this->pipelineId);
+        RequisitionWorkflow::applyRejection($requisition);
 
         $requisition->refresh();
 
         $this->assertSame($this->statusIds['Rejected'], $requisition->status_id);
-        $this->assertSame($this->stageIds['Draft'], $requisition->stage_id);
-        $this->assertSame(RequisitionWorkflow::DRAFT_STAGE_SEQUENCE, $requisition->current_stage_sequence);
-    }
-
-    public function test_origin_stage_id_for_user_returns_own_stage_for_workflow_role(): void
-    {
-        $user = new User(['name' => 'Budget Officer', 'email' => 'bo@ub.edu.bz']);
-        $user->id = '44444444-4444-4444-4444-444444444444';
-        $user->exists = true;
-
-        $this->attachRoleToUserInTestContext($user, 'budget-officer');
-
-        $this->assertSame(
-            $this->stageIds['Budget Officer'],
-            RequisitionWorkflow::originStageIdForUser($user, $this->pipelineId)
-        );
-    }
-
-    public function test_origin_stage_id_for_user_returns_draft_stage_for_plain_requester(): void
-    {
-        $user = new User(['name' => 'Plain Requester', 'email' => 'requester@ub.edu.bz']);
-        $user->id = '55555555-5555-5555-5555-555555555555';
-        $user->exists = true;
-
-        $this->attachRoleToUserInTestContext($user, 'requester');
-
-        $this->assertSame(
-            $this->stageIds['Draft'],
-            RequisitionWorkflow::originStageIdForUser($user, $this->pipelineId)
-        );
-    }
-
-    public function test_start_stage_id_from_origin_overrides_default_for_workflow_role_origin(): void
-    {
-        $this->assertSame(
-            $this->stageIds['Budget Officer'],
-            RequisitionWorkflow::startStageIdFromOrigin($this->stageIds['Budget Officer'], $this->pipelineId)
-        );
-    }
-
-    public function test_start_stage_id_from_origin_returns_null_for_draft_origin(): void
-    {
-        $this->assertNull(
-            RequisitionWorkflow::startStageIdFromOrigin($this->stageIds['Draft'], $this->pipelineId)
-        );
-    }
-
-    public function test_apply_rejection_returns_to_origin_stage_when_creator_is_a_workflow_role(): void
-    {
-        $requisitionId = $this->createTestRequisition(
-            $this->stageIds['VP Approval'],
-            $this->statusIds['Pending'],
-            4,
-            $this->stageIds['Budget Officer']
-        );
-
-        $requisition = Requisition::findOrFail($requisitionId);
-
-        RequisitionWorkflow::applyRejection($requisition, $this->pipelineId);
-
-        $requisition->refresh();
-
-        $this->assertSame($this->statusIds['Rejected'], $requisition->status_id);
-        $this->assertSame($this->stageIds['Budget Officer'], $requisition->stage_id);
-        $this->assertSame(3, $requisition->current_stage_sequence);
+        $this->assertSame($this->stageIds['VP Approval'], $requisition->stage_id);
+        $this->assertSame(4, $requisition->current_stage_sequence);
     }
 
     public function test_apply_cost_center_review_sets_status_without_changing_stage(): void
@@ -273,10 +209,6 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '11111111-1111-1111-1111-111111111111';
         $user->exists = true;
 
-        // 🔒 Seed context roles and guarantee user footprint
-        $this->attachRoleToUserInTestContext($user, 'director-dean');
-        $this->attachRoleToUserInTestContext($user, 'budget-officer');
-
         UserStage::create([
             'user_id'  => $user->id,
             'stage_id' => $this->stageIds["Director's Approval"],
@@ -303,8 +235,6 @@ class RequisitionWorkflowTest extends TestCase
         $user->id = '22222222-2222-2222-2222-222222222222';
         $user->exists = true;
 
-        $this->attachRoleToUserInTestContext($user, 'budget-officer');
-
         UserStage::create([
             'user_id'  => $user->id,
             'stage_id' => $this->stageIds['Budget Officer'],
@@ -323,10 +253,6 @@ class RequisitionWorkflowTest extends TestCase
         $user = new User(['name' => 'Multi Approver', 'email' => 'multi@ub.edu.bz']);
         $user->id = '33333333-3333-3333-3333-333333333333';
         $user->exists = true;
-
-        // 🔒 Seed sequential context roles for this user
-        $this->attachRoleToUserInTestContext($user, 'director-dean');
-        $this->attachRoleToUserInTestContext($user, 'budget-officer');
 
         UserStage::create([
             'user_id'  => $user->id,
@@ -367,36 +293,5 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertFalse(RequisitionWorkflow::userCanActAtCurrentStage($requisition, $user));
         $this->assertSame($this->stageIds['VP Approval'], $requisition->stage_id);
         $this->assertSame($this->statusIds['Pending'], $requisition->status_id);
-    }
-
-    /**
-     * Helper to link testing roles and write user entries inside the in-memory database workspace.
-     */
-    private function attachRoleToUserInTestContext(User $user, string $roleName): void
-    {
-        // Ensure the base user record exists in the mocked pgsql users table
-        DB::connection('pgsql')->table('users')->updateOrInsert(
-            ['id' => $user->id],
-            [
-                'name' => $user->name ?? 'Test User',
-                'email' => $user->email ?? 'test@example.com',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]
-        );
-
-        $roleId = (string) Str::uuid();
-
-        DB::connection('pgsql')->table('roles')->insert([
-            'id' => $roleId,
-            'role_name' => $roleName,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::connection('pgsql')->table('user_roles')->insert([
-            'user_id' => $user->id,
-            'role_id' => $roleId,
-        ]);
     }
 }

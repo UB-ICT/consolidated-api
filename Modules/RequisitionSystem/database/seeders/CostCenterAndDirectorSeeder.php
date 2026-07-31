@@ -13,7 +13,7 @@ class CostCenterAndDirectorSeeder extends Seeder
 {
     public function run(): void
     {
-        // Dataset containing both directors/deans and standard requesters
+        // Dataset with explicit individual emails mapped manually
         $matrix = [
             ['cc' => 'Admissions', 'director-dean' => 'Saddith Torres', 'email' => 'saddith.torres@ub.edu.bz'],
             ['cc' => 'Belize Policy Research Institute', 'director-dean' => 'Dylan Vernon', 'email' => 'dvernon@ub.edu.bz'],
@@ -26,10 +26,8 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'Faculty of Health Sciences', 'director-dean' => 'Lydia Thurton', 'email' => 'lthurton@ub.edu.bz'],
             ['cc' => 'Faculty of Management and Social Sciences', 'director-dean' => 'Bernard Watler', 'email' => 'bwatler@ub.edu.bz'],
             ['cc' => 'Faculty of Science and Technology', 'director-dean' => 'Apolonio Aguilar', 'email' => 'aaguilar@ub.edu.bz'],
-            ['cc' => 'Human Resources', 'director-dean' => 'Dareth Cayetano-Obermayer', 'email' => 'dareth.obermayer@ub.edu.bz'],
-            ['cc' => 'Human Resources', 'director-dean' => 'Sheridan Petillo-Arzu', 'email' => 'sheridan.arzu@ub.edu.bz'],
+            ['cc' => 'Human Resources', 'director-dean' => 'Gilroy Middleton Jr', 'email' => 'gilroy.middleton.jr@ub.edu.bz'],
             ['cc' => 'Information and Communication Technology', 'director-dean' => 'Luis Herrera', 'email' => 'luis.herrera@ub.edu.bz'],
-            ['cc' => 'Information and Communication Technology', 'requester' => 'James Faber', 'email' => 'james.faber@ub.edu.bz', 'password' => 'Kingjames_x2'], // Preserved custom password
             ['cc' => 'Institute of Banking and Finance', 'director-dean' => 'Derrick Conorqui', 'email' => 'dconorqui@ub.edu.bz'],
             ['cc' => 'Intercultural Indigenous Language Institute', 'director-dean' => 'Delmer Tzib', 'email' => 'delmer.tzib@ub.edu.bz'],
             ['cc' => 'Institutional Advancement', 'director-dean' => 'Egbert Irving', 'email' => 'egbert.irving@ub.edu.bz'],
@@ -51,83 +49,44 @@ class CostCenterAndDirectorSeeder extends Seeder
             ['cc' => 'UB School of Medicine', 'director-dean' => 'Lisa Johnson', 'email' => 'ljohnson@ub.edu.bz'],
             ['cc' => 'Vice President', 'director-dean' => 'Sherlene Enriquez-Savery', 'email' => 'senriquez@ub.edu.bz'],
             ['cc' => 'Wellness', 'director-dean' => 'Martin Cuellar', 'email' => 'mcuellar@ub.edu.bz'],
-
-            // Added Workflow System Users (Assigned to Information and Communication Technology Cost Center)
-            ['cc' => 'Information and Communication Technology', 'budget-officer' => 'Stephanie Windsor', 'email' => 'swindsor@ub.edu.bz'],
-            ['cc' => 'Information and Communication Technology', 'vice-president' => 'Steve Castillo', 'email' => 'steve.castillo@ub.edu.bz'],
-            ['cc' => 'Information and Communication Technology', 'director-of-finance' => 'Daren Brown', 'email' => 'dbrown@ub.edu.bz'],
-            ['cc' => 'Information and Communication Technology', 'purchase-officer' => 'Justina Oh', 'email' => 'joh@ub.edu.bz'],
         ];
 
-        // Ensure all application roles exist up-front using firstOrCreate
-        $rolesMap = [
-            'director-dean'       => Role::firstOrCreate(['role_name' => 'director-dean'], ['id' => (string) Str::uuid(), 'description' => 'Head of Cost Center / Dean of Faculty']),
-            'requester'           => Role::firstOrCreate(['role_name' => 'requester'], ['id' => (string) Str::uuid(), 'description' => 'Standard Cost Center Requisition Submitter']),
-            'budget-officer'      => Role::firstOrCreate(['role_name' => 'budget-officer'], ['id' => (string) Str::uuid(), 'description' => 'Budget Reviewing Officer']),
-            'vice-president'      => Role::firstOrCreate(['role_name' => 'vice-president'], ['id' => (string) Str::uuid(), 'description' => 'Vice President Executive Approver']),
-            'director-of-finance' => Role::firstOrCreate(['role_name' => 'director-of-finance'], ['id' => (string) Str::uuid(), 'description' => 'Director of Finance Final Reviewer']),
-            'purchase-officer'    => Role::firstOrCreate(['role_name' => 'purchase-officer'], ['id' => (string) Str::uuid(), 'description' => 'Purchasing Department Process Officer']),
-        ];
+        $directorDeanRole = Role::firstOrCreate(
+            ['role_name' => 'director-dean'],
+            ['id' => (string) Str::uuid(), 'description' => 'Head of Cost Center / Dean of Faculty']
+        );
 
         foreach ($matrix as $row) {
-            // Determine dynamic name, target role string, and fallback tracking
-            $detectedRoleKey = null;
-            $name = 'Unknown User';
-
-            foreach (array_keys($rolesMap) as $roleKey) {
-                if (isset($row[$roleKey])) {
-                    $detectedRoleKey = $roleKey;
-                    $name = $row[$roleKey];
-                    break;
-                }
-            }
-
-            // Fallback safety catch
-            if (!$detectedRoleKey) {
-                continue;
-            }
-
-            $assignedRoleId = $rolesMap[$detectedRoleKey]->id;
-            $passwordStr = $row['password'] ?? 'password';
-
-            // 1. Check if user already exists on 'pgsql' by email to preserve real UUIDs
-            $userAccount = User::where('email', $row['email'])->first();
-
-            // 2. Fallback to registration if account does not exist
-            if (!$userAccount) {
-                $userAccount = User::create([
-                    'name'     => $name,
-                    'email'    => $row['email'],
-                    'password' => bcrypt($passwordStr),
-                ]);
-            }
-
-            // Assign the dynamically verified operational role link
-            DB::connection('pgsql')->table('user_roles')->updateOrInsert(
+            // Users live on pgsql; pivots on porsql. Do not wrap both in one
+            // default-connection transaction or FK checks cannot see new users.
+            $userAccount = User::firstOrCreate(
+                ['email' => $row['email']],
                 [
-                    'user_id' => $userAccount->id,
-                    'role_id' => $assignedRoleId
+                    'name' => $row['director-dean'],
                 ]
             );
 
-            $noCostCenterRoles = ['budget-officer', 'vice-president', 'director-of-finance', 'purchase-officer'];
+            DB::connection('pgsql')->table('user_roles')->updateOrInsert(
+                [
+                    'user_id' => $userAccount->id,
+                    'role_id' => $directorDeanRole->id
+                ]
+            );
 
-            if (!in_array($detectedRoleKey, $noCostCenterRoles)) {
-                $costCenter = CostCenter::firstOrCreate([
-                    'name' => $row['cc']
-                ]);
+            $costCenter = CostCenter::firstOrCreate([
+                'name' => $row['cc']
+            ]);
 
-                DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
-                    [
-                        'user_id'        => $userAccount->id,
-                        'cost_center_id' => $costCenter->id
-                    ],
-                    [
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
-                );
-            }
+            DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
+                [
+                    'user_id' => $userAccount->id,
+                    'cost_center_id' => $costCenter->id
+                ],
+                [
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+            );
         }
     }
 }

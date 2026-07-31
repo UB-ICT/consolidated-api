@@ -20,6 +20,8 @@ final class RequisitionLogAction
 
     public const CANCELLED = 'cancelled';
 
+    public const CLOSED = 'closed';
+
     public static function all(): array
     {
         return [
@@ -31,6 +33,7 @@ final class RequisitionLogAction
             self::COMMENT,
             self::COST_CENTER_REVIEW,
             self::CANCELLED,
+            self::CLOSED,
         ];
     }
 }

@@ -55,7 +55,8 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
 
             'items' => 'required|array|min:1',
-            'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
+            'items.*.line_item_number' => 'required|string|max:50',
+            'items.*.description' => 'required|string|max:255',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.comments' => 'nullable|string|max:1000',
@@ -68,6 +69,9 @@ class RequisitionStoreRequest extends FormRequest
                 'string',
                 'max:2000',
             ],
+
+            'tag_ids' => 'sometimes|array',
+            'tag_ids.*' => 'integer|exists:porsql.tags,id',
         ];
     }
 
@@ -79,6 +83,23 @@ class RequisitionStoreRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $costCenterId = (int) $this->input('cost_center_id');
+            $tagIds = collect($this->input('tag_ids', []))->filter()->unique()->values();
+
+            if ($tagIds->isNotEmpty() && $costCenterId) {
+                $invalidCount = \Modules\RequisitionSystem\Models\Tag::query()
+                    ->whereIn('id', $tagIds)
+                    ->where('cost_center_id', '!=', $costCenterId)
+                    ->count();
+
+                if ($invalidCount > 0) {
+                    $validator->errors()->add(
+                        'tag_ids',
+                        'All tags must belong to the requisition cost center.'
+                    );
+                }
+            }
+
             if (!$this->shouldSubmit()) {
                 return;
             }

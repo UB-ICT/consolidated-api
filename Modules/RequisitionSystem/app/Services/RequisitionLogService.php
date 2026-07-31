@@ -151,6 +151,25 @@ class RequisitionLogService
         );
     }
 
+    public function recordClosure(
+        Requisition $requisition,
+        User $user,
+        ?string $comments = null
+    ): Logs {
+        $summary = sprintf(
+            'Requisition %s closed (discontinued / not processed).',
+            $requisition->number
+        );
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::CLOSED,
+            $summary,
+            $comments
+        );
+    }
+
     public function recordComment(
         Requisition $requisition,
         User $user,
@@ -265,20 +284,20 @@ class RequisitionLogService
 
         $previous = $previousItems
             ->map(fn ($item) => [
-                'chart_of_account_id' => $item->chart_of_account_id,
-                'quantity'            => (int) $item->quantity,
-                'unit_cost'           => (float) $item->unit_cost,
-                'comments'            => $item->comments,
+                'description' => $item->description,
+                'quantity'    => (int) $item->quantity,
+                'unit_cost'   => (float) $item->unit_cost,
+                'comments'    => $item->comments,
             ])
             ->values()
             ->all();
 
         $next = $newItems
             ->map(fn (array $item) => [
-                'chart_of_account_id' => (int) $item['chart_of_account_id'],
-                'quantity'            => (int) $item['quantity'],
-                'unit_cost'           => (float) $item['unit_cost'],
-                'comments'            => $item['comments'] ?? null,
+                'description' => $item['description'],
+                'quantity'    => (int) $item['quantity'],
+                'unit_cost'   => (float) $item['unit_cost'],
+                'comments'    => $item['comments'] ?? null,
             ])
             ->values()
             ->all();

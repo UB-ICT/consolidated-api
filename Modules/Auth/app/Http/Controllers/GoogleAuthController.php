@@ -70,17 +70,7 @@ class GoogleAuthController extends Controller
         }
 
         // Get Google user
-        try {
-            $user = Socialite::driver('google')->stateless()->user();
-        } catch (\Throwable $e) {
-            // Most commonly a stale/already-consumed authorization code (e.g. duplicate
-            // callback request) causing Google to reject the exchange with invalid_grant.
-            Log::error('Google OAuth callback failed to exchange authorization code', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return redirect($callerDomain . '?error=invalid_grant');
-        }
+        $user = Socialite::driver('google')->stateless()->user();
 
         // Retrieve or Create User
         $_user = User::where('email', $user->email)->first();
@@ -91,23 +81,14 @@ class GoogleAuthController extends Controller
                 [
                     'name' => $user->name,
                     'google_id' => $user->id,
-                    'profile_picture' => $user->avatar,
                     'password' => bcrypt(Str::random(16)),
                     'email_verified_at' => now(),
                 ]
             );
         } else {
-            // Update existing user with google_id if not set, and keep the avatar in sync
-            $dirty = false;
+            // Update existing user with google_id if not set
             if (empty($_user->google_id)) {
                 $_user->google_id = $user->id;
-                $dirty = true;
-            }
-            if ($user->avatar && $_user->profile_picture !== $user->avatar) {
-                $_user->profile_picture = $user->avatar;
-                $dirty = true;
-            }
-            if ($dirty) {
                 $_user->save();
             }
         }
@@ -118,10 +99,6 @@ class GoogleAuthController extends Controller
         }
 
         Auth::login($_user);
-
-        // Stamp last_active so the admin console's "Last active" column reflects
-        // real sign-ins instead of staying null forever.
-        $_user->forceFill(['last_active' => now()])->save();
 
         // Default Sanctum ability so token checks behave like a normal PAT (empty [] can confuse tooling).
         $token = $_user->createToken('google-login', ['*'])->plainTextToken;
@@ -135,7 +112,6 @@ class GoogleAuthController extends Controller
             'system' => $system,
             'email' => $_user->email,
             'name' => $_user->name,
-            'picture' => $_user->profile_picture,
         ]);
         $separator = str_contains($callerDomain, '?') ? '&' : '?';
 
@@ -431,7 +407,6 @@ class GoogleAuthController extends Controller
             'name' => $resolved->name,
             'email' => $resolved->email,
             'email_verified_at' => $resolved->email_verified_at,
-            'profile_picture' => $resolved->profile_picture,
         ]);
     }
 
@@ -533,7 +508,7 @@ class GoogleAuthController extends Controller
                 return null;
             }
 
-            return $this->touchLastActive($accessToken->tokenable);
+            return $accessToken->tokenable;
         }
 
         $googlePayload = $this->verifyGoogleIdToken($raw);
@@ -572,17 +547,6 @@ class GoogleAuthController extends Controller
             $user->google_id = $googleSub;
             $user->save();
         }
-
-        return $this->touchLastActive($user);
-    }
-
-    /**
-     * Stamps last_active on every resolved session (login or session check) so
-     * the admin console's "Last active" column reflects real activity.
-     */
-    private function touchLastActive(User $user): User
-    {
-        $user->forceFill(['last_active' => now()])->save();
 
         return $user;
     }
@@ -666,7 +630,6 @@ class GoogleAuthController extends Controller
 
         // Bypass group checks for testing or implement them if needed
         Auth::login($_user);
-        $_user->forceFill(['last_active' => now()])->save();
         $token = $_user->createToken('postman-login')->plainTextToken;
 
         // // Instantiate courseMonitoring record for the user

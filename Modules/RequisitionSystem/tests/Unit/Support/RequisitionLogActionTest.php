@@ -32,4 +32,17 @@ class RequisitionLogActionTest extends TestCase
     {
         $this->assertSame('cancelled', RequisitionLogAction::CANCELLED);
     }
+
+    public function test_all_includes_closed(): void
+    {
+        $this->assertContains(
+            RequisitionLogAction::CLOSED,
+            RequisitionLogAction::all()
+        );
+    }
+
+    public function test_closed_constant_value(): void
+    {
+        $this->assertSame('closed', RequisitionLogAction::CLOSED);
+    }
 }

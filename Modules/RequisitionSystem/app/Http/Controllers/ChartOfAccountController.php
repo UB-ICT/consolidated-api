@@ -5,8 +5,8 @@ namespace Modules\RequisitionSystem\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\RequisitionSystem\Models\ChartOfAccount;
 use Modules\RequisitionSystem\Http\Requests\ChartOfAccountStoreRequest;
+use Modules\RequisitionSystem\Models\ChartOfAccount;
 
 class ChartOfAccountController extends Controller
 {
@@ -16,7 +16,9 @@ class ChartOfAccountController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = ChartOfAccount::query()->orderBy('account_no');
+        $query = ChartOfAccount::query()
+            ->with(['parent:id,account_no,description'])
+            ->orderBy('account_no');
 
         if ($search = $request->string('search')->trim()->value()) {
             $query->where(function ($query) use ($search) {
@@ -37,11 +39,12 @@ class ChartOfAccountController extends Controller
     public function store(ChartOfAccountStoreRequest $request): JsonResponse
     {
         $chartOfAccount = ChartOfAccount::create($request->validated());
+        $chartOfAccount->load(['parent:id,account_no,description']);
 
         return response()->json([
             'success' => true,
-            'message' => 'Chart of account created successfully.',
-            'data'    => $chartOfAccount
+            'message' => 'Account created successfully.',
+            'data'    => $chartOfAccount,
         ], 201);
     }
 
@@ -50,9 +53,14 @@ class ChartOfAccountController extends Controller
      */
     public function show(ChartOfAccount $chartOfAccount): JsonResponse
     {
+        $chartOfAccount->load([
+            'parent:id,account_no,description',
+            'children:id,parent_id,account_no,description',
+        ]);
+
         return response()->json([
             'success' => true,
-            'data'    => $chartOfAccount
+            'data'    => $chartOfAccount,
         ], 200);
     }
 
@@ -62,11 +70,12 @@ class ChartOfAccountController extends Controller
     public function update(ChartOfAccountStoreRequest $request, ChartOfAccount $chartOfAccount): JsonResponse
     {
         $chartOfAccount->update($request->validated());
+        $chartOfAccount->load(['parent:id,account_no,description']);
 
         return response()->json([
             'success' => true,
-            'message' => 'Chart of account updated successfully.',
-            'data'    => $chartOfAccount
+            'message' => 'Account updated successfully.',
+            'data'    => $chartOfAccount,
         ], 200);
     }
 
@@ -75,11 +84,32 @@ class ChartOfAccountController extends Controller
      */
     public function destroy(ChartOfAccount $chartOfAccount): JsonResponse
     {
+        if ($chartOfAccount->children()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete this account because it has nested child accounts. Move or delete the children first.',
+            ], 422);
+        }
+
+        if ($chartOfAccount->items()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete this account because it is linked to requisition line items.',
+            ], 422);
+        }
+
+        if ($chartOfAccount->budgetLineItems()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete this account because it is linked to budget line items.',
+            ], 422);
+        }
+
         $chartOfAccount->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Chart of account deleted successfully.'
+            'message' => 'Account deleted successfully.',
         ], 200);
     }
 }

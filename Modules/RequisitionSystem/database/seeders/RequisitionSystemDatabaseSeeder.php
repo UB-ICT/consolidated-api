@@ -21,16 +21,18 @@ class RequisitionSystemDatabaseSeeder extends Seeder
             UserStageSeeder::class,
             CurrencySeeder::class,
             BankSeeder::class,
+            ChartOfAccountSeeder::class,
             SupplierSeeder::class,
             SupplierBankSeeder::class,
             CountrySeeder::class,
             AddressSeeder::class,
             RequisitionSeeder::class,
-            ChartOfAccountSeeder::class,
             ItemSeeder::class,
             AttachmentSeeder::class,
             ApprovalSeeder::class,
             FullRequisitionFlowSeeder::class,
+            BudgetPipelineSeeder::class,
+            IctBudgetProjectionSeeder::class,
         ]);
     }
 }

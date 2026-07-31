@@ -88,12 +88,13 @@ class RequisitionSystemModelsTest extends TestCase
     public function test_item_model_configuration(): void
     {
         $this->assertModelFillable(Item::class, [
+            'description',
             'quantity',
+            'line_item_number',
             'unit_cost',
             'total',
             'comments',
             'requisition_id',
-            'chart_of_account_id',
         ]);
     }
 
@@ -115,8 +116,6 @@ class RequisitionSystemModelsTest extends TestCase
             'priority',
             'expected_delivery_date',
             'stage_id',
-            'origin_stage_id',
-            'created_by',
             'date_prepared',
             'is_recurring',
             'reminder_date',
@@ -148,7 +147,7 @@ class RequisitionSystemModelsTest extends TestCase
             'contact_person',
             'phone_number',
             'email',
-            'TAX',
+            'TIN',
             'status_id',
             'notes',
             'approved_by_user_id',

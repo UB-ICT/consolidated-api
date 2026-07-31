@@ -10,7 +10,7 @@ trait GuardsRequisitionCancellation
 {
     protected function nonCancellableStatuses(): array
     {
-        return ['Rejected', 'Approved', 'Cancelled'];
+        return ['Rejected', 'Approved', 'Cancelled', 'Closed'];
     }
 
     protected function userIsCostCenterOrDirectorDean(User $user): bool
@@ -20,18 +20,13 @@ trait GuardsRequisitionCancellation
             ->exists();
     }
 
-    /**
-     * Determine authorization rules for cancelling a requisition sheet.
-     * Safely checks runtime role context strings if available.
-     */
-    protected function userCanCancelRequisition(Requisition $requisition, ?User $user, ?string $currentRole = null): bool
+    protected function userCanCancelRequisition(Requisition $requisition, ?User $user): bool
     {
         if (!$user) {
             return false;
         }
 
-        // Safeguard check: If the userHasGlobalRequisitionAccess method exists on the composition class, evaluate it
-        if (method_exists($this, 'userHasGlobalRequisitionAccess') && $this->userHasGlobalRequisitionAccess($user, $currentRole)) {
+        if ($this->userHasGlobalRequisitionAccess($user)) {
             return false;
         }
 
@@ -48,7 +43,7 @@ trait GuardsRequisitionCancellation
         return $assignedCostCenterIds->contains($requisition->cost_center_id);
     }
 
-    protected function assertUserCanCancel(Requisition $requisition, ?User $user, ?string $currentRole = null): void
+    protected function assertUserCanCancel(Requisition $requisition, ?User $user): void
     {
         if (!$user) {
             throw new HttpResponseException(response()->json([
@@ -59,7 +54,7 @@ trait GuardsRequisitionCancellation
 
         $requisition->loadMissing('status');
 
-        if (!$this->userCanCancelRequisition($requisition, $user, $currentRole)) {
+        if (!$this->userCanCancelRequisition($requisition, $user)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to cancel this requisition.',

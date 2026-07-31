@@ -102,6 +102,9 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
             ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
+            ['label' => 'Accounts', 'path' => '/requisitions/accounts', 'icon' => 'notebook', 'sort_order' => 4],
+            ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 5],
+            ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 6],
         ];
 
         // 4. Define the Level 2 menu items specific to your 'cost-center' role layout
@@ -109,6 +112,9 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
             ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
+            ['label' => 'Accounts', 'path' => '/requisitions/accounts', 'icon' => 'notebook', 'sort_order' => 4],
+            ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 5],
+            ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 6],
         ];
 
         // 5. Seed management layouts nested under the RequisitionSystem app item

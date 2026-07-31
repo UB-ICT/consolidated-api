@@ -18,32 +18,6 @@ trait CreatesRequisitionWorkflowSchema
 
     protected function setUpRequisitionWorkflowSchema(): void
     {
-        // 🔒 1. Mock central authentication tables inside pgsql connection context
-        Schema::connection('pgsql')->dropIfExists('user_roles');
-        Schema::connection('pgsql')->dropIfExists('roles');
-        Schema::connection('pgsql')->dropIfExists('users');
-
-        Schema::connection('pgsql')->create('users', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamps();
-        });
-
-        Schema::connection('pgsql')->create('roles', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('role_name');
-            $table->string('description')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::connection('pgsql')->create('user_roles', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->uuid('role_id');
-            $table->primary(['user_id', 'role_id']);
-        });
-
-        // ⚙️ 2. Clean and provision your local porsql workflow tables
         Schema::connection('porsql')->dropIfExists('user_stages');
         Schema::connection('porsql')->dropIfExists('approvals');
         Schema::connection('porsql')->dropIfExists('requisitions');
@@ -80,9 +54,8 @@ trait CreatesRequisitionWorkflowSchema
 
         Schema::connection('porsql')->create('requisitions', function (Blueprint $table) {
             $table->id();
-            $table->uuid('created_by')->nullable();
+            $table->foreignId('pipeline_id')->nullable()->constrained('pipelines');
             $table->unsignedBigInteger('stage_id');
-            $table->unsignedBigInteger('origin_stage_id')->nullable();
             $table->unsignedBigInteger('status_id');
             $table->unsignedInteger('current_stage_sequence')->nullable();
             $table->timestamps();
@@ -112,7 +85,7 @@ trait CreatesRequisitionWorkflowSchema
 
     protected function seedWorkflowStatuses(): void
     {
-        foreach (['Draft', 'Pending', 'Approved', 'Rejected', 'Cost Center Review', 'Cancelled'] as $name) {
+        foreach (['Draft', 'Pending', 'Approved', 'Rejected', 'Cost Center Review', 'Cancelled', 'Closed'] as $name) {
             $id = DB::connection('porsql')->table('statuses')->insertGetId([
                 'name'       => $name,
                 'created_at' => now(),
@@ -158,15 +131,11 @@ trait CreatesRequisitionWorkflowSchema
         }
     }
 
-    protected function createTestRequisition(
-        int $stageId,
-        int $statusId,
-        int $sequence,
-        ?int $originStageId = null
-    ): int {
+    protected function createTestRequisition(int $stageId, int $statusId, int $sequence): int
+    {
         return DB::connection('porsql')->table('requisitions')->insertGetId([
+            'pipeline_id'            => $this->pipelineId,
             'stage_id'               => $stageId,
-            'origin_stage_id'        => $originStageId,
             'status_id'              => $statusId,
             'current_stage_sequence' => $sequence,
             'created_at'             => now(),

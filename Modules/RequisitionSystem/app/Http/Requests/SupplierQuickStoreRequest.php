@@ -24,11 +24,11 @@ class SupplierQuickStoreRequest extends FormRequest
                 'max:255',
                 Rule::unique('porsql.suppliers', 'email'),
             ],
-            'TAX'            => [
+            'TIN'            => [
                 'nullable',
                 'string',
                 'max:100',
-                Rule::unique('porsql.suppliers', 'TAX'),
+                Rule::unique('porsql.suppliers', 'TIN'),
             ],
             'notes'          => 'nullable|string|max:1000',
         ];

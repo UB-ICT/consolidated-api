@@ -10,41 +10,13 @@ trait GuardsRequisitionEditing
 {
     protected function costCenterEditableStatuses(): array
     {
-        return ['Draft', 'Cost Center Review', 'Rejected'];
+        return ['Draft', 'Cost Center Review'];
     }
 
-    /**
-     * Roles that review requisitions system-wide rather than within a single
-     * cost center (e.g. director-dean is scoped to their own cost center).
-     */
-    protected function globalRequisitionRoles(): array
+    protected function userHasGlobalRequisitionAccess(User $user): bool
     {
-        return [
-            'budget-officer',
-            'vice-president',
-            'director-of-finance',
-            'purchase-officer',
-            'payroll-officer',
-            'super-admin'
-        ];
-    }
-
-    /**
-     * Check if a user/role combination bypasses Cost Center isolation sandboxing.
-     * Centralized to accept both single argument calls and dynamic role overrides.
-     */
-    protected function userHasGlobalRequisitionAccess(User $user, ?string $currentRole = null): bool
-    {
-        $globalRoles = $this->globalRequisitionRoles();
-
-        // 1. If an explicit runtime role override was requested (like via dashboard or query string), validate it
-        if ($currentRole && in_array($currentRole, $globalRoles, true)) {
-            return true;
-        }
-
-        // 2. Otherwise, fallback to checking if the user holds any of these administrative profiles in the database
         return $user->roles()
-            ->whereIn('roles.role_name', $globalRoles)
+            ->whereIn('roles.role_name', ['director-of-finance', 'payroll-officer'])
             ->exists();
     }
 

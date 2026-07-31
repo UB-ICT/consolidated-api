@@ -15,11 +15,15 @@ trait GuardsRequisitionApproval
     }
 
     /**
+     * Terminal stage decisions that block further approve/reject/request-review.
+     * cost_center_review is intentional pause history — after the cost center
+     * resubmits, the same stage assignee must be able to continue.
+     *
      * @return array<int, string>
      */
     protected function userStageDecisionStatuses(): array
     {
-        return ['approved', 'rejected', 'cost_center_review'];
+        return ['approved', 'rejected'];
     }
 
     protected function findUserStageDecision(Requisition $requisition, User $user): ?Approval
@@ -49,21 +53,7 @@ trait GuardsRequisitionApproval
             return false;
         }
 
-        // 1. Resolve what stage this user matches in user_stages
-        $matchingStageId = RequisitionWorkflow::matchingUserStageId($requisition, $user);
-
-        if ($matchingStageId === null) {
-            return false;
-        }
-
-        // 2. Map the matched stage to its required role
-        $requiredRole = RequisitionWorkflow::requiredRoleForStageId($matchingStageId);
-
-        if ($requiredRole !== null && !$user->hasAnyRole($requiredRole)) {
-            return false;
-        }
-
-        return true;
+        return RequisitionWorkflow::matchingUserStageId($requisition, $user) !== null;
     }
 
     protected function canUserApproveRequisition(Requisition $requisition, ?User $user): bool
