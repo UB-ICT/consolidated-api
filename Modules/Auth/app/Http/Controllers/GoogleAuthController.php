@@ -72,22 +72,38 @@ class GoogleAuthController extends Controller
         // Get Google user
         $user = Socialite::driver('google')->stateless()->user();
 
-        // Retrieve or Create User
-        $_user = User::where('email', $user->email)->first();
+        // Portal: only invited (pre-provisioned) users with an assigned role may sign in.
+        // Other systems keep the existing auto-create behaviour.
+        if ($system === 'portal') {
+            $_user = User::where('email', $user->email)->first();
 
-        if (!$_user) {
-            $_user = User::updateOrCreate(
-                ['email' => $user->email],
-                [
-                    'name' => $user->name,
-                    'google_id' => $user->id,
-                    'password' => bcrypt(Str::random(16)),
-                    'email_verified_at' => now(),
-                ]
-            );
-        } else {
-            // Update existing user with google_id if not set
+            if (!$_user || !$_user->isPortalEligible()) {
+                Log::info('Portal Google login rejected: user not invited or has no role', [
+                    'email' => $user->email,
+                    'exists' => (bool) $_user,
+                ]);
+
+                return redirect($callerDomain . '?error=unauthorized');
+            }
+
             if (empty($_user->google_id)) {
+                $_user->google_id = $user->id;
+                $_user->save();
+            }
+        } else {
+            $_user = User::where('email', $user->email)->first();
+
+            if (!$_user) {
+                $_user = User::updateOrCreate(
+                    ['email' => $user->email],
+                    [
+                        'name' => $user->name,
+                        'google_id' => $user->id,
+                        'password' => bcrypt(Str::random(16)),
+                        'email_verified_at' => now(),
+                    ]
+                );
+            } elseif (empty($_user->google_id)) {
                 $_user->google_id = $user->id;
                 $_user->save();
             }
@@ -319,6 +335,16 @@ class GoogleAuthController extends Controller
 
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if (!$user->isPortalEligible()) {
+            // Drop tokens so a user who loses roles cannot keep using an old session.
+            $user->tokens()->delete();
+
+            return response()->json([
+                'error' => 'Unauthorized',
+                'message' => 'Your account has not been invited to UB Portal or has no assigned role.',
+            ], 403);
         }
 
         $mailingGroups = $this->getUserMailingGroups($user);

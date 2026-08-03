@@ -61,6 +61,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Whether the user may sign in to UB Portal: invited (exists) + active + has a role.
+     */
+    public function isPortalEligible(): bool
+    {
+        if (($this->status ?? 'active') === 'disabled') {
+            return false;
+        }
+
+        return $this->roles()->exists();
+    }
+
+    /**
      * Check if the user has the given permission, either directly through one
      * of their roles or implicitly via the super-admin bypass.
      */
