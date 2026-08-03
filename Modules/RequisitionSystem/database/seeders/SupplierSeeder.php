@@ -83,13 +83,15 @@ class SupplierSeeder extends Seeder
 
             $bank = Bank::firstOrCreate(['name' => $bankName]);
 
+            $address = trim((string) ($row['address'] ?? ''));
+
             SupplierBank::updateOrCreate(
                 ['supplier_id' => $supplier->id],
                 [
                     'bank_id'        => $bank->id,
                     'account_number' => $accountNumber !== '' ? $accountNumber : 'N/A',
                     'account_name'   => $row['name'],
-                    'address'        => $row['address'] ?? null,
+                    'address'        => $address !== '' ? $address : null,
                 ]
             );
         }
