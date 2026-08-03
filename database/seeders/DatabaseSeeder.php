@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             \Modules\RequisitionSystem\Database\Seeders\StageSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CostCenterAndDirectorSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\AccountsUsersSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\BudgetPipelineSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\IctBudgetProjectionSeeder::class,
         ]);
     }
 }

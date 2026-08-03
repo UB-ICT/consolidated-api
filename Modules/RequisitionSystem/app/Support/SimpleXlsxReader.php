@@ -29,6 +29,32 @@ final class SimpleXlsxReader
             return self::rowsFromCsv($path);
         }
 
+        return self::rowsFromXlsxPath($path);
+    }
+
+    /**
+     * @return list<array{0: mixed, 1: mixed, 2: mixed}>
+     */
+    public static function rowsFromPath(string $path): array
+    {
+        if (!is_readable($path)) {
+            throw new RuntimeException('Could not read the spreadsheet at '.$path);
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if ($extension === 'csv') {
+            return self::rowsFromCsv($path);
+        }
+
+        return self::rowsFromXlsxPath($path);
+    }
+
+    /**
+     * @return list<array{0: mixed, 1: mixed, 2: mixed}>
+     */
+    private static function rowsFromXlsxPath(string $path): array
+    {
         if (!class_exists(ZipArchive::class)) {
             throw new RuntimeException('ZipArchive is required to read Excel files.');
         }

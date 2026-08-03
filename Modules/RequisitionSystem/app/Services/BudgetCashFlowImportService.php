@@ -17,19 +17,31 @@ use RuntimeException;
 
 class BudgetCashFlowImportService
 {
+    public function parse(UploadedFile $file): array
+    {
+        return $this->parseRows(SimpleXlsxReader::rows($file));
+    }
+
     /**
-     * Parse an ICT-style cash-flow workbook:
-     * column A = account number, B = description, C = amount.
-     *
      * @return array{
      *   accounts: list<array{account_no: string, description: string, parent_no: ?string}>,
      *   line_items: list<array{account_no: string, amount: float}>
      * }
      */
-    public function parse(UploadedFile $file): array
+    public function parsePath(string $path, bool $fillMissingAmounts = false): array
     {
-        $rows = SimpleXlsxReader::rows($file);
+        return $this->parseRows(SimpleXlsxReader::rowsFromPath($path), $fillMissingAmounts);
+    }
 
+    /**
+     * @param  list<array{0: mixed, 1: mixed, 2: mixed}>  $rows
+     * @return array{
+     *   accounts: list<array{account_no: string, description: string, parent_no: ?string}>,
+     *   line_items: list<array{account_no: string, amount: float}>
+     * }
+     */
+    private function parseRows(array $rows, bool $fillMissingAmounts = false): array
+    {
         if ($rows === []) {
             throw new RuntimeException('The uploaded spreadsheet is empty.');
         }
@@ -75,7 +87,7 @@ class BudgetCashFlowImportService
             );
         }
 
-        return $this->buildHierarchyAndLineItems($raw);
+        return $this->buildHierarchyAndLineItems($raw, $fillMissingAmounts);
     }
 
     /**
@@ -206,7 +218,7 @@ class BudgetCashFlowImportService
      *   line_items: list<array{account_no: string, amount: float}>
      * }
      */
-    private function buildHierarchyAndLineItems(array $raw): array
+    private function buildHierarchyAndLineItems(array $raw, bool $fillMissingAmounts = false): array
     {
         $byNo = [];
         $order = [];
@@ -276,9 +288,16 @@ class BudgetCashFlowImportService
         }
 
         $childrenWithAmounts = [];
+        $childrenByParent = [];
 
         foreach ($accounts as $account) {
-            if ($account['parent_no'] === null || $account['amount'] === null) {
+            if ($account['parent_no'] === null) {
+                continue;
+            }
+
+            $childrenByParent[$account['parent_no']][] = $account['account_no'];
+
+            if ($account['amount'] === null) {
                 continue;
             }
 
@@ -288,17 +307,21 @@ class BudgetCashFlowImportService
         $lineItems = [];
 
         foreach ($accounts as $account) {
-            if ($account['amount'] === null) {
+            $hasChildren = $fillMissingAmounts
+                ? !empty($childrenByParent[$account['account_no']])
+                : !empty($childrenWithAmounts[$account['account_no']]);
+
+            if ($hasChildren) {
                 continue;
             }
 
-            if (!empty($childrenWithAmounts[$account['account_no']])) {
+            if ($account['amount'] === null && !$fillMissingAmounts) {
                 continue;
             }
 
             $lineItems[] = [
                 'account_no' => $account['account_no'],
-                'amount' => round((float) $account['amount'], 2),
+                'amount' => round((float) ($account['amount'] ?? 0), 2),
             ];
         }
 
