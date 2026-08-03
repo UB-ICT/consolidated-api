@@ -130,7 +130,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'name' => 'ABC Supplies Ltd',
                     'contact_person' => 'John Doe',
                     'phone_number' => '+5016000001',
-                    'TIN' => 'TIN-001'
+                    'TAX' => 'TIN-001'
                 ]
             );
 
@@ -140,7 +140,7 @@ class FullRequisitionFlowSeeder extends Seeder
                     'name' => 'XYZ Diagnostics & Tools',
                     'contact_person' => 'Jane Smith',
                     'phone_number' => '+5016159988',
-                    'TIN' => 'TIN-042'
+                    'TAX' => 'TIN-042'
                 ]
             );
 

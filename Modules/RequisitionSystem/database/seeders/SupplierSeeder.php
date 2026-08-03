@@ -53,7 +53,9 @@ class SupplierSeeder extends Seeder
                     'contact_person' => $row['contact'] ?: 'N/A',
                     'phone_number'   => $row['phone'] ?: ($row['mobile'] ?: 'N/A'),
                     'email'          => $email,
-                    'TAX'            => $row['tax_id'] ?: null,
+                    'TAX'            => trim((string) ($row['tax_id'] ?? '')) !== ''
+                        ? trim((string) $row['tax_id'])
+                        : 'N/A',
                     'status_id'      => $approvedStatusId,
                 ]
             );

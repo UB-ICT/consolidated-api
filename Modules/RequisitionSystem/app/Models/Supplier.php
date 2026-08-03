@@ -18,7 +18,7 @@ class Supplier extends Model
         'contact_person',
         'phone_number',
         'email',
-        'TIN',
+        'TAX',
         'status_id',
         'notes',
         'approved_by_user_id',
