@@ -16,7 +16,7 @@ class SupplierBankStoreRequest extends FormRequest
         return [
             'supplier_id'    => 'required|integer|exists:suppliers,id',
             'bank_id'        => 'required|integer|exists:banks,id',
-            'account_number' => 'required|string|max:100',
+            'account_number' => 'required|string|max:255',
             'account_name'   => 'required|string|max:255',
             'address'        => 'nullable|string|max:500',
         ];

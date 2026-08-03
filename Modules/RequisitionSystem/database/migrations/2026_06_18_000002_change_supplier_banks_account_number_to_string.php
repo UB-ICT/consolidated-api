@@ -34,7 +34,7 @@ return new class extends Migration
         }
 
         DB::connection($this->connection)->statement(
-            'ALTER TABLE supplier_banks ALTER COLUMN account_number TYPE VARCHAR(50) USING account_number::text'
+            'ALTER TABLE supplier_banks ALTER COLUMN account_number TYPE VARCHAR(255) USING account_number::text'
         );
     }
 
