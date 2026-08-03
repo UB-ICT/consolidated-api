@@ -47,15 +47,30 @@ class SupplierSeeder extends Seeder
                 $email = 'N/A';
             }
 
+            $taxId = trim((string) ($row['tax_id'] ?? ''));
+            if (
+                $taxId === ''
+                || strcasecmp($taxId, 'N/A') === 0
+                || strcasecmp($taxId, 'none') === 0
+            ) {
+                $taxId = null;
+            } elseif (
+                Supplier::query()
+                    ->where('TAX', $taxId)
+                    ->where('name', '!=', $row['name'])
+                    ->exists()
+            ) {
+                // TAX is unique; source sheet has duplicate IDs across vendors.
+                $taxId = null;
+            }
+
             $supplier = Supplier::updateOrCreate(
                 ['name' => $row['name']],
                 [
                     'contact_person' => $row['contact'] ?: 'N/A',
                     'phone_number'   => $row['phone'] ?: ($row['mobile'] ?: 'N/A'),
                     'email'          => $email,
-                    'TAX'            => trim((string) ($row['tax_id'] ?? '')) !== ''
-                        ? trim((string) $row['tax_id'])
-                        : 'N/A',
+                    'TAX'            => $taxId,
                     'status_id'      => $approvedStatusId,
                 ]
             );
