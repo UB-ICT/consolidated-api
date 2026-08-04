@@ -15,9 +15,9 @@ class ItemStoreRequest extends FormRequest
     {
         return [
             'chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
-            'quantity'            => 'required|numeric|min:1',
+            'quantity'            => 'required|numeric',
             'unit_cost'           => 'required|numeric|min:0',
-            'total'               => 'required|numeric|min:0',
+            'total'               => 'required|numeric',
             'comments'            => 'nullable|string|max:1000',
             'requisition_id'      => 'required|integer|exists:porsql.requisitions,id',
         ];

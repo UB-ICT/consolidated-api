@@ -66,8 +66,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/menu/my-application', [MenuController::class, 'getActiveApplicationMenu']); // Fetch the complete, nested menu tree for a SPECIFIC application filtered dynamically by the logged-in user's roles.
     Route::get('/menu/catalog', [MenuController::class, 'catalog']); // Admin view of the full applications catalog (every status) for the Applications management page.
     Route::post('/menu/icon', [MenuController::class, 'uploadIcon']); // Upload an icon image for an application/menu entry and return its public URL.
-    Route::get('/menu', [MenuController::class, 'index']); // List top-level menu items with children.
+    Route::get('/menu', [MenuController::class, 'index']); // List menu items (optional parent_id / roots_only).
     Route::post('/menu', [MenuController::class, 'store']); // Create a menu item.
+    Route::get('/menu/{menu}', [MenuController::class, 'show']); // Get one menu item with roles.
+    Route::put('/menu/{menu}/roles', [MenuController::class, 'syncRoles']); // Sync roles for a menu item.
     Route::patch('/menu/{menu}', [MenuController::class, 'update']); // Partially update menu item.
     Route::delete('/menu/{menu}', [MenuController::class, 'destroy']); // Delete a menu item.
 

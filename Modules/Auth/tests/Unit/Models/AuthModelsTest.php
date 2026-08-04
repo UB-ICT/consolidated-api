@@ -60,7 +60,6 @@ class AuthModelsTest extends TestCase
             'status',
             'description',
             'category',
-            'role_id',
             'parent_id',
             'sort_order',
         ]);

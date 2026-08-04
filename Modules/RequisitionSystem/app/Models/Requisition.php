@@ -15,16 +15,23 @@ class Requisition extends Model
     protected $fillable = [
         'number',
         'purchase_order_number',
+        'purchase_order_file_name',
+        'purchase_order_file_path',
+        'purchase_order_emailed_at',
         'cost_center_id',
         'pipeline_id',
         'status_id',
         'currency_id',
         'total',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
         'priority',
         'expected_delivery_date',
         'stage_id',
         'date_prepared',
         'is_recurring',
+        'requires_downpayment',
         'reminder_date',
         'current_stage_sequence',
     ];
@@ -33,8 +40,20 @@ class Requisition extends Model
         'date_prepared' => 'datetime:M d, Y',
         'expected_delivery_date' => 'date:Y-m-d',
         'reminder_date' => 'date:Y-m-d',
+        'purchase_order_emailed_at' => 'datetime',
         'is_recurring' => 'boolean',
+        'requires_downpayment' => 'boolean',
         'total' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+    ];
+
+    protected $hidden = [
+        'purchase_order_file_path',
+    ];
+
+    protected $appends = [
+        'has_purchase_order_file',
     ];
 
     protected static function booted(): void
@@ -107,6 +126,22 @@ class Requisition extends Model
             'requisition_id',
             'tag_id'
         )->withTimestamps()->orderBy('tags.name');
+    }
+
+    public function getHasPurchaseOrderFileAttribute(): bool
+    {
+        return filled($this->purchase_order_file_path);
+    }
+
+    public function preferredSupplier(): ?Supplier
+    {
+        $this->loadMissing('suppliers');
+
+        $recommended = $this->suppliers->first(
+            fn (Supplier $supplier) => (bool) ($supplier->pivot?->is_recommended)
+        );
+
+        return $recommended ?? $this->suppliers->first();
     }
 
     /**

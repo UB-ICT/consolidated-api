@@ -14,6 +14,7 @@ class AuthDatabaseSeeder extends Seeder
         $this->call([
             PermissionsSeeder::class,
             AuthTestDataSeeder::class,
+            CostCentersMenuSeeder::class,
         ]);
     }
 }

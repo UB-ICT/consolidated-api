@@ -9,11 +9,8 @@ class CountrySeeder extends Seeder
 {
     public function run(): void
     {
-        Country::insert([
-            ['name' => 'Belize'],
-            ['name' => 'United States'],
-            ['name' => 'Canada'],
-            ['name' => 'Mexico'],
-        ]);
+        foreach (['Belize', 'United States', 'Canada', 'Mexico'] as $name) {
+            Country::firstOrCreate(['name' => $name]);
+        }
     }
 }

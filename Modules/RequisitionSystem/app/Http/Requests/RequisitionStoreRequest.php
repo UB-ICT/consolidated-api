@@ -7,6 +7,7 @@ use Illuminate\Validation\Rule;
 use Modules\RequisitionSystem\Models\Budget;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
+use Modules\RequisitionSystem\Support\RequisitionLinePricing;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 use Modules\RequisitionSystem\Support\SupplierStatus;
 
@@ -39,13 +40,16 @@ class RequisitionStoreRequest extends FormRequest
                 'exists:porsql.statuses,id',
             ],
             'currency_id' => 'nullable|integer|exists:porsql.currencies,id',
-            'total' => 'nullable|numeric|min:0',
+            'total' => 'nullable|numeric',
+            'discount_type' => 'nullable|string|in:none,percent,amount',
+            'discount_value' => 'nullable|numeric|min:0',
             'stage_id' => 'nullable|integer|exists:porsql.stages,id',
 
-            'priority' => 'required|string|in:routine,standard,urgent,critical',
+            'priority' => 'required|string|in:standard,urgent,critical',
             'expected_delivery_date' => 'nullable|date|after_or_equal:today',
 
             'is_recurring' => 'required|boolean',
+            'requires_downpayment' => 'sometimes|boolean',
             'reminder_date' => 'nullable|required_if:is_recurring,true|date|after_or_equal:today',
             'current_stage_sequence' => 'nullable|integer|min:1',
 
@@ -57,8 +61,9 @@ class RequisitionStoreRequest extends FormRequest
 
             'items' => 'required|array|min:1',
             'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
-            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.quantity' => 'required|numeric',
             'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.gst_applicable' => 'sometimes|boolean',
             'items.*.comments' => 'nullable|string|max:1000',
 
             'submit' => 'sometimes|boolean',
@@ -142,9 +147,11 @@ class RequisitionStoreRequest extends FormRequest
                 return;
             }
 
-            $total = RequisitionSupplierQuoteRules::calculateItemsTotal(
-                $this->input('items', [])
-            );
+            $total = RequisitionLinePricing::calculate(
+                $this->input('items', []),
+                (string) $this->input('discount_type', RequisitionLinePricing::DISCOUNT_NONE),
+                (float) $this->input('discount_value', 0)
+            )['total'];
 
             $errors = RequisitionSupplierQuoteRules::validateSuppliers(
                 $this->input('suppliers', []),

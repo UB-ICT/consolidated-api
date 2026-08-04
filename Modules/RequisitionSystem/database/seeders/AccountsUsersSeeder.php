@@ -12,26 +12,32 @@ use Modules\RequisitionSystem\Models\CostCenter;
 class AccountsUsersSeeder extends Seeder
 {
     /**
-     * Accounts cost-center staff: name, email, role_name.
+     * Accounts cost-center staff synced from current DB (merge on email).
      *
      * @var list<array{name: string, email: string, role: string}>
      */
     private const USERS = [
         ['name' => 'Yvonne Lin', 'email' => 'ylin@ub.edu.bz', 'role' => 'budget-officer'],
-        ['name' => 'Desorie Contrerrans', 'email' => 'dcontreras@ub.edu.bz', 'role' => 'vice-president'],
+        ['name' => 'Desorie Contrerras', 'email' => 'dcontreras@ub.edu.bz', 'role' => 'vice-president'],
         ['name' => 'Carlos Cocom', 'email' => 'ccocom@ub.edu.bz', 'role' => 'purchase-officer'],
         ['name' => 'Lisa Ramirez', 'email' => 'lramirez@ub.edu.bz', 'role' => 'budget-officer'],
         ['name' => 'Gianne Lewis', 'email' => 'gianni.lewis@ub.edu.bz', 'role' => 'requester'],
         ['name' => 'Jose Lopez', 'email' => 'jose.lopez@ub.edu.bz', 'role' => 'purchase-officer'],
-        ['name' => 'Annie Rosado', 'email' => 'annie.rosado@ub.edu.bz', 'role' => 'director-of-finance'],
         ['name' => 'Shiffana Flowers', 'email' => 'shiffana.flowers@ub.edu.bz', 'role' => 'requester'],
         ['name' => 'Shajida Zuniga', 'email' => 'shajida.zuniga@ub.edu.bz', 'role' => 'requester'],
-        ['name' => 'Irene Garcia', 'email' => 'irene.garcia@ub.edu.bz', 'role' => 'director-of-finance'],
+        ['name' => 'Mariot Simon', 'email' => 'msimon@ub.edu.bz', 'role' => 'vice-president'],
     ];
 
     public function run(): void
     {
-        $costCenter = CostCenter::firstOrCreate(['name' => 'Accounts']);
+        $costCenter = CostCenter::firstOrCreate(
+            ['name' => 'Accounts'],
+            ['number' => 'ACC']
+        );
+
+        if ($costCenter->number !== 'ACC') {
+            $costCenter->update(['number' => 'ACC']);
+        }
 
         foreach (self::USERS as $row) {
             $user = User::firstOrCreate(

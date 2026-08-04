@@ -3,20 +3,16 @@
 namespace Modules\Auth\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Role;
 use Modules\Auth\Models\User;
 
 class AuthTestDataSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. Add 'super-admin' to your role core list
         $targetRoleNames = [
             'super-admin',
             'budget-officer',
@@ -27,23 +23,21 @@ class AuthTestDataSeeder extends Seeder
             'senior-account',
             'director-dean',
             'requester',
-            'purchase-officer'
+            'purchase-officer',
         ];
 
-        // Guarantee roles exist and capture their database UUIDs safely
         $roleMap = [];
         foreach ($targetRoleNames as $name) {
             $role = Role::firstOrCreate(
                 ['role_name' => $name],
                 [
                     'id' => Str::uuid()->toString(),
-                    'description' => "System access role for " . ucfirst($name),
+                    'description' => 'System access role for '.ucfirst($name),
                 ]
             );
             $roleMap[$name] = $role->id;
         }
 
-        // 2. Define the Level 1 Applications as root menus (parent_id = null, type = 'application')
         $apps = [
             'ub_portal' => [
                 'label' => 'UB Portal',
@@ -77,7 +71,6 @@ class AuthTestDataSeeder extends Seeder
 
         $appIds = [];
         foreach ($apps as $key => $appData) {
-            // Use firstOrNew to prevent overriding the 'id' during updates
             $menuApp = Menu::firstOrNew(['path' => $appData['path'], 'parent_id' => null]);
 
             if (!$menuApp->exists) {
@@ -87,150 +80,103 @@ class AuthTestDataSeeder extends Seeder
             $menuApp->fill([
                 'label' => $appData['label'],
                 'icon' => $appData['icon'],
-                'type' => 'application',
+                'type' => Menu::TYPE_APPLICATION,
                 'status' => Menu::STATUS_ACTIVE,
                 'description' => $appData['description'],
                 'category' => $appData['category'],
                 'sort_order' => 1,
             ])->save();
 
+            // Application roots are public; visibility comes from child menus.
+            $menuApp->roles()->sync([]);
             $appIds[$key] = $menuApp->id;
         }
 
-        // 3. Define the Level 2 menu items shared by the management/approval roles
-        $managementMenuItems = [
+        $requisitionMenuItems = [
             ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
             ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
             ['label' => 'Accounts', 'path' => '/requisitions/accounts', 'icon' => 'notebook', 'sort_order' => 4],
-            ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 5],
-            ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 6],
+            ['label' => 'Cost Centers', 'path' => '/requisitions/cost-centers', 'icon' => 'building-2', 'sort_order' => 5],
+            ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 6],
+            ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 7],
         ];
 
-        // 4. Define the Level 2 menu items specific to your 'cost-center' role layout
-        $costCenterMenuItems = [
-            ['label' => 'Dashboard', 'path' => '/requisitions', 'icon' => 'squares-2x2', 'sort_order' => 1],
-            ['label' => 'Requisition', 'path' => '/requisitions/forms', 'icon' => 'document-plus', 'sort_order' => 2],
-            ['label' => 'Suppliers', 'path' => '/requisitions/suppliers', 'icon' => 'building-office', 'sort_order' => 3],
-            ['label' => 'Accounts', 'path' => '/requisitions/accounts', 'icon' => 'notebook', 'sort_order' => 4],
-            ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 5],
-            ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 6],
-        ];
+        $allRoleIds = array_values($roleMap);
 
-        // 5. Seed management layouts nested under the RequisitionSystem app item
-        $managementRoles = array_diff($targetRoleNames, ['requester']);
-        foreach ($managementRoles as $roleName) {
-            $roleId = $roleMap[$roleName];
-            foreach ($managementMenuItems as $item) {
-                $subMenu = Menu::firstOrNew([
-                    'path' => $item['path'],
-                    'role_id' => $roleId
-                ]);
-
-                if (!$subMenu->exists) {
-                    $subMenu->id = Str::uuid()->toString();
-                }
-
-                $subMenu->fill([
+        foreach ($requisitionMenuItems as $item) {
+            $this->upsertMenuItem(
+                parentId: $appIds['requisition'],
+                path: $item['path'],
+                type: Menu::TYPE_SUBMENU,
+                attributes: [
                     'label' => $item['label'],
                     'icon' => $item['icon'],
-                    'type' => 'submenu',
-                    'parent_id' => $appIds['requisition'],
                     'sort_order' => $item['sort_order'],
-                ])->save();
-            }
+                    'status' => Menu::STATUS_ACTIVE,
+                ],
+                roleIds: $allRoleIds
+            );
         }
 
-        // 6. Seed cost-center layout nested under the RequisitionSystem app item
-        $costCenterId = $roleMap['requester'];
-        foreach ($costCenterMenuItems as $item) {
-            $subMenu = Menu::firstOrNew([
-                'path' => $item['path'],
-                'role_id' => $costCenterId
-            ]);
+        $signOut = $this->upsertMenuItem(
+            parentId: null,
+            path: '/signOut',
+            type: Menu::TYPE_USER_MENU,
+            attributes: [
+                'label' => 'Sign out',
+                'icon' => 'sign-out',
+                'sort_order' => 3,
+                'status' => Menu::STATUS_ACTIVE,
+            ],
+            roleIds: []
+        );
 
-            if (!$subMenu->exists) {
-                $subMenu->id = Str::uuid()->toString();
-            }
+        $adminConsole = $this->upsertMenuItem(
+            parentId: null,
+            path: '/admin',
+            type: Menu::TYPE_USER_MENU,
+            attributes: [
+                'label' => 'Admin Console',
+                'icon' => 'squares-plus',
+                'sort_order' => 4,
+                'status' => Menu::STATUS_ACTIVE,
+            ],
+            roleIds: [$roleMap['super-admin']]
+        );
 
-            $subMenu->fill([
-                'label' => $item['label'],
-                'icon' => $item['icon'],
-                'type' => 'submenu',
-                'parent_id' => $appIds['requisition'],
-                'sort_order' => $item['sort_order'],
-            ])->save();
-        }
-
-        // 7. Seed Profile Dropdown Cards (type = 'user-menu')
-        $profileDropdownItems = [
-            'sign_out' => ['label' => 'Sign out', 'path' => '/signOut', 'icon' => 'sign-out', 'role_id' => null, 'sort_order' => 3],
-            'admin_console' => ['label' => 'Admin Console', 'path' => '/admin', 'icon' => 'squares-plus', 'role_id' => $roleMap['super-admin'], 'sort_order' => 4],
-        ];
-
-        $userMenuIds = [];
-        foreach ($profileDropdownItems as $key => $item) {
-            // Keyed on role_id too, since a menu item can have one role-scoped row per role.
-            $userMenu = Menu::firstOrNew([
-                'path' => $item['path'],
-                'type' => 'user-menu',
-                'role_id' => $item['role_id'],
-            ]);
-
-            if (!$userMenu->exists) {
-                $userMenu->id = Str::uuid()->toString();
-            }
-
-            $userMenu->fill([
-                'label' => $item['label'],
-                'icon' => $item['icon'],
-                'parent_id' => null,
-                'sort_order' => $item['sort_order'],
-            ])->save();
-
-            $userMenuIds[$key] = $userMenu->id;
-        }
-
-        // 8. Seed submenu layout nested under the Admin Console user-menu item.
-        // getActiveApplicationMenu() only needs the root menu's id and loads its
-        // type=submenu children — it doesn't require the root to be type=application,
-        // so Admin Console can stay a super-admin-only profile link and still drive
-        // the sidebar via the same endpoint the other apps use.
         $adminConsoleMenuItems = [
             ['label' => 'Overview', 'path' => '/admin', 'icon' => 'squares-2x2', 'sort_order' => 1],
             ['label' => 'Users', 'path' => '/admin/users', 'icon' => 'users', 'sort_order' => 2],
             ['label' => 'Apps', 'path' => '/admin/apps', 'icon' => 'shield-check', 'sort_order' => 3],
             ['label' => 'Roles', 'path' => '/admin/roles', 'icon' => 'shield-check', 'sort_order' => 4],
-            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'shield-check', 'sort_order' => 5],
-            ['label' => 'Audit log', 'path' => '/admin/audit-log', 'icon' => 'shield-check', 'sort_order' => 6],
+            ['label' => 'Menus', 'path' => '/admin/menu', 'icon' => 'bars-3', 'sort_order' => 5],
+            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'shield-check', 'sort_order' => 6],
+            ['label' => 'Audit log', 'path' => '/admin/audit-log', 'icon' => 'shield-check', 'sort_order' => 7],
         ];
 
         foreach ($adminConsoleMenuItems as $item) {
-            $subMenu = Menu::firstOrNew([
-                'path' => $item['path'],
-                'role_id' => $roleMap['super-admin'],
-                'parent_id' => $userMenuIds['admin_console'],
-            ]);
-
-            if (!$subMenu->exists) {
-                $subMenu->id = Str::uuid()->toString();
-            }
-
-            $subMenu->fill([
-                'label' => $item['label'],
-                'icon' => $item['icon'],
-                'type' => 'submenu',
-                'sort_order' => $item['sort_order'],
-            ])->save();
+            $this->upsertMenuItem(
+                parentId: $adminConsole->id,
+                path: $item['path'],
+                type: Menu::TYPE_SUBMENU,
+                attributes: [
+                    'label' => $item['label'],
+                    'icon' => $item['icon'],
+                    'sort_order' => $item['sort_order'],
+                    'status' => Menu::STATUS_ACTIVE,
+                ],
+                roleIds: [$roleMap['super-admin']]
+            );
         }
 
-        // 9. Define testing users
+        unset($signOut);
+
         $testUsers = [
             ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
             ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
         ];
 
-        // 10. Handle user instantiation and pivot syncs
         foreach ($testUsers as $userData) {
             $user = User::firstOrCreate(
                 ['email' => $userData['email']],
@@ -241,13 +187,36 @@ class AuthTestDataSeeder extends Seeder
                 ]
             );
 
-            $roleId = $roleMap[$userData['role']];
-
-            if (method_exists($user, 'roles')) {
-                $user->roles()->syncWithoutDetaching([$roleId]);
-            }
+            $user->roles()->syncWithoutDetaching([$roleMap[$userData['role']]]);
         }
 
-        $this->command->info('Successfully seeded everything including user-menus and external layout links!');
+        $this->command?->info('Successfully seeded menus with role_menu pivot assignments.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  list<string>  $roleIds
+     */
+    private function upsertMenuItem(
+        ?string $parentId,
+        string $path,
+        string $type,
+        array $attributes,
+        array $roleIds
+    ): Menu {
+        $menu = Menu::firstOrNew([
+            'path' => $path,
+            'parent_id' => $parentId,
+            'type' => $type,
+        ]);
+
+        if (!$menu->exists) {
+            $menu->id = Str::uuid()->toString();
+        }
+
+        $menu->fill($attributes)->save();
+        $menu->roles()->sync($roleIds);
+
+        return $menu;
     }
 }

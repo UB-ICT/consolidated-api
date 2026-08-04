@@ -3,26 +3,32 @@
 namespace Modules\RequisitionSystem\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CostCenterStoreRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
-        $costCenterId = $this->route('cost_center') ? $this->route('cost_center')->id : null;
+        $costCenter = $this->route('costCenter') ?? $this->route('cost_center');
 
         return [
-            'name' => 'required|string|max:255|unique:cost_centers,name,' . $costCenterId,
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('porsql.cost_centers', 'name')->ignore($costCenter?->id),
+            ],
+            'number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('porsql.cost_centers', 'number')->ignore($costCenter?->id),
+            ],
         ];
     }
 }

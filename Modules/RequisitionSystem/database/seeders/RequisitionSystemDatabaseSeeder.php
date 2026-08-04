@@ -4,7 +4,6 @@ namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-
 class RequisitionSystemDatabaseSeeder extends Seeder
 {
     /**
@@ -13,24 +12,16 @@ class RequisitionSystemDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            CostCenterSeeder::class,
-            UserSeeder::class,
             StatusSeeder::class,
-            PipelineSeeder::class,
             StageSeeder::class,
-            UserStageSeeder::class,
+            CountrySeeder::class,
             CurrencySeeder::class,
             BankSeeder::class,
             ChartOfAccountSeeder::class,
             SupplierSeeder::class,
-            SupplierBankSeeder::class,
-            CountrySeeder::class,
-            AddressSeeder::class,
-            RequisitionSeeder::class,
-            ItemSeeder::class,
-            AttachmentSeeder::class,
-            ApprovalSeeder::class,
-            FullRequisitionFlowSeeder::class,
+            CostCenterAndDirectorSeeder::class,
+            AccountsUsersSeeder::class,
+            PipelineSeeder::class,
             BudgetPipelineSeeder::class,
             IctBudgetProjectionSeeder::class,
         ]);

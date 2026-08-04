@@ -13,12 +13,11 @@ use Modules\Auth\Models\Menu;
  * Handles CRUD operations for portal menu items.
  *
  * Menu items are nested through parent/child relationships
- * where root items act as Application modules.
+ * where root items act as Application modules. Visibility is
+ * controlled by the role_menu pivot (empty = public).
  */
 class MenuController extends Controller
 {
-
-
     /**
      * GET /api/menus/profile
      * Build the user profile dropdown layout dynamically based on roles.
@@ -28,33 +27,24 @@ class MenuController extends Controller
         $user = $request->user();
         $roleIds = $user->roles()->pluck('roles.id')->toArray();
 
-        // Query links marked for user-menu or external-link types
         $menuItems = Menu::query()
-            ->whereIn('type', ['user-menu', 'external-link'])
-            ->where(function ($query) use ($roleIds) {
-                // If role_id is null, it's public to all logged-in users
-                $query->whereNull('role_id');
-
-                // If it has a role restriction, the user must possess that role ID
-                if (!empty($roleIds)) {
-                    $query->orWhereIn('role_id', $roleIds);
-                }
-            })
+            ->whereIn('type', [Menu::TYPE_USER_MENU, Menu::TYPE_EXTERNAL_LINK])
+            ->visibleToRoles($roleIds)
+            ->with('roles:id,role_name')
             ->orderBy('sort_order')
             ->get();
 
-        // Split items by type for clean frontend consumption
-        $links = $menuItems->where('type', 'user-menu')->values();
-        $externals = $menuItems->where('type', 'external-link')->values();
+        $links = $menuItems->where('type', Menu::TYPE_USER_MENU)->values();
+        $externals = $menuItems->where('type', Menu::TYPE_EXTERNAL_LINK)->values();
 
         return response()->json([
             'user' => [
-                'name'     => $user->name,
-                'email'    => $user->email,
-                'initials' => collect(explode(' ', $user->name))->map(fn($n) => mb_substr($n, 0, 1))->join(''),
+                'name' => $user->name,
+                'email' => $user->email,
+                'initials' => collect(explode(' ', $user->name))->map(fn ($n) => mb_substr($n, 0, 1))->join(''),
             ],
-            'navigation'     => $links,
-            'external_links' => $externals
+            'navigation' => $links,
+            'external_links' => $externals,
         ]);
     }
 
@@ -83,10 +73,9 @@ class MenuController extends Controller
         $roles = $user->roles;
         $roleIds = $roles->pluck('id')->toArray();
 
-        // 👑 SUPER ADMIN BYPASS: Give access to all applications immediately
         if ($roles->contains('role_name', 'super-admin')) {
             $allApps = Menu::whereNull('parent_id')
-                ->where('type', 'application') // 👈 CRITICAL: Must be an application type!
+                ->where('type', Menu::TYPE_APPLICATION)
                 ->where('status', Menu::STATUS_ACTIVE)
                 ->select('id', 'label', 'path', 'icon', 'sort_order')
                 ->orderBy('sort_order')
@@ -95,15 +84,15 @@ class MenuController extends Controller
             return response()->json($allApps);
         }
 
-        // Standard user role filtering logic
         $myApps = Menu::query()
             ->whereNull('parent_id')
-            ->where('type', 'application') // 👈 CRITICAL: Excludes 'user-menu' items with null parents!
+            ->where('type', Menu::TYPE_APPLICATION)
             ->where('status', Menu::STATUS_ACTIVE)
-            ->whereHas('children', function ($query) use ($roleIds) {
-                if (!empty($roleIds)) {
-                    $query->whereIn('role_id', $roleIds);
-                }
+            ->where(function ($query) use ($roleIds) {
+                // Public submenus (no roles) or role-restricted submenus matching the user.
+                $query->whereHas('children', function ($children) use ($roleIds) {
+                    $children->visibleToRoles($roleIds);
+                });
             })
             ->select('id', 'label', 'path', 'icon', 'sort_order')
             ->orderBy('sort_order')
@@ -113,17 +102,27 @@ class MenuController extends Controller
     }
 
     /**
-     * Display all top-level menu items (Applications) with recursively nested layouts.
-     * Useful for global administrative schema management screens.
+     * Display all menu items for admin management (flat + nested).
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $menus = Menu::whereNull('parent_id')
-            ->with(['role', 'children.children']) // Deep loading structural setups
-            ->orderBy('sort_order')
-            ->get();
+        $parentId = $request->query('parent_id');
 
-        return response()->json($menus);
+        $query = Menu::query()
+            ->with(['roles:id,role_name', 'parent:id,label,path,type'])
+            ->withCount(['children', 'roles'])
+            ->orderBy('sort_order')
+            ->orderBy('label');
+
+        if ($request->boolean('roots_only')) {
+            $query->whereNull('parent_id');
+        } elseif ($parentId === 'null' || $request->query('parent_id') === '') {
+            $query->whereNull('parent_id');
+        } elseif ($parentId) {
+            $query->where('parent_id', $parentId);
+        }
+
+        return response()->json($query->get());
     }
 
     /**
@@ -133,22 +132,19 @@ class MenuController extends Controller
     public function catalog(): JsonResponse
     {
         $applications = Menu::whereNull('parent_id')
-            ->where('type', 'application')
+            ->where('type', Menu::TYPE_APPLICATION)
             ->select('id', 'label', 'path', 'icon', 'status', 'description', 'category', 'sort_order')
             ->orderBy('sort_order')
             ->get();
 
         return response()->json([
-            'total'        => $applications->count(),
+            'total' => $applications->count(),
             'applications' => $applications,
         ]);
     }
 
     /**
      * POST /api/menu/icon
-     * Upload an icon image for an application/menu entry and return its public URL.
-     * Used by the Applications admin page's Connect/Edit app dialog; the returned
-     * URL is then submitted as the `icon` field on the store/update endpoints.
      */
     public function uploadIcon(Request $request): JsonResponse
     {
@@ -169,20 +165,44 @@ class MenuController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'label'       => 'required|string|max:255',
-            'path'        => 'required|string|max:255',
-            'icon'        => 'nullable|string|max:255',
-            'status'      => ['nullable', 'string', Rule::in([Menu::STATUS_ACTIVE, Menu::STATUS_MAINTENANCE, Menu::STATUS_DISABLED])],
+            'label' => 'required|string|max:255',
+            'path' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'type' => ['nullable', 'string', Rule::in([
+                Menu::TYPE_APPLICATION,
+                Menu::TYPE_SUBMENU,
+                Menu::TYPE_USER_MENU,
+                Menu::TYPE_EXTERNAL_LINK,
+            ])],
+            'status' => ['nullable', 'string', Rule::in([
+                Menu::STATUS_ACTIVE,
+                Menu::STATUS_MAINTENANCE,
+                Menu::STATUS_DISABLED,
+            ])],
             'description' => 'nullable|string',
-            'category'    => 'nullable|string|max:255',
-            'role_id'     => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'   => 'nullable|uuid|exists:pgsql.menus,id',
-            'sort_order'  => 'nullable|integer|min:0',
+            'category' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|uuid|exists:pgsql.menus,id',
+            'sort_order' => 'nullable|integer|min:0',
+            'role_ids' => 'nullable|array',
+            'role_ids.*' => 'uuid|exists:pgsql.roles,id',
         ]);
+
+        $roleIds = $data['role_ids'] ?? null;
+        unset($data['role_ids']);
+
+        if (!isset($data['type'])) {
+            $data['type'] = $data['parent_id']
+                ? Menu::TYPE_SUBMENU
+                : Menu::TYPE_APPLICATION;
+        }
 
         $menu = Menu::create($data);
 
-        return response()->json($menu, 201);
+        if (is_array($roleIds)) {
+            $menu->roles()->sync($roleIds);
+        }
+
+        return response()->json($this->formatMenu($menu->fresh()), 201);
     }
 
     /**
@@ -190,7 +210,7 @@ class MenuController extends Controller
      */
     public function show(Menu $menu): JsonResponse
     {
-        return response()->json($menu->load(['role', 'children']));
+        return response()->json($this->formatMenu($menu));
     }
 
     /**
@@ -208,20 +228,58 @@ class MenuController extends Controller
         }
 
         $data = validator($payload, [
-            'label'       => 'sometimes|required|string|max:255',
-            'path'        => 'sometimes|required|string|max:255',
-            'icon'        => 'nullable|string|max:255',
-            'status'      => ['nullable', 'string', Rule::in([Menu::STATUS_ACTIVE, Menu::STATUS_MAINTENANCE, Menu::STATUS_DISABLED])],
+            'label' => 'sometimes|required|string|max:255',
+            'path' => 'sometimes|required|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'type' => ['nullable', 'string', Rule::in([
+                Menu::TYPE_APPLICATION,
+                Menu::TYPE_SUBMENU,
+                Menu::TYPE_USER_MENU,
+                Menu::TYPE_EXTERNAL_LINK,
+            ])],
+            'status' => ['nullable', 'string', Rule::in([
+                Menu::STATUS_ACTIVE,
+                Menu::STATUS_MAINTENANCE,
+                Menu::STATUS_DISABLED,
+            ])],
             'description' => 'nullable|string',
-            'category'    => 'nullable|string|max:255',
-            'role_id'     => 'nullable|uuid|exists:pgsql.roles,id',
-            'parent_id'   => 'nullable|uuid|exists:pgsql.menus,id',
-            'sort_order'  => 'nullable|integer|min:0',
+            'category' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|uuid|exists:pgsql.menus,id',
+            'sort_order' => 'nullable|integer|min:0',
+            'role_ids' => 'nullable|array',
+            'role_ids.*' => 'uuid|exists:pgsql.roles,id',
         ])->validate();
 
-        $menu->update($data);
+        $roleIds = array_key_exists('role_ids', $data) ? $data['role_ids'] : null;
+        unset($data['role_ids']);
 
-        return response()->json($menu->fresh());
+        if ($data !== []) {
+            $menu->update($data);
+        }
+
+        if (is_array($roleIds)) {
+            $menu->roles()->sync($roleIds);
+        }
+
+        return response()->json($this->formatMenu($menu->fresh()));
+    }
+
+    /**
+     * Sync roles for a menu item.
+     */
+    public function syncRoles(Request $request, Menu $menu): JsonResponse
+    {
+        $data = $request->validate([
+            'role_ids' => 'present|array',
+            'role_ids.*' => 'uuid|exists:pgsql.roles,id',
+        ]);
+
+        $menu->roles()->sync($data['role_ids']);
+
+        return response()->json([
+            'message' => 'Menu roles updated successfully.',
+            'menu' => $this->formatMenu($menu->fresh()),
+        ]);
     }
 
     /**
@@ -229,6 +287,12 @@ class MenuController extends Controller
      */
     public function destroy(Menu $menu): JsonResponse
     {
+        if ($menu->children()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete a menu that has child items. Remove or reassign children first.',
+            ], 422);
+        }
+
         $menu->delete();
 
         return response()->json(['message' => 'Menu item deleted successfully']);
@@ -247,19 +311,13 @@ class MenuController extends Controller
         $roleIds = $roles->pluck('id')->toArray();
         $isSuperAdmin = $roles->contains('role_name', 'super-admin');
 
-        // Force explicit postgres model instantiation to honor model database connections
         $applicationMenu = Menu::on('pgsql')
             ->where('id', $applicationId)
             ->with(['children' => function ($query) use ($roleIds, $isSuperAdmin) {
-                $query->where('type', 'submenu')->orderBy('sort_order');
+                $query->where('type', Menu::TYPE_SUBMENU)->orderBy('sort_order');
 
                 if (!$isSuperAdmin) {
-                    $query->where(function ($subQuery) use ($roleIds) {
-                        $subQuery->whereNull('role_id');
-                        if (!empty($roleIds)) {
-                            $subQuery->orWhereIn('role_id', $roleIds);
-                        }
-                    });
+                    $query->visibleToRoles($roleIds);
                 }
             }])
             ->first();
@@ -268,19 +326,23 @@ class MenuController extends Controller
             return response()->json(['message' => 'Application layout could not be found.'], 404);
         }
 
-        // --- FIX DETECTED HERE ---
-        // Filter the children array to keep only unique paths, resetting array indices cleanly
         $uniqueChildren = $applicationMenu->children
             ->unique('path')
             ->values();
 
         return response()->json([
-            'id'         => $applicationMenu->id,
-            'label'      => $applicationMenu->label,
-            'path'       => $applicationMenu->path,
-            'icon'       => $applicationMenu->icon,
+            'id' => $applicationMenu->id,
+            'label' => $applicationMenu->label,
+            'path' => $applicationMenu->path,
+            'icon' => $applicationMenu->icon,
             'sort_order' => $applicationMenu->sort_order,
-            'children'   => $uniqueChildren
+            'children' => $uniqueChildren,
         ]);
+    }
+
+    private function formatMenu(Menu $menu): Menu
+    {
+        return $menu->load(['roles:id,role_name', 'parent:id,label,path,type'])
+            ->loadCount(['children', 'roles']);
     }
 }

@@ -80,6 +80,42 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertSame(RequisitionWorkflow::SUBMITTED_STAGE_SEQUENCE, $data['current_stage_sequence']);
     }
 
+    public function test_apply_submit_state_skips_to_budget_officer_for_director_dean(): void
+    {
+        $director = $this->createMock(User::class);
+        $director->method('hasAnyRole')
+            ->with(['director-dean'])
+            ->willReturn(true);
+
+        $data = [];
+
+        RequisitionWorkflow::applySubmitState($data, $this->pipelineId, $director);
+
+        $this->assertSame($this->statusIds['Pending'], $data['status_id']);
+        $this->assertSame($this->stageIds['Budget Officer'], $data['stage_id']);
+        $this->assertSame(
+            RequisitionWorkflow::BUDGET_OFFICER_STAGE_SEQUENCE,
+            $data['current_stage_sequence']
+        );
+        $this->assertTrue(RequisitionWorkflow::skipsDirectorApprovalOnSubmit($director));
+    }
+
+    public function test_apply_submit_state_keeps_director_stage_for_non_director_dean(): void
+    {
+        $requester = $this->createMock(User::class);
+        $requester->method('hasAnyRole')
+            ->with(['director-dean'])
+            ->willReturn(false);
+
+        $data = [];
+
+        RequisitionWorkflow::applySubmitState($data, $this->pipelineId, $requester);
+
+        $this->assertSame($this->stageIds["Director's Approval"], $data['stage_id']);
+        $this->assertSame(RequisitionWorkflow::SUBMITTED_STAGE_SEQUENCE, $data['current_stage_sequence']);
+        $this->assertFalse(RequisitionWorkflow::skipsDirectorApprovalOnSubmit($requester));
+    }
+
     public function test_apply_resubmit_from_cost_center_review_preserves_stage(): void
     {
         $requisition = new Requisition([

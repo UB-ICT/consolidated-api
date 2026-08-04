@@ -21,6 +21,8 @@ final class RequisitionWorkflow
 
     public const SUBMITTED_STAGE_SEQUENCE = 2;
 
+    public const BUDGET_OFFICER_STAGE_SEQUENCE = 3;
+
     public static function defaultPipelineId(): int
     {
         return (int) (Pipeline::query()
@@ -220,16 +222,38 @@ final class RequisitionWorkflow
         $data['current_stage_sequence'] = self::DRAFT_STAGE_SEQUENCE;
     }
 
-    public static function applySubmitState(array &$data, ?int $pipelineId = null): void
+    /**
+     * Landing sequence after submit. Director-deans skip their own approval
+     * stage and go straight to budget-officer review.
+     */
+    public static function submitSequenceForUser(?User $submitter = null): int
     {
+        if ($submitter?->hasAnyRole(['director-dean'])) {
+            return self::BUDGET_OFFICER_STAGE_SEQUENCE;
+        }
+
+        return self::SUBMITTED_STAGE_SEQUENCE;
+    }
+
+    public static function skipsDirectorApprovalOnSubmit(?User $submitter = null): bool
+    {
+        return self::submitSequenceForUser($submitter) === self::BUDGET_OFFICER_STAGE_SEQUENCE;
+    }
+
+    public static function applySubmitState(
+        array &$data,
+        ?int $pipelineId = null,
+        ?User $submitter = null
+    ): void {
         $pipelineId ??= self::defaultPipelineId();
-        $submittedStageId = self::stageIdForSequence(self::SUBMITTED_STAGE_SEQUENCE, $pipelineId)
+        $sequence = self::submitSequenceForUser($submitter);
+        $submittedStageId = self::stageIdForSequence($sequence, $pipelineId)
             ?? Stage::query()->value('id');
 
         $data['pipeline_id'] = $pipelineId;
         $data['status_id'] = self::pendingStatusId() ?? $data['status_id'] ?? Status::query()->value('id');
         $data['stage_id'] = $submittedStageId;
-        $data['current_stage_sequence'] = self::SUBMITTED_STAGE_SEQUENCE;
+        $data['current_stage_sequence'] = $sequence;
     }
 
     public static function applyResubmitFromCostCenterReview(array &$data, Requisition $requisition): void

@@ -13,9 +13,7 @@ final class RequisitionSupplierQuoteRules
 
     public static function calculateItemsTotal(array $items): float
     {
-        return (float) collect($items)->sum(
-            fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
-        );
+        return RequisitionLinePricing::calculate($items)['total'];
     }
 
     /**
@@ -54,8 +52,8 @@ final class RequisitionSupplierQuoteRules
             return $errors;
         }
 
-        if ($requisitionTotal >= self::HIGH_VALUE_THRESHOLD && $recommendedCount !== 1) {
-            $errors['suppliers'] = 'Select exactly one recommended supplier quote.';
+        if ($recommendedCount !== 1) {
+            $errors['suppliers'] = 'Select exactly one preferred supplier when multiple supplier quotes are submitted.';
         }
 
         return $errors;

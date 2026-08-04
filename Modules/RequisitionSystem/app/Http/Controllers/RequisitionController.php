@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
@@ -14,17 +18,22 @@ use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Tag;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
+use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderEmailRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
+use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderUploadRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
+use Modules\RequisitionSystem\Mail\PurchaseOrderToSupplierMail;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionClosure;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
+use Modules\RequisitionSystem\Support\RequisitionLinePricing;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
 use Modules\RequisitionSystem\Support\RequisitionWorkflow;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RequisitionController extends Controller
 {
@@ -466,6 +475,115 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function uploadPurchaseOrder(
+        RequisitionPurchaseOrderUploadRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertCanManagePurchaseOrderDocument($requisition, $user);
+
+        $file = $request->file('file');
+        $storedFileName = Str::uuid() . '.pdf';
+        $storedPath = $file->storeAs('uploads/purchase-orders', $storedFileName, 'local');
+
+        if ($requisition->purchase_order_file_path
+            && Storage::disk('local')->exists($requisition->purchase_order_file_path)
+        ) {
+            Storage::disk('local')->delete($requisition->purchase_order_file_path);
+        }
+
+        $updates = [
+            'purchase_order_file_name' => $file->getClientOriginalName(),
+            'purchase_order_file_path' => $storedPath,
+            'purchase_order_emailed_at' => null,
+        ];
+
+        $purchaseOrderNumber = $request->validated('purchase_order_number');
+        if ($purchaseOrderNumber !== null) {
+            $updates['purchase_order_number'] = $purchaseOrderNumber !== ''
+                ? $purchaseOrderNumber
+                : null;
+        }
+
+        $requisition->update($updates);
+
+        $this->logService->recordPurchaseOrderDocumentUpload(
+            $requisition,
+            $user,
+            $file->getClientOriginalName()
+        );
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Purchase order uploaded successfully.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
+    public function downloadPurchaseOrder(Requisition $requisition): StreamedResponse|JsonResponse
+    {
+        if (!$requisition->purchase_order_file_path
+            || !Storage::disk('local')->exists($requisition->purchase_order_file_path)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase order file not found.',
+            ], 404);
+        }
+
+        return Storage::disk('local')->response(
+            $requisition->purchase_order_file_path,
+            $requisition->purchase_order_file_name ?: 'purchase-order.pdf',
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => sprintf(
+                    'attachment; filename="%s"',
+                    $requisition->purchase_order_file_name ?: 'purchase-order.pdf'
+                ),
+            ]
+        );
+    }
+
+    public function emailPurchaseOrder(
+        RequisitionPurchaseOrderEmailRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertCanEmailPurchaseOrder($requisition, $user);
+
+        $supplier = $requisition->preferredSupplier();
+
+        Mail::to($supplier->email)->send(new PurchaseOrderToSupplierMail(
+            $requisition,
+            $supplier,
+            $request->validated('message')
+        ));
+
+        $requisition->update([
+            'purchase_order_emailed_at' => now(),
+        ]);
+
+        $this->logService->recordPurchaseOrderEmailed(
+            $requisition,
+            $user,
+            $supplier->email
+        );
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+
+        return response()->json([
+            'success' => true,
+            'message' => sprintf('Purchase order emailed to %s.', $supplier->email),
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
     public function destroy(Requisition $requisition): JsonResponse
     {
         $requisition->delete();
@@ -478,7 +596,7 @@ class RequisitionController extends Controller
 
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
-        $requisition->loadMissing('status', 'stage', 'tags', 'pipeline.stages');
+        $requisition->loadMissing('status', 'stage', 'tags', 'pipeline.stages', 'suppliers');
 
         $requisition->setAttribute(
             'is_editable',
@@ -510,6 +628,21 @@ class RequisitionController extends Controller
         );
 
         $requisition->setAttribute(
+            'can_upload_purchase_order',
+            $this->canManagePurchaseOrderDocument($requisition, $user)
+        );
+
+        $requisition->setAttribute(
+            'can_email_purchase_order',
+            $this->canEmailPurchaseOrder($requisition, $user)
+        );
+
+        $requisition->setAttribute(
+            'preferred_supplier_email',
+            $requisition->preferredSupplier()?->email
+        );
+
+        $requisition->setAttribute(
             'can_cancel',
             $this->userCanCancelRequisition($requisition, $user)
         );
@@ -530,18 +663,32 @@ class RequisitionController extends Controller
         $items = $data['items'];
         unset($data['items'], $data['suppliers'], $data['submit'], $data['tag_ids']);
 
-        $data['total'] = collect($items)->sum(
-            fn (array $item) => ($item['quantity'] ?? 0) * ($item['unit_cost'] ?? 0)
+        $pricing = RequisitionLinePricing::calculate(
+            $items,
+            (string) ($data['discount_type'] ?? RequisitionLinePricing::DISCOUNT_NONE),
+            (float) ($data['discount_value'] ?? 0)
         );
+
+        $data['discount_type'] = $pricing['discount_type'];
+        $data['discount_value'] = $pricing['discount_value'];
+        $data['discount_amount'] = $pricing['discount_amount'];
+        $data['total'] = $pricing['total'];
+        $pricedItems = $pricing['items'];
 
         $data['number'] = $data['number']
             ?? $this->generateRequisitionNumber();
+
+        /** @var User|null $submitter */
+        $submitter = Auth::user();
+        $skippedDirectorApproval = false;
+        $pipelineId = null;
 
         if (!$requisition) {
             $pipelineId = RequisitionWorkflow::defaultPipelineId();
 
             if ($shouldSubmit) {
-                RequisitionWorkflow::applySubmitState($data, $pipelineId);
+                RequisitionWorkflow::applySubmitState($data, $pipelineId, $submitter);
+                $skippedDirectorApproval = RequisitionWorkflow::skipsDirectorApprovalOnSubmit($submitter);
             } else {
                 RequisitionWorkflow::applyDraftState($data, $pipelineId);
             }
@@ -551,7 +698,8 @@ class RequisitionController extends Controller
             if ($requisition->status?->name === 'Cost Center Review') {
                 RequisitionWorkflow::applyResubmitFromCostCenterReview($data, $requisition);
             } else {
-                RequisitionWorkflow::applySubmitState($data, $pipelineId);
+                RequisitionWorkflow::applySubmitState($data, $pipelineId, $submitter);
+                $skippedDirectorApproval = RequisitionWorkflow::skipsDirectorApprovalOnSubmit($submitter);
             }
         } else {
             unset(
@@ -569,6 +717,8 @@ class RequisitionController extends Controller
             $data['reminder_date'] = null;
         }
 
+        $data['requires_downpayment'] = (bool) ($data['requires_downpayment'] ?? false);
+
         if ($requisition) {
             $requisition->update($data);
             $requisition->items()->delete();
@@ -576,15 +726,37 @@ class RequisitionController extends Controller
             $requisition = Requisition::create($data);
         }
 
-        foreach ($items as $item) {
+        foreach ($pricedItems as $item) {
             Item::create([
                 'chart_of_account_id' => (int) $item['chart_of_account_id'],
-                'quantity'            => (int) $item['quantity'],
-                'unit_cost'           => $item['unit_cost'],
-                'total'               => $item['quantity'] * $item['unit_cost'],
-                'comments'            => $item['comments'] ?? null,
-                'requisition_id'      => $requisition->id,
+                'quantity' => (int) $item['quantity'],
+                'unit_cost' => $item['unit_cost'],
+                'subtotal' => $item['subtotal'],
+                'discount_amount' => $item['discount_amount'],
+                'gst_applicable' => (bool) $item['gst_applicable'],
+                'gst_amount' => $item['gst_amount'],
+                'total' => $item['total'],
+                'comments' => $item['comments'] ?? null,
+                'requisition_id' => $requisition->id,
             ]);
+        }
+
+        if ($skippedDirectorApproval && $submitter && $pipelineId) {
+            $directorStageId = RequisitionWorkflow::stageIdForSequence(
+                RequisitionWorkflow::SUBMITTED_STAGE_SEQUENCE,
+                $pipelineId
+            );
+
+            if ($directorStageId) {
+                Approval::create([
+                    'requisition_id' => $requisition->id,
+                    'user_id' => $submitter->id,
+                    'stage_id' => $directorStageId,
+                    'status' => 'approved',
+                    'comments' => 'Auto-approved: submitted by director-dean.',
+                    'signed_at' => now(),
+                ]);
+            }
         }
 
         return $requisition->fresh([

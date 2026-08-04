@@ -13,16 +13,16 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             \Modules\Auth\Database\Seeders\AuthDatabaseSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\StageSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CountrySeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CurrencySeeder::class,
-            \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\BankSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\ChartOfAccountSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\SupplierSeeder::class,
-            \Modules\RequisitionSystem\Database\Seeders\StatusSeeder::class,
-            \Modules\RequisitionSystem\Database\Seeders\StageSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CostCenterAndDirectorSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\AccountsUsersSeeder::class,
+            \Modules\RequisitionSystem\Database\Seeders\PipelineSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\BudgetPipelineSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\IctBudgetProjectionSeeder::class,
         ]);

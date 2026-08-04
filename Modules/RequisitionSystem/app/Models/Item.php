@@ -7,12 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Item extends Model
 {
-
     protected $connection = 'porsql';
 
     protected $fillable = [
         'quantity',
         'unit_cost',
+        'subtotal',
+        'discount_amount',
+        'gst_applicable',
+        'gst_amount',
         'total',
         'comments',
         'requisition_id',
@@ -22,6 +25,10 @@ class Item extends Model
     protected $casts = [
         'quantity' => 'integer',
         'unit_cost' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'gst_applicable' => 'boolean',
+        'gst_amount' => 'decimal:2',
         'total' => 'decimal:2',
     ];
 

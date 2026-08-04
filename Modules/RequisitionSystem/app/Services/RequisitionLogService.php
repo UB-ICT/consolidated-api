@@ -209,6 +209,32 @@ class RequisitionLogService
         );
     }
 
+    public function recordPurchaseOrderDocumentUpload(
+        Requisition $requisition,
+        User $user,
+        string $fileName
+    ): Logs {
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::UPDATED,
+            sprintf('Purchase order document uploaded (%s).', $fileName)
+        );
+    }
+
+    public function recordPurchaseOrderEmailed(
+        Requisition $requisition,
+        User $user,
+        string $supplierEmail
+    ): Logs {
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::UPDATED,
+            sprintf('Purchase order emailed to %s.', $supplierEmail)
+        );
+    }
+
     private function buildChangeSummary(
         Requisition $before,
         array $validated,
@@ -220,6 +246,7 @@ class RequisitionLogService
             'priority'               => 'Priority',
             'expected_delivery_date' => 'Expected delivery date',
             'is_recurring'           => 'Recurring flag',
+            'requires_downpayment'   => '50% downpayment required',
             'reminder_date'          => 'Reminder date',
             'currency_id'            => 'Currency',
             'cost_center_id'         => 'Cost center',

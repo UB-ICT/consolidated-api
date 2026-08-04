@@ -22,6 +22,7 @@ use Modules\RequisitionSystem\Http\Controllers\SupplierBankController;
 use Modules\RequisitionSystem\Http\Controllers\ApprovalController;
 use Modules\RequisitionSystem\Http\Controllers\ChartOfAccountController;
 use Modules\RequisitionSystem\Http\Controllers\RequisitionLogController;
+use Modules\RequisitionSystem\Http\Controllers\SettingController;
 use Modules\RequisitionSystem\Http\Controllers\TagController;
 
 /*
@@ -43,6 +44,7 @@ Route::group([
     'middleware' => 'auth:sanctum',
 ], function () {
     Route::get('costCenters/assigned/me', [CostCenterController::class, 'assignedToMe']);
+    Route::put('costCenters/{costCenter}/users', [CostCenterController::class, 'syncUsers']);
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('costCenters', CostCenterController::class);
@@ -64,6 +66,9 @@ Route::group([
     Route::post('requisitions/{requisition}/cancel', [RequisitionController::class, 'cancel']);
     Route::post('requisitions/{requisition}/close', [RequisitionController::class, 'close']);
     Route::patch('requisitions/{requisition}/purchase-order-number', [RequisitionController::class, 'updatePurchaseOrderNumber']);
+    Route::post('requisitions/{requisition}/purchase-order', [RequisitionController::class, 'uploadPurchaseOrder']);
+    Route::get('requisitions/{requisition}/purchase-order/download', [RequisitionController::class, 'downloadPurchaseOrder']);
+    Route::post('requisitions/{requisition}/purchase-order/email', [RequisitionController::class, 'emailPurchaseOrder']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);
@@ -103,6 +108,11 @@ Route::group([
     Route::get('budgets/{budget}/logs', [BudgetLogController::class, 'index']);
     Route::post('budgets/{budget}/logs', [BudgetLogController::class, 'store']);
     Route::apiResource('budgets', BudgetController::class);
+
+    Route::get('settings', [SettingController::class, 'index']);
+    Route::get('settings/gst-rate', [SettingController::class, 'gstRate']);
+    Route::put('settings/gst-rate', [SettingController::class, 'updateGstRate']);
+    Route::put('settings/{key}', [SettingController::class, 'update']);
 
     Route::apiResource('addresses', AddressController::class);
     Route::apiResource('approvals', ApprovalController::class);

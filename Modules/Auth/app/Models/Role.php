@@ -5,7 +5,6 @@ namespace Modules\Auth\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Represents an access-control role.
@@ -42,9 +41,9 @@ class Role extends Model
     {
         return $this->belongsToMany(
             User::class,
-            'user_roles', // Table name
-            'user_id',    // Foreign key on user_roles matching User
-            'role_id'     // Foreign key on user_roles matching Role
+            'user_roles',
+            'role_id', // Foreign key on user_roles matching this Role
+            'user_id'  // Foreign key on user_roles matching User
         );
     }
 
@@ -60,10 +59,18 @@ class Role extends Model
     // }
 
     /**
-     * Menu items directly associated with this role.
+     * Menu items associated with this role via role_menu.
      */
-    public function menuItems(): HasMany
+    public function menus(): BelongsToMany
     {
-        return $this->hasMany(Menu::class);
+        return $this->belongsToMany(Menu::class, 'role_menu', 'role_id', 'menu_id');
+    }
+
+    /**
+     * @deprecated Use menus() — kept for transitional callers.
+     */
+    public function menuItems(): BelongsToMany
+    {
+        return $this->menus();
     }
 }

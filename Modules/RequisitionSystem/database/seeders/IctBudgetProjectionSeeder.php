@@ -31,7 +31,14 @@ class IctBudgetProjectionSeeder extends Seeder
         $importService = app(BudgetCashFlowImportService::class);
         $parsed = $importService->parsePath(self::WORKBOOK, true);
 
-        $costCenter = CostCenter::firstOrCreate(['name' => self::COST_CENTER_NAME]);
+        $costCenter = CostCenter::firstOrCreate(
+            ['name' => self::COST_CENTER_NAME],
+            ['number' => '013']
+        );
+
+        if (!$costCenter->number) {
+            $costCenter->update(['number' => '013']);
+        }
 
         $year = BudgetYear::firstOrCreate(
             ['label' => self::BUDGET_YEAR],

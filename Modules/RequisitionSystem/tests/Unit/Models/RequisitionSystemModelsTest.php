@@ -107,16 +107,23 @@ class RequisitionSystemModelsTest extends TestCase
         $this->assertModelFillable(Requisition::class, [
             'number',
             'purchase_order_number',
+            'purchase_order_file_name',
+            'purchase_order_file_path',
+            'purchase_order_emailed_at',
             'cost_center_id',
             'pipeline_id',
             'status_id',
             'currency_id',
             'total',
+            'discount_type',
+            'discount_value',
+            'discount_amount',
             'priority',
             'expected_delivery_date',
             'stage_id',
             'date_prepared',
             'is_recurring',
+            'requires_downpayment',
             'reminder_date',
             'current_stage_sequence',
         ]);
@@ -126,6 +133,7 @@ class RequisitionSystemModelsTest extends TestCase
             'expected_delivery_date' => 'date:Y-m-d',
             'reminder_date' => 'date:Y-m-d',
             'is_recurring' => 'boolean',
+            'requires_downpayment' => 'boolean',
         ]);
     }
 

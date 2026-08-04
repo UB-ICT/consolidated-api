@@ -2,8 +2,9 @@
 
 namespace Modules\RequisitionSystem\Tests\Unit\Support;
 
+use Modules\RequisitionSystem\Support\RequisitionLinePricing;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class RequisitionSupplierQuoteRulesTest extends TestCase
 {
@@ -17,10 +18,15 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
 
     public function test_calculate_items_total(): void
     {
-        $total = RequisitionSupplierQuoteRules::calculateItemsTotal([
-            ['quantity' => 2, 'unit_cost' => 50],
-            ['quantity' => 1, 'unit_cost' => 25.5],
-        ]);
+        $total = RequisitionLinePricing::calculate(
+            [
+                ['quantity' => 2, 'unit_cost' => 50, 'gst_applicable' => false],
+                ['quantity' => 1, 'unit_cost' => 25.5, 'gst_applicable' => false],
+            ],
+            RequisitionLinePricing::DISCOUNT_NONE,
+            0,
+            0
+        )['total'];
 
         $this->assertSame(125.5, $total);
     }
@@ -44,7 +50,22 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
         $this->assertArrayHasKey('suppliers', $errors);
     }
 
-    public function test_validate_suppliers_requires_recommended_supplier_for_high_value(): void
+    public function test_validate_suppliers_requires_preferred_supplier_when_multiple_quotes(): void
+    {
+        $suppliers = [
+            ['supplier_id' => 1, 'is_recommended' => false],
+            ['supplier_id' => 2, 'is_recommended' => false],
+        ];
+
+        $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 500);
+
+        $this->assertSame(
+            'Select exactly one preferred supplier when multiple supplier quotes are submitted.',
+            $errors['suppliers']
+        );
+    }
+
+    public function test_validate_suppliers_requires_preferred_supplier_for_high_value(): void
     {
         $suppliers = [
             ['supplier_id' => 1, 'is_recommended' => false],
@@ -55,7 +76,34 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
         $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 1500);
 
         $this->assertSame(
-            'Select exactly one recommended supplier quote.',
+            'Select exactly one preferred supplier when multiple supplier quotes are submitted.',
+            $errors['suppliers']
+        );
+    }
+
+    public function test_validate_suppliers_allows_multiple_quotes_with_one_preferred(): void
+    {
+        $suppliers = [
+            ['supplier_id' => 1, 'is_recommended' => true],
+            ['supplier_id' => 2, 'is_recommended' => false],
+        ];
+
+        $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 500);
+
+        $this->assertSame([], $errors);
+    }
+
+    public function test_validate_suppliers_rejects_multiple_preferred_suppliers(): void
+    {
+        $suppliers = [
+            ['supplier_id' => 1, 'is_recommended' => true],
+            ['supplier_id' => 2, 'is_recommended' => true],
+        ];
+
+        $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 500);
+
+        $this->assertSame(
+            'Select exactly one preferred supplier when multiple supplier quotes are submitted.',
             $errors['suppliers']
         );
     }
