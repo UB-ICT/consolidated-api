@@ -64,6 +64,8 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/menu/applications', [MenuController::class, 'applications']); // Global dashboard grid listing every registered root app module.
     Route::get('/menu/my-applications', [MenuController::class, 'myApplications']); // Filtered landing deck displaying only apps accessible to the user's roles (with Super Admin bypass).
     Route::get('/menu/my-application', [MenuController::class, 'getActiveApplicationMenu']); // Fetch the complete, nested menu tree for a SPECIFIC application filtered dynamically by the logged-in user's roles.
+    Route::get('/menu/catalog', [MenuController::class, 'catalog']); // Admin view of the full applications catalog (every status) for the Applications management page.
+    Route::post('/menu/icon', [MenuController::class, 'uploadIcon']); // Upload an icon image for an application/menu entry and return its public URL.
     Route::get('/menu', [MenuController::class, 'index']); // List top-level menu items with children.
     Route::post('/menu', [MenuController::class, 'store']); // Create a menu item.
     Route::patch('/menu/{menu}', [MenuController::class, 'update']); // Partially update menu item.
