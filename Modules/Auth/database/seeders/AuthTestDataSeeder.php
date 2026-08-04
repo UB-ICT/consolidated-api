@@ -3,40 +3,33 @@
 namespace Modules\Auth\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Modules\Auth\Models\Menu;
 use Modules\Auth\Models\Role;
-use Modules\Auth\Models\User;
 
 class AuthTestDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $targetRoleNames = [
-            'super-admin',
-            'budget-officer',
-            'president',
-            'vice-president',
-            'director-of-finance',
-            'director-dean',
-            'requester',
-            'purchase-officer',
-            // Kept for budget pipeline / future assignments (may not have users yet).
-            'senior-account',
-            'accounts-payable',
-        ];
+        // Roles come only from RoleSeeder (live DB set). Menus attach to those.
+        $roleMap = Role::query()
+            ->whereIn('role_name', [
+                'super-admin',
+                'budget-officer',
+                'president',
+                'vice-president',
+                'director-of-finance',
+                'director-dean',
+                'requester',
+                'purchase-officer',
+            ])
+            ->pluck('id', 'role_name')
+            ->all();
 
-        $roleMap = [];
-        foreach ($targetRoleNames as $name) {
-            $role = Role::firstOrCreate(
-                ['role_name' => $name],
-                [
-                    'id' => Str::uuid()->toString(),
-                    'description' => 'System access role for '.ucfirst($name),
-                ]
-            );
-            $roleMap[$name] = $role->id;
+        if ($roleMap === []) {
+            $this->command?->warn('AuthTestDataSeeder: no roles found. Run RoleSeeder first.');
+
+            return;
         }
 
         $apps = [
@@ -120,7 +113,7 @@ class AuthTestDataSeeder extends Seeder
             );
         }
 
-        $signOut = $this->upsertMenuItem(
+        $this->upsertMenuItem(
             parentId: null,
             path: '/signOut',
             type: Menu::TYPE_USER_MENU,
@@ -169,26 +162,6 @@ class AuthTestDataSeeder extends Seeder
                 ],
                 roleIds: [$roleMap['super-admin']]
             );
-        }
-
-        unset($signOut);
-
-        $testUsers = [
-            ['email' => 'james.faber@ub.edu.bz', 'name' => 'James Faber', 'role' => 'super-admin'],
-            ['email' => 'luis.herrera@ub.edu.bz', 'name' => 'Luis Herrera', 'role' => 'super-admin'],
-        ];
-
-        foreach ($testUsers as $userData) {
-            $user = User::firstOrCreate(
-                ['email' => $userData['email']],
-                [
-                    'id' => Str::uuid()->toString(),
-                    'name' => $userData['name'],
-                    'password' => Hash::make('password'),
-                ]
-            );
-
-            $user->roles()->syncWithoutDetaching([$roleMap[$userData['role']]]);
         }
 
         $this->command?->info('Successfully seeded menus with role_menu pivot assignments.');

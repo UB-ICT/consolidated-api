@@ -24,24 +24,6 @@ trait GuardsRequisitionPurchaseOrder
             ->exists();
     }
 
-    protected function isAtPurchaseOfficerStage(Requisition $requisition): bool
-    {
-        $pipelineId = RequisitionWorkflow::pipelineIdFor($requisition);
-        $mapping = RequisitionWorkflow::roleStageMapping($pipelineId);
-        $purchaseStageId = $mapping['purchase-officer'] ?? null;
-
-        if ($purchaseStageId !== null && (int) $requisition->stage_id === (int) $purchaseStageId) {
-            return true;
-        }
-
-        $purchaseSequence = $purchaseStageId !== null
-            ? RequisitionWorkflow::sequenceForStageId((int) $purchaseStageId, $pipelineId)
-            : 6;
-
-        return $purchaseSequence !== null
-            && (int) $requisition->current_stage_sequence === (int) $purchaseSequence;
-    }
-
     protected function canEditPurchaseOrderNumber(Requisition $requisition, ?User $user): bool
     {
         if (!$user || !$this->userIsPurchaseOfficer($user)) {
@@ -49,13 +31,8 @@ trait GuardsRequisitionPurchaseOrder
         }
 
         $requisition->loadMissing('status');
-        $status = $requisition->status?->name;
 
-        if ($status === $this->purchaseOrderEditableStatus()) {
-            return true;
-        }
-
-        return $status === 'Pending' && $this->isAtPurchaseOfficerStage($requisition);
+        return $requisition->status?->name === $this->purchaseOrderEditableStatus();
     }
 
     protected function canManagePurchaseOrderDocument(Requisition $requisition, ?User $user): bool
@@ -147,7 +124,7 @@ trait GuardsRequisitionPurchaseOrder
 
         throw new HttpResponseException(response()->json([
             'success' => false,
-            'message' => 'The purchase order can only be managed at the purchase approval step or after the requisition is approved.',
+            'message' => 'The purchase order can only be managed after the requisition is approved.',
         ], 403));
     }
 }

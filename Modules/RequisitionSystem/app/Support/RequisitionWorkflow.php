@@ -119,7 +119,6 @@ final class RequisitionWorkflow
             'budget-officer'      => 3,
             'vice-president'      => 4,
             'director-of-finance' => 5,
-            'purchase-officer'    => 6,
         ] as $role => $sequence) {
             $stageId = self::stageIdForSequence($sequence, $pipelineId);
 

@@ -53,7 +53,7 @@ class RequisitionPurchaseOrderGuardTest extends TestCase
         $this->assertFalse($this->canEditPurchaseOrderNumber($requisition, $otherUser));
     }
 
-    public function test_purchase_officer_cannot_edit_purchase_order_number_before_purchase_stage(): void
+    public function test_purchase_officer_cannot_edit_purchase_order_number_while_pending(): void
     {
         [$user, $requisition] = $this->makePurchaseOfficerWithApprovedRequisition(
             $this->statusIds['Pending'],
@@ -63,24 +63,13 @@ class RequisitionPurchaseOrderGuardTest extends TestCase
         $this->assertFalse($this->canEditPurchaseOrderNumber($requisition, $user));
     }
 
-    public function test_purchase_officer_can_edit_purchase_order_number_at_purchase_stage(): void
-    {
-        [$user, $requisition] = $this->makePurchaseOfficerWithApprovedRequisition(
-            $this->statusIds['Pending'],
-            6
-        );
-
-        $this->assertTrue($this->canEditPurchaseOrderNumber($requisition, $user));
-    }
-
     /**
      * @return array{0: User, 1: Requisition}
      */
     private function makePurchaseOfficerWithApprovedRequisition(
         ?int $statusId = null,
         int $sequence = 5
-    ): array
-    {
+    ): array {
         $roleId = (string) Str::uuid();
 
         DB::connection('pgsql')->table('roles')->insert([
@@ -104,11 +93,8 @@ class RequisitionPurchaseOrderGuardTest extends TestCase
             'role_id' => $roleId,
         ]);
 
-        $stageName = $sequence >= 6 ? 'Purchase Officer' : 'Finance Approval';
-        $stageId = $this->stageIds[$stageName] ?? $this->stageIds['Finance Approval'];
-
         $requisitionId = $this->createTestRequisition(
-            $stageId,
+            $this->stageIds['Finance Approval'],
             $statusId ?? $this->statusIds['Approved'],
             $sequence
         );

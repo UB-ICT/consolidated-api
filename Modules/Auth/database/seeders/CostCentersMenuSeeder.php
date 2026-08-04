@@ -21,8 +21,6 @@ class CostCentersMenuSeeder extends Seeder
             'president',
             'vice-president',
             'director-of-finance',
-            'accounts-payable',
-            'senior-account',
             'director-dean',
             'purchase-officer',
             'requester',

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             \Modules\RequisitionSystem\Database\Seeders\SupplierSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\CostCenterAndDirectorSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\AccountsUsersSeeder::class,
+            \Modules\Auth\Database\Seeders\UserRoleSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\TagSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\PipelineSeeder::class,
             \Modules\RequisitionSystem\Database\Seeders\BudgetPipelineSeeder::class,

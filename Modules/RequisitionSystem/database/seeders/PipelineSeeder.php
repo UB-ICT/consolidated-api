@@ -12,8 +12,9 @@ class PipelineSeeder extends Seeder
 {
     public function run(): void
     {
-        // Synced from live operations pipeline + pipeline_stages.
-        // User ↔ stage assignments live in UserStageSeeder (exact DB rows).
+        // Synced from intended operations pipeline (no purchase stage).
+        // Purchase officers act after Finance Approval sets status to Approved.
+        // User ↔ stage assignments live in UserStageSeeder.
         $pipeline = Pipeline::firstOrCreate(['name' => RequisitionWorkflow::PIPELINE_NAME]);
 
         $stages = [
@@ -22,11 +23,13 @@ class PipelineSeeder extends Seeder
             3 => 'Budget Officer',
             4 => 'VP Approval',
             5 => 'Finance Approval',
-            6 => 'Purchase Approval',
         ];
+
+        $keptStageIds = [];
 
         foreach ($stages as $sequence => $name) {
             $stage = Stage::firstOrCreate(['name' => $name]);
+            $keptStageIds[] = $stage->id;
 
             DB::connection('porsql')->table('pipeline_stages')->updateOrInsert(
                 [
@@ -40,5 +43,11 @@ class PipelineSeeder extends Seeder
                 ]
             );
         }
+
+        // Drop purchase (or any other) stages that should not sit on operations.
+        DB::connection('porsql')->table('pipeline_stages')
+            ->where('pipeline_id', $pipeline->id)
+            ->whereNotIn('stage_id', $keptStageIds)
+            ->delete();
     }
 }

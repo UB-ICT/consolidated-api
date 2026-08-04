@@ -11,6 +11,7 @@ class UserStageSeeder extends Seeder
 {
     /**
      * Synced from live user_stages (email → stage name).
+     * Includes Draft and standalone Purchase Approval (not on the operations pipeline).
      *
      * @var list<array{email: string, stage: string}>
      */
