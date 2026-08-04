@@ -88,5 +88,43 @@ class CostCenterAndDirectorSeeder extends Seeder
                 ]
             );
         }
+
+        // Additional individual role/cost-center grants that don't fit the
+        // one-director-dean-per-cost-center pattern above.
+        $additionalGrants = [
+            ['name' => 'James Faber', 'email' => 'james.faber@ub.edu.bz', 'cc' => 'Information and Communication Technology', 'roles' => ['requester', 'super-admin']],
+        ];
+
+        foreach ($additionalGrants as $row) {
+            $userAccount = User::firstOrCreate(
+                ['email' => $row['email']],
+                ['name' => $row['name']]
+            );
+
+            foreach ($row['roles'] as $roleName) {
+                $role = Role::firstOrCreate(
+                    ['role_name' => $roleName],
+                    ['id' => (string) Str::uuid(), 'description' => $roleName]
+                );
+
+                DB::connection('pgsql')->table('user_roles')->updateOrInsert([
+                    'user_id' => $userAccount->id,
+                    'role_id' => $role->id,
+                ]);
+            }
+
+            $costCenter = CostCenter::firstOrCreate(['name' => $row['cc']]);
+
+            DB::connection('porsql')->table('user_cost_center')->updateOrInsert(
+                [
+                    'user_id' => $userAccount->id,
+                    'cost_center_id' => $costCenter->id
+                ],
+                [
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+            );
+        }
     }
 }
