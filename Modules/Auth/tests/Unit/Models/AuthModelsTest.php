@@ -29,6 +29,7 @@ class AuthModelsTest extends TestCase
             'device_token',
             'google_id',
             'email_verified_at',
+            'default_application_id',
         ]);
         $this->assertModelCastsInclude(User::class, [
             'email_verified_at' => 'datetime',

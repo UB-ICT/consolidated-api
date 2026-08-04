@@ -47,6 +47,7 @@ class UserController extends Controller
             'status' => 'sometimes|nullable|string',
             'profile_picture' => 'sometimes|nullable|url|max:500',
             'google_id' => 'sometimes|nullable|string|max:255',
+            'default_application_id' => 'sometimes|nullable|uuid|exists:pgsql.menus,id',
         ]);
 
         if ($validator->fails()) {
@@ -61,6 +62,8 @@ class UserController extends Controller
             $data = $validator->validated();
             $data['password'] = $data['password'] ?? Str::random(16);
             $data['type'] = $data['type'] ?? 'auth';
+            $data['default_application_id'] = $data['default_application_id']
+                ?? \Modules\Auth\Models\Menu::defaultApplicationId();
 
             $user = User::create($data);
 

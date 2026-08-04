@@ -347,6 +347,9 @@ class GoogleAuthController extends Controller
             ], 403);
         }
 
+        $user->ensureDefaultApplication();
+        $user->loadMissing('defaultApplication');
+
         $mailingGroups = $this->getUserMailingGroups($user);
 
         return response()->json([
@@ -618,6 +621,8 @@ class GoogleAuthController extends Controller
 
     private function formatUserResponse($user, $mailingGroups, $menus, $forms, $tables)
     {
+        $defaultApplication = $user->defaultApplication;
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -626,6 +631,13 @@ class GoogleAuthController extends Controller
             'google_id' => $user->google_id,
             'user_status_id' => $user->user_status_id,
             'profile_picture' => $user->profile_picture,
+            'default_application_id' => $user->default_application_id,
+            'default_application' => $defaultApplication ? [
+                'id' => $defaultApplication->id,
+                'label' => $defaultApplication->label,
+                'path' => $defaultApplication->path,
+                'icon' => $defaultApplication->icon,
+            ] : null,
             'mailing_groups' => $mailingGroups,
             'menus' => $menus,
             'forms' => $forms,

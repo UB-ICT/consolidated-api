@@ -74,6 +74,20 @@ class Menu extends Model
     }
 
     /**
+     * Default landing app for portal users (Requisition System).
+     */
+    public static function defaultApplicationId(): ?string
+    {
+        $id = static::query()
+            ->whereNull('parent_id')
+            ->where('type', self::TYPE_APPLICATION)
+            ->where('path', '/requisitions')
+            ->value('id');
+
+        return $id !== null ? (string) $id : null;
+    }
+
+    /**
      * Visible when the menu has no role restrictions, or shares a role with the user.
      *
      * @param  array<int, string>  $roleIds

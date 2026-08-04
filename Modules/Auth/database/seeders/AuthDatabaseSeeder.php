@@ -15,6 +15,7 @@ class AuthDatabaseSeeder extends Seeder
             PermissionsSeeder::class,
             AuthTestDataSeeder::class,
             CostCentersMenuSeeder::class,
+            DefaultApplicationSeeder::class,
         ]);
     }
 }

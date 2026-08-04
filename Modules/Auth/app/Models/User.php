@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\RequisitionSystem\Models\Supplier;
@@ -33,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'device_token',
         'google_id',
         'email_verified_at',
+        'default_application_id',
     ];
 
     protected $hidden = [
@@ -44,6 +46,15 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_active' => 'datetime',
         'password' => 'hashed',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $user) {
+            if (!$user->default_application_id) {
+                $user->default_application_id = Menu::defaultApplicationId();
+            }
+        });
+    }
 
     /**
      * Check if the user has any of the given role slugs.
@@ -94,6 +105,33 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Using 'user_roles' table as defined in your setup
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    /**
+     * Default portal application to open after login.
+     */
+    public function defaultApplication(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class, 'default_application_id');
+    }
+
+    /**
+     * Ensure the user has a default application (Requisition System when available).
+     */
+    public function ensureDefaultApplication(): void
+    {
+        if ($this->default_application_id) {
+            return;
+        }
+
+        $applicationId = Menu::defaultApplicationId();
+
+        if (!$applicationId) {
+            return;
+        }
+
+        $this->forceFill(['default_application_id' => $applicationId])->save();
+        $this->unsetRelation('defaultApplication');
     }
 
     /**
