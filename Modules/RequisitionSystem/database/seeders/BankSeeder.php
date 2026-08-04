@@ -9,12 +9,13 @@ class BankSeeder extends Seeder
 {
     public function run(): void
     {
-        // Synced from live banks (excluding orphan alias "Belize Bank").
+        // Synced from live banks.
         $banks = [
             'Atlantic Bank Limited',
             'BAC International Bank',
             'Banco Promerica',
             'Bank of America',
+            'Belize Bank',
             'BMO Harris Bank',
             'Citibank, N.A.',
             'Heritage Bank Limited',

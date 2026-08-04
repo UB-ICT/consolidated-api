@@ -19,11 +19,12 @@ class AuthTestDataSeeder extends Seeder
             'president',
             'vice-president',
             'director-of-finance',
-            'accounts-payable',
-            'senior-account',
             'director-dean',
             'requester',
             'purchase-officer',
+            // Kept for budget pipeline / future assignments (may not have users yet).
+            'senior-account',
+            'accounts-payable',
         ];
 
         $roleMap = [];
