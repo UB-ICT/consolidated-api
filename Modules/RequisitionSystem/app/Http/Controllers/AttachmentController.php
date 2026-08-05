@@ -62,6 +62,20 @@ class AttachmentController extends Controller
         $fileName = Str::uuid() . '.pdf';
         $storedPath = $file->storeAs('uploads/quotes', $fileName, 'local');
 
+        // One quote PDF per supplier per requisition — replace any prior upload
+        // so draft autosaves cannot accumulate duplicates.
+        $existingAttachments = Attachment::query()
+            ->where('requisition_id', $requisition->id)
+            ->where('supplier_id', $validated['supplier_id'])
+            ->get();
+
+        foreach ($existingAttachments as $existing) {
+            if ($existing->file_path && Storage::disk('local')->exists($existing->file_path)) {
+                Storage::disk('local')->delete($existing->file_path);
+            }
+            $existing->delete();
+        }
+
         $attachment = Attachment::create([
             'file_name'      => $file->getClientOriginalName(),
             'file_path'      => $storedPath,

@@ -134,8 +134,6 @@ class RequisitionController extends Controller
 
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
-        } else {
-            $this->logService->recordCreation($requisition, $user);
         }
 
         return response()->json([
@@ -196,6 +194,8 @@ class RequisitionController extends Controller
 
         $requisition->load('status');
 
+        // Draft autosaves are frequent; only write activity history on submit
+        // (approvals / cancel / close / PO actions still log elsewhere).
         if ($shouldSubmit) {
             $changeSummary = $this->logService->summarizeChanges(
                 $before,
@@ -208,15 +208,6 @@ class RequisitionController extends Controller
                 $user,
                 $activityComment,
                 $changeSummary
-            );
-        } else {
-            $this->logService->recordUpdate(
-                $requisition,
-                $user,
-                $before,
-                $validated,
-                $previousItems,
-                $activityComment
             );
         }
 
