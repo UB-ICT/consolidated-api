@@ -311,20 +311,22 @@ class RequisitionLogService
 
         $previous = $previousItems
             ->map(fn ($item) => [
-                'description' => $item->description,
-                'quantity'    => (int) $item->quantity,
-                'unit_cost'   => (float) $item->unit_cost,
-                'comments'    => $item->comments,
+                'chart_of_account_id' => (int) $item->chart_of_account_id,
+                'quantity'            => (int) $item->quantity,
+                'unit_cost'           => (float) $item->unit_cost,
+                'gst_applicable'      => (bool) ($item->gst_applicable ?? false),
+                'comments'            => $item->comments,
             ])
             ->values()
             ->all();
 
         $next = $newItems
             ->map(fn (array $item) => [
-                'description' => $item['description'],
-                'quantity'    => (int) $item['quantity'],
-                'unit_cost'   => (float) $item['unit_cost'],
-                'comments'    => $item['comments'] ?? null,
+                'chart_of_account_id' => (int) ($item['chart_of_account_id'] ?? 0),
+                'quantity'            => (int) ($item['quantity'] ?? 0),
+                'unit_cost'           => (float) ($item['unit_cost'] ?? 0),
+                'gst_applicable'      => (bool) ($item['gst_applicable'] ?? false),
+                'comments'            => $item['comments'] ?? null,
             ])
             ->values()
             ->all();
