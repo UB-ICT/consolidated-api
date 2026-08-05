@@ -76,6 +76,14 @@ class AttachmentController extends Controller
             'quote_reference_number' => $validated['quote_reference_number'] ?? null,
         ];
 
+        if ($pivotData['is_recommended']) {
+            // Exactly one preferred supplier at a time.
+            DB::connection('porsql')->table('requisition_suppliers')
+                ->where('requisition_id', $requisition->id)
+                ->where('supplier_id', '!=', $validated['supplier_id'])
+                ->update(['is_recommended' => false]);
+        }
+
         $requisition->suppliers()->syncWithoutDetaching([
             $validated['supplier_id'] => $pivotData,
         ]);
