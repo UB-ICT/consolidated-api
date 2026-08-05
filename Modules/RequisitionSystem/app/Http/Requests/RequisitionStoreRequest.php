@@ -53,6 +53,7 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.is_recommended' => 'required|boolean',
             'suppliers.*.quoted_total' => 'nullable|numeric|min:0',
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
+            'quote_waiver_reason' => 'nullable|string|max:2000',
 
             'items' => 'required|array|min:1',
             'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
@@ -150,7 +151,8 @@ class RequisitionStoreRequest extends FormRequest
 
             $errors = RequisitionSupplierQuoteRules::validateSuppliers(
                 $this->input('suppliers', []),
-                $total
+                $total,
+                $this->input('quote_waiver_reason')
             );
 
             foreach ($errors as $field => $message) {

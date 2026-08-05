@@ -48,6 +48,34 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
         $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 1000);
 
         $this->assertArrayHasKey('suppliers', $errors);
+        $this->assertArrayHasKey('quote_waiver_reason', $errors);
+    }
+
+    public function test_validate_suppliers_allows_fewer_high_value_quotes_with_reason(): void
+    {
+        $suppliers = [
+            ['supplier_id' => 1, 'is_recommended' => true],
+        ];
+
+        $errors = RequisitionSupplierQuoteRules::validateSuppliers(
+            $suppliers,
+            1500,
+            'Sole-source vendor for licensed software renewal.'
+        );
+
+        $this->assertSame([], $errors);
+    }
+
+    public function test_validate_suppliers_rejects_blank_waiver_reason(): void
+    {
+        $suppliers = [
+            ['supplier_id' => 1, 'is_recommended' => true],
+            ['supplier_id' => 2, 'is_recommended' => false],
+        ];
+
+        $errors = RequisitionSupplierQuoteRules::validateSuppliers($suppliers, 1200, '   ');
+
+        $this->assertArrayHasKey('quote_waiver_reason', $errors);
     }
 
     public function test_validate_suppliers_requires_preferred_supplier_when_multiple_quotes(): void
@@ -126,5 +154,33 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
         ]);
 
         $this->assertTrue($suppliers[0]['is_recommended']);
+    }
+
+    public function test_resolve_stored_waiver_reason_clears_when_enough_quotes(): void
+    {
+        $reason = RequisitionSupplierQuoteRules::resolveStoredWaiverReason(
+            [
+                ['supplier_id' => 1],
+                ['supplier_id' => 2],
+                ['supplier_id' => 3],
+            ],
+            1500,
+            'No longer needed'
+        );
+
+        $this->assertNull($reason);
+    }
+
+    public function test_resolve_stored_waiver_reason_keeps_when_fewer_quotes(): void
+    {
+        $reason = RequisitionSupplierQuoteRules::resolveStoredWaiverReason(
+            [
+                ['supplier_id' => 1],
+            ],
+            1500,
+            '  Sole source  '
+        );
+
+        $this->assertSame('Sole source', $reason);
     }
 }

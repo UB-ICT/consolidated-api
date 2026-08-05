@@ -32,6 +32,7 @@ class Requisition extends Model
         'date_prepared',
         'is_recurring',
         'requires_downpayment',
+        'quote_waiver_reason',
         'reminder_date',
         'current_stage_sequence',
     ];

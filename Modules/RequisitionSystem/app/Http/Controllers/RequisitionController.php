@@ -29,6 +29,7 @@ use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionClosure;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
+use Modules\RequisitionSystem\Support\GuardsRequisitionVisibility;
 use Modules\RequisitionSystem\Support\RequisitionLinePricing;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
@@ -42,21 +43,28 @@ class RequisitionController extends Controller
     use GuardsRequisitionCancellation;
     use GuardsRequisitionClosure;
     use GuardsRequisitionPurchaseOrder;
+    use GuardsRequisitionVisibility;
 
     public function __construct(
         private readonly RequisitionLogService $logService
     ) {}
 
     /**
-     * List all requisitions with their attached suppliers & line items.
-     * * Supports: 
-     * - Sorting: Descending by default (latest)
-     * - Filtering: By priority (?priority=urgent)
-     * - Scoping: By authenticated user's cost centers (?scope=cost_center)
-     * * Budget Officer, VP, Director of Finance, and Payroll Officer bypass isolation.
+     * List requisitions visible to the authenticated user:
+     * pending items at their assigned stage(s), their cost-center records,
+     * approved items for purchase officers, or everything for global viewers.
+     *
+     * Supports filtering by priority, status, cost center, recurring, and upcoming alerts.
      */
     public function index(Request $request)
     {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
         $query = Requisition::with([
             'suppliers.status',
             'items.chartOfAccount',
@@ -67,24 +75,7 @@ class RequisitionController extends Controller
             'tags',
         ]);
 
-        if ($request->get('scope') === 'cost_center') {
-            /** @var \Modules\Auth\Models\User $user */
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
-            }
-
-            if (!$this->userHasGlobalRequisitionAccess($user)) {
-                $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
-
-                if ($assignedCostCenterIds->isEmpty()) {
-                    return response()->json(['success' => false, 'message' => 'Unauthorized cost center access.'], 403);
-                }
-
-                $query->whereIn('cost_center_id', $assignedCostCenterIds);
-            }
-        }
+        $this->applyRequisitionVisibilityScope($query, $user);
 
         if ($request->has('cost_center_id')) {
             $query->where('cost_center_id', $request->get('cost_center_id'));
@@ -107,8 +98,6 @@ class RequisitionController extends Controller
         }
 
         $requisitions = $query->latest()->get();
-        /** @var \Modules\Auth\Models\User|null $user */
-        $user = Auth::user();
 
         return response()->json([
             'success' => true,
@@ -162,6 +151,8 @@ class RequisitionController extends Controller
     {
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
+
+        $this->assertUserCanViewRequisition($requisition->loadMissing('status'), $user);
 
         return response()->json([
             'success' => true,
@@ -666,6 +657,7 @@ class RequisitionController extends Controller
         bool $shouldSubmit = false
     ): Requisition {
         $items = $data['items'];
+        $suppliers = $data['suppliers'] ?? [];
         unset($data['items'], $data['suppliers'], $data['submit'], $data['tag_ids']);
 
         $pricing = RequisitionLinePricing::calculate(
@@ -679,6 +671,12 @@ class RequisitionController extends Controller
         $data['discount_amount'] = $pricing['discount_amount'];
         $data['total'] = $pricing['total'];
         $pricedItems = $pricing['items'];
+
+        $data['quote_waiver_reason'] = RequisitionSupplierQuoteRules::resolveStoredWaiverReason(
+            is_array($suppliers) ? $suppliers : [],
+            (float) $data['total'],
+            $data['quote_waiver_reason'] ?? null
+        );
 
         if ($requisition) {
             // Requisition numbers are immutable after creation.
