@@ -656,9 +656,13 @@ class RequisitionController extends Controller
         ?Requisition $requisition = null,
         bool $shouldSubmit = false
     ): Requisition {
-        $items = $data['items'];
+        $items = $data['items'] ?? [];
         $suppliers = $data['suppliers'] ?? [];
         unset($data['items'], $data['suppliers'], $data['submit'], $data['tag_ids']);
+
+        if (!is_array($items)) {
+            $items = [];
+        }
 
         $pricing = RequisitionLinePricing::calculate(
             $items,

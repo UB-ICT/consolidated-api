@@ -21,6 +21,7 @@ class RequisitionStoreRequest extends FormRequest
     public function rules(): array
     {
         $requisition = $this->route('requisition');
+        $isDraft = !$this->boolean('submit');
 
         return [
             'number' => 'prohibited',
@@ -55,7 +56,8 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
             'quote_waiver_reason' => 'nullable|string|max:2000',
 
-            'items' => 'required|array|min:1',
+            // Drafts may be saved with no complete line items yet; submit still requires ≥1.
+            'items' => $isDraft ? 'nullable|array' : 'required|array|min:1',
             'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
             'items.*.quantity' => 'required|numeric',
             'items.*.unit_cost' => 'required|numeric|min:0',
