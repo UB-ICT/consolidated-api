@@ -42,6 +42,7 @@ class RequisitionStoreRequest extends FormRequest
             'stage_id' => 'nullable|integer|exists:porsql.stages,id',
 
             'priority' => 'required|string|in:standard,urgent,critical',
+            'description' => 'nullable|string|max:5000',
             'expected_delivery_date' => 'nullable|date|after_or_equal:today',
 
             'is_recurring' => 'required|boolean',
@@ -58,9 +59,11 @@ class RequisitionStoreRequest extends FormRequest
 
             // Drafts may be saved with no complete line items yet; submit still requires ≥1.
             'items' => $isDraft ? 'nullable|array' : 'required|array|min:1',
-            'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
-            'items.*.quantity' => 'required|numeric',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.chart_of_account_id' => $isDraft
+                ? 'nullable|integer|exists:porsql.chart_of_accounts,id'
+                : 'required|integer|exists:porsql.chart_of_accounts,id',
+            'items.*.quantity' => $isDraft ? 'nullable|numeric' : 'required|numeric',
+            'items.*.unit_cost' => $isDraft ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'items.*.gst_applicable' => 'sometimes|boolean',
             'items.*.comments' => 'nullable|string|max:1000',
 

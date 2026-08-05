@@ -244,6 +244,7 @@ class RequisitionLogService
 
         $fieldLabels = [
             'priority'               => 'Priority',
+            'description'            => 'Description',
             'expected_delivery_date' => 'Expected delivery date',
             'is_recurring'           => 'Recurring flag',
             'requires_downpayment'   => '50% downpayment required',

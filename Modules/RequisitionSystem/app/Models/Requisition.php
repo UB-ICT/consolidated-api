@@ -27,6 +27,7 @@ class Requisition extends Model
         'discount_value',
         'discount_amount',
         'priority',
+        'description',
         'expected_delivery_date',
         'stage_id',
         'date_prepared',

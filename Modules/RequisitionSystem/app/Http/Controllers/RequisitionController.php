@@ -721,6 +721,11 @@ class RequisitionController extends Controller
 
         $data['requires_downpayment'] = (bool) ($data['requires_downpayment'] ?? false);
 
+        $description = $data['description'] ?? null;
+        $data['description'] = is_string($description) && trim($description) !== ''
+            ? trim($description)
+            : null;
+
         if ($requisition) {
             $requisition->update($data);
             $requisition->items()->delete();
@@ -729,15 +734,19 @@ class RequisitionController extends Controller
         }
 
         foreach ($pricedItems as $item) {
+            $accountId = $item['chart_of_account_id'] ?? null;
+
             Item::create([
-                'chart_of_account_id' => (int) $item['chart_of_account_id'],
-                'quantity' => (int) $item['quantity'],
-                'unit_cost' => $item['unit_cost'],
-                'subtotal' => $item['subtotal'],
-                'discount_amount' => $item['discount_amount'],
-                'gst_applicable' => (bool) $item['gst_applicable'],
-                'gst_amount' => $item['gst_amount'],
-                'total' => $item['total'],
+                'chart_of_account_id' => $accountId !== null && $accountId !== ''
+                    ? (int) $accountId
+                    : null,
+                'quantity' => (int) ($item['quantity'] ?? 0),
+                'unit_cost' => $item['unit_cost'] ?? 0,
+                'subtotal' => $item['subtotal'] ?? 0,
+                'discount_amount' => $item['discount_amount'] ?? 0,
+                'gst_applicable' => (bool) ($item['gst_applicable'] ?? false),
+                'gst_amount' => $item['gst_amount'] ?? 0,
+                'total' => $item['total'] ?? 0,
                 'comments' => $item['comments'] ?? null,
                 'requisition_id' => $requisition->id,
             ]);
