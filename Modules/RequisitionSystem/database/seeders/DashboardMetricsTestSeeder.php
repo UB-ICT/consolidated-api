@@ -3,11 +3,10 @@
 namespace Modules\RequisitionSystem\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Requisition;
-use Illuminate\Support\Facades\DB;
 
 class DashboardMetricsTestSeeder extends Seeder
 {
@@ -115,7 +114,7 @@ class DashboardMetricsTestSeeder extends Seeder
 
         for ($i = 0; $i < $count; $i++) {
             Requisition::create([
-                'number' => 'REQ-' . date('Y') . '-' . Str::upper(Str::random(5)),
+                'number' => str_pad((string) ($i + 1), 9, '0', STR_PAD_LEFT),
                 'cost_center_id' => $costCenterId,
                 'status_id' => $statusId,
                 'currency_id' => $currencyId,

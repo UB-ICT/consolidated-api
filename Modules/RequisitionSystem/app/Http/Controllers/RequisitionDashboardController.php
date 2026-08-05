@@ -157,9 +157,11 @@ class RequisitionDashboardController extends Controller
                 $base = [
                     'id' => $requisition->id,
                     'number' => $requisition->number,
+                    'requisition_number' => $requisition->number,
                     'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
                     'date_prepared' => $requisition->date_prepared,
                     'total' => (float) $requisition->total,
+                    'status_name' => $requisition->status?->name,
                     'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
                 ];
 

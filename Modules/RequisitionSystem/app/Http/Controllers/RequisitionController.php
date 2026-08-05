@@ -643,6 +643,11 @@ class RequisitionController extends Controller
         );
 
         $requisition->setAttribute(
+            'requisition_number',
+            $requisition->number
+        );
+
+        $requisition->setAttribute(
             'can_cancel',
             $this->userCanCancelRequisition($requisition, $user)
         );
@@ -675,8 +680,12 @@ class RequisitionController extends Controller
         $data['total'] = $pricing['total'];
         $pricedItems = $pricing['items'];
 
-        $data['number'] = $data['number']
-            ?? $this->generateRequisitionNumber();
+        if ($requisition) {
+            // Requisition numbers are immutable after creation.
+            unset($data['number']);
+        } else {
+            $data['number'] = $this->generateRequisitionNumber();
+        }
 
         /** @var User|null $submitter */
         $submitter = Auth::user();
@@ -806,11 +815,25 @@ class RequisitionController extends Controller
         }
     }
 
+    /**
+     * Unique 9-digit zero-padded requisition number (e.g. 000000001).
+     */
     private function generateRequisitionNumber(): string
     {
-        $year = now()->format('Y');
-        $count = Requisition::whereYear('created_at', $year)->count() + 1;
+        // Serialize allocation within the surrounding porsql transaction.
+        DB::connection('porsql')->select('SELECT pg_advisory_xact_lock(?)', [872_314_001]);
 
-        return sprintf('REQ-%s-%04d', $year, $count);
+        $max = DB::connection('porsql')
+            ->table('requisitions')
+            ->whereRaw("number ~ '^[0-9]{1,9}$'")
+            ->max(DB::raw('CAST(number AS BIGINT)'));
+
+        $next = ((int) $max) + 1;
+
+        if ($next > 999_999_999) {
+            throw new \RuntimeException('Requisition number space exhausted.');
+        }
+
+        return str_pad((string) $next, 9, '0', STR_PAD_LEFT);
     }
 }

@@ -23,12 +23,7 @@ class RequisitionStoreRequest extends FormRequest
         $requisition = $this->route('requisition');
 
         return [
-            'number' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('porsql.requisitions', 'number')->ignore($requisition?->id),
-            ],
+            'number' => 'prohibited',
             'purchase_order_number' => 'prohibited',
 
             'cost_center_id' => 'required|integer|exists:porsql.cost_centers,id',
