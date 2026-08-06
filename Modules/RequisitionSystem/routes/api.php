@@ -58,6 +58,7 @@ Route::group([
     Route::get('requisitions/dashboard-metrics', [RequisitionDashboardController::class, 'metrics']);
     Route::get('requisitions/recent', [RequisitionDashboardController::class, 'recent']);
     Route::get('requisitions/summary-by-cost-center', [RequisitionDashboardController::class, 'summaryByCostCenter']);
+    Route::get('requisitions/balance-over-time', [RequisitionDashboardController::class, 'balanceOverTime']);
 
     Route::apiResource('requisitions', RequisitionController::class);
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);

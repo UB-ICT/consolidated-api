@@ -12,9 +12,11 @@ class PipelineSeeder extends Seeder
 {
     public function run(): void
     {
-        // Synced from intended operations pipeline (no purchase stage).
-        // Purchase officers act after Finance Approval sets status to Approved.
-        // User ↔ stage assignments live in UserStageSeeder.
+        // Operations pipeline, ending at Purchase Approval — reuses the
+        // existing 'Purchase Approval' stage (see UserStageSeeder, where
+        // ccocom@ub.edu.bz / jose.lopez@ub.edu.bz are already assigned to
+        // it) rather than a differently-named duplicate with no one
+        // assigned. User ↔ stage assignments live in UserStageSeeder.
         $pipeline = Pipeline::firstOrCreate(['name' => RequisitionWorkflow::PIPELINE_NAME]);
 
         $stages = [
@@ -23,6 +25,7 @@ class PipelineSeeder extends Seeder
             3 => 'Budget Officer',
             4 => 'VP Approval',
             5 => 'Finance Approval',
+            6 => 'Purchase Approval',
         ];
 
         $keptStageIds = [];

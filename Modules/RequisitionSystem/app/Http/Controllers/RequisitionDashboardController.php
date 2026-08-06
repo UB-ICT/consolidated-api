@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
+use Modules\RequisitionSystem\Models\Budget;
 use Modules\RequisitionSystem\Models\CostCenter;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
@@ -289,6 +290,122 @@ class RequisitionDashboardController extends Controller
                 'by_stage' => $stageTotals,
                 'grand_total' => array_sum($stageTotals),
             ],
+        ]);
+    }
+
+    /**
+     * GET /requisitions/balance-over-time
+     *
+     * Cumulative spend vs. allocated budget, grouped by day and cost center.
+     * "Spent" = the requisition has an approved signature at the Purchase
+     * Approval stage (RequisitionWorkflow::roleStageMapping()['purchase-officer']),
+     * i.e. actually approved by the purchase officer. Falls back to
+     * status_id = Closed if that stage isn't seeded/wired in this
+     * environment yet, so the endpoint degrades rather than silently
+     * over/under-counting.
+     *
+     * cost_center_id is optional for a scoped (non-global-access) caller —
+     * omitting it returns the series for every cost center they're assigned
+     * to. Global-access roles must pass it explicitly.
+     */
+    public function balanceOverTime(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $validated = $request->validate([
+            'cost_center_id' => 'nullable|integer|exists:porsql.cost_centers,id',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
+
+        if (Carbon::parse($validated['date_from'])->diffInDays(Carbon::parse($validated['date_to'])) > 366) {
+            return response()->json([
+                'success' => false,
+                'message' => 'date_to must be within 366 days of date_from.',
+            ], 422);
+        }
+
+        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+        $hasGlobalAccess = $this->userHasDashboardGlobalAccess($user, $currentRole);
+
+        if ($validated['cost_center_id'] ?? null) {
+            $costCenterIds = [(int) $validated['cost_center_id']];
+
+            if (!$hasGlobalAccess && !$user->costCenters()->pluck('cost_centers.id')->contains($costCenterIds[0])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. You are not assigned to this cost center.',
+                ], 403);
+            }
+        } elseif ($hasGlobalAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'cost_center_id is required.',
+            ], 422);
+        } else {
+            $costCenterIds = $user->costCenters()->pluck('cost_centers.id')->all();
+        }
+
+        if (empty($costCenterIds)) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $allocatedByCostCenter = Budget::operational()
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->with('lineItems')
+            ->get()
+            ->mapWithKeys(fn (Budget $budget) => [
+                $budget->cost_center_id => (float) $budget->lineItems->sum('amount'),
+            ]);
+
+        $purchaseOfficerStageId = RequisitionWorkflow::roleStageMapping()['purchase-officer'] ?? null;
+
+        $spendQuery = Requisition::query()
+            ->selectRaw("date_trunc('day', date_prepared)::date as spend_date, cost_center_id, SUM(total) as spent")
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->whereBetween('date_prepared', [
+                $validated['date_from'] . ' 00:00:00',
+                $validated['date_to'] . ' 23:59:59',
+            ]);
+
+        if ($purchaseOfficerStageId !== null) {
+            $spendQuery->whereHas('approvals', function ($approvalQuery) use ($purchaseOfficerStageId) {
+                $approvalQuery->where('stage_id', $purchaseOfficerStageId)
+                    ->where('status', 'approved');
+            });
+        } else {
+            $closedId = Status::query()->where('name', 'Closed')->value('id') ?? 0;
+            $spendQuery->where('status_id', $closedId);
+        }
+
+        $spendRows = $spendQuery
+            ->groupBy('spend_date', 'cost_center_id')
+            ->orderBy('spend_date')
+            ->get();
+
+        $running = [];
+        $series = $spendRows->map(function ($row) use (&$running, $allocatedByCostCenter) {
+            $costCenterId = (int) $row->cost_center_id;
+            $running[$costCenterId] = ($running[$costCenterId] ?? 0) + (float) $row->spent;
+            $allocated = (float) ($allocatedByCostCenter[$costCenterId] ?? 0);
+
+            return [
+                'date' => $row->spend_date,
+                'cost_center_id' => $costCenterId,
+                'spent_cumulative' => round($running[$costCenterId], 2),
+                'allocated' => round($allocated, 2),
+                'balance' => round($allocated - $running[$costCenterId], 2),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $series,
         ]);
     }
 
