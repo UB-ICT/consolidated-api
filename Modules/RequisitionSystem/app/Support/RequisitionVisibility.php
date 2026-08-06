@@ -45,10 +45,10 @@ final class RequisitionVisibility
 
     /**
      * Restrict a requisition query to records the user is allowed to see:
-     * - Pending items currently at a stage assigned to them
-     * - Any requisition for their assigned cost center(s)
-     * - Approved items when they are a purchase officer
-     * - Everything when they have global view access
+     * - Cost-center members: their cost center's requisitions at any status
+     * - Stage assignees: non-draft items at or past their assigned pipeline stage
+     * - Purchase officers: approved items
+     * - Global viewers: everything
      */
     public static function constrainQuery(Builder $query, User $user): void
     {
@@ -58,25 +58,38 @@ final class RequisitionVisibility
 
         $assignedStageIds = RequisitionWorkflow::assignedStageIdsForUser($user);
         $costCenterIds = self::assignedCostCenterIds($user);
-        $pendingStatusId = RequisitionWorkflow::pendingStatusId();
+        $draftStatusId = RequisitionWorkflow::draftStatusId();
         $approvedStatusId = RequisitionWorkflow::approvedStatusId();
         $canViewApproved = self::userIsPurchaseOfficer($user);
 
         $query->where(function (Builder $visible) use (
             $assignedStageIds,
             $costCenterIds,
-            $pendingStatusId,
+            $draftStatusId,
             $approvedStatusId,
             $canViewApproved
         ) {
             $matched = false;
 
-            if ($assignedStageIds->isNotEmpty() && $pendingStatusId) {
+            if ($assignedStageIds->isNotEmpty()) {
                 $matched = true;
-                $visible->where(function (Builder $stageQueue) use ($assignedStageIds, $pendingStatusId) {
-                    $stageQueue
-                        ->where('status_id', $pendingStatusId)
-                        ->whereIn('stage_id', $assignedStageIds->all());
+                $visible->where(function (Builder $stageQueue) use ($assignedStageIds, $draftStatusId) {
+                    if ($draftStatusId) {
+                        $stageQueue->where('status_id', '!=', $draftStatusId);
+                    }
+
+                    // At or past any assigned stage (sequence), excluding drafts.
+                    $stageQueue->whereExists(function ($sub) use ($assignedStageIds) {
+                        $sub->selectRaw('1')
+                            ->from('pipeline_stages as user_ps')
+                            ->whereColumn('user_ps.pipeline_id', 'requisitions.pipeline_id')
+                            ->whereIn('user_ps.stage_id', $assignedStageIds->all())
+                            ->whereColumn(
+                                'user_ps.sequence',
+                                '<=',
+                                'requisitions.current_stage_sequence'
+                            );
+                    });
                 });
             }
 
@@ -132,10 +145,41 @@ final class RequisitionVisibility
             return true;
         }
 
-        if ($requisition->status?->name !== 'Pending') {
+        if ($requisition->status?->name === 'Draft') {
             return false;
         }
 
-        return RequisitionWorkflow::userCanActAtCurrentStage($requisition, $user);
+        return self::userHasReachedStage($requisition, $user);
+    }
+
+    /**
+     * True when the requisition is at or past any pipeline stage assigned to the user.
+     */
+    public static function userHasReachedStage(Requisition $requisition, User $user): bool
+    {
+        $assignedStageIds = RequisitionWorkflow::assignedStageIdsForUser($user);
+
+        if ($assignedStageIds->isEmpty() || !$requisition->stage_id) {
+            return false;
+        }
+
+        $pipelineId = RequisitionWorkflow::pipelineIdFor($requisition);
+        $currentSequence = $requisition->current_stage_sequence !== null
+            ? (int) $requisition->current_stage_sequence
+            : RequisitionWorkflow::sequenceForStageId((int) $requisition->stage_id, $pipelineId);
+
+        if ($currentSequence === null) {
+            return false;
+        }
+
+        foreach ($assignedStageIds as $stageId) {
+            $userSequence = RequisitionWorkflow::sequenceForStageId((int) $stageId, $pipelineId);
+
+            if ($userSequence !== null && $currentSequence >= $userSequence) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

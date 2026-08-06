@@ -24,6 +24,7 @@ use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderUploadReques
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Mail\PurchaseOrderToSupplierMail;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
+use Modules\RequisitionSystem\Services\RequisitionNotificationService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionClosure;
@@ -46,13 +47,12 @@ class RequisitionController extends Controller
     use GuardsRequisitionVisibility;
 
     public function __construct(
-        private readonly RequisitionLogService $logService
+        private readonly RequisitionLogService $logService,
+        private readonly RequisitionNotificationService $notificationService,
     ) {}
 
     /**
-     * List requisitions visible to the authenticated user:
-     * pending items at their assigned stage(s), their cost-center records,
-     * approved items for purchase officers, or everything for global viewers.
+     * List requisitions visible to the authenticated user (slim payload + pagination).
      *
      * Supports filtering by priority, status, cost center, recurring, and upcoming alerts.
      */
@@ -66,13 +66,10 @@ class RequisitionController extends Controller
         }
 
         $query = Requisition::with([
-            'suppliers.status',
-            'items.chartOfAccount',
-            'costCenter',
-            'stage',
-            'status',
-            'attachments.supplier.status',
-            'tags',
+            'suppliers',
+            'costCenter:id,name,number',
+            'stage:id,name',
+            'status:id,name',
         ]);
 
         $this->applyRequisitionVisibilityScope($query, $user);
@@ -97,14 +94,21 @@ class RequisitionController extends Controller
             $query->scopeUpcomingReminders(30);
         }
 
-        $requisitions = $query->latest()->get();
+        $perPage = min(100, max(1, $request->integer('per_page', 50)));
+        $paginator = $query->latest()->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'count'   => $requisitions->count(),
-            'data'    => $requisitions->map(
-                fn (Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
-            ),
+            'count'   => $paginator->total(),
+            'meta'    => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+            ],
+            'data' => collect($paginator->items())->map(
+                fn (Requisition $requisition) => $this->formatRequisitionListItem($requisition)
+            )->values(),
         ]);
     }
 
@@ -134,6 +138,10 @@ class RequisitionController extends Controller
 
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
+            $this->notificationService->notifyCurrentStageReviewers(
+                $requisition->refresh(),
+                $user
+            );
         }
 
         return response()->json([
@@ -209,6 +217,10 @@ class RequisitionController extends Controller
                 $activityComment,
                 $changeSummary
             );
+            $this->notificationService->notifyCurrentStageReviewers(
+                $requisition->refresh(),
+                $user
+            );
         }
 
         return response()->json([
@@ -266,6 +278,8 @@ class RequisitionController extends Controller
             $comments,
             $stageName
         );
+
+        $this->notificationService->notifyAfterStageAdvance($requisition, $user);
 
         return response()->json([
             'success' => true,
@@ -574,6 +588,56 @@ class RequisitionController extends Controller
             'success' => true,
             'message' => 'Requisition deleted successfully.',
         ]);
+    }
+
+    private function formatRequisitionListItem(Requisition $requisition): array
+    {
+        $preferred = $requisition->preferredSupplier()
+            ?? $requisition->suppliers->first();
+
+        return [
+            'id' => $requisition->id,
+            'number' => $requisition->number,
+            'requisition_number' => $requisition->number,
+            'cost_center_id' => $requisition->cost_center_id,
+            'date_prepared' => $requisition->date_prepared,
+            'status_id' => $requisition->status_id,
+            'stage_id' => $requisition->stage_id,
+            'currency_id' => $requisition->currency_id,
+            'total' => $requisition->total,
+            'priority' => $requisition->priority,
+            'current_stage_sequence' => $requisition->current_stage_sequence,
+            'cost_center' => $requisition->costCenter
+                ? [
+                    'id' => $requisition->costCenter->id,
+                    'name' => $requisition->costCenter->name,
+                    'number' => $requisition->costCenter->number,
+                ]
+                : null,
+            'status' => $requisition->status
+                ? [
+                    'id' => $requisition->status->id,
+                    'name' => $requisition->status->name,
+                ]
+                : null,
+            'stage' => $requisition->stage
+                ? [
+                    'id' => $requisition->stage->id,
+                    'name' => $requisition->stage->name,
+                ]
+                : null,
+            'suppliers' => $preferred
+                ? [[
+                    'id' => $preferred->id,
+                    'name' => $preferred->name,
+                    'pivot' => [
+                        'is_recommended' => (bool) ($preferred->pivot?->is_recommended ?? false),
+                        'quoted_total' => $preferred->pivot?->quoted_total,
+                        'quote_reference_number' => $preferred->pivot?->quote_reference_number,
+                    ],
+                ]]
+                : [],
+        ];
     }
 
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition

@@ -20,31 +20,52 @@ class RequisitionVisibilityTest extends TestCase
         $this->setUpRequisitionWorkflowSchema();
     }
 
-    public function test_stage_assignee_sees_only_pending_requisitions_at_their_stage(): void
+    public function test_stage_assignee_sees_pending_at_their_stage_but_not_before(): void
     {
-        $user = $this->makeStageUser($this->stageIds["Director's Approval"]);
+        $user = $this->makeStageUser($this->stageIds['Budget Officer']);
 
-        $visibleId = $this->createTestRequisition(
-            $this->stageIds["Director's Approval"],
-            $this->statusIds['Pending'],
-            2
-        );
-        $otherStageId = $this->createTestRequisition(
+        $atStageId = $this->createTestRequisition(
             $this->stageIds['Budget Officer'],
             $this->statusIds['Pending'],
             3
         );
-        $draftAtStageId = $this->createTestRequisition(
+        $beforeStageId = $this->createTestRequisition(
             $this->stageIds["Director's Approval"],
-            $this->statusIds['Draft'],
+            $this->statusIds['Pending'],
             2
+        );
+        $draftId = $this->createTestRequisition(
+            $this->stageIds['Budget Officer'],
+            $this->statusIds['Draft'],
+            3
         );
 
         $ids = $this->visibleIdsFor($user);
 
-        $this->assertContains($visibleId, $ids);
-        $this->assertNotContains($otherStageId, $ids);
-        $this->assertNotContains($draftAtStageId, $ids);
+        $this->assertContains($atStageId, $ids);
+        $this->assertNotContains($beforeStageId, $ids);
+        $this->assertNotContains($draftId, $ids);
+    }
+
+    public function test_stage_assignee_still_sees_requisitions_after_their_stage(): void
+    {
+        $user = $this->makeStageUser($this->stageIds['Budget Officer']);
+
+        $pastStageId = $this->createTestRequisition(
+            $this->stageIds['VP Approval'],
+            $this->statusIds['Pending'],
+            4
+        );
+        $approvedPastId = $this->createTestRequisition(
+            $this->stageIds['Finance Approval'],
+            $this->statusIds['Approved'],
+            5
+        );
+
+        $ids = $this->visibleIdsFor($user);
+
+        $this->assertContains($pastStageId, $ids);
+        $this->assertContains($approvedPastId, $ids);
     }
 
     public function test_user_without_stage_or_cost_center_sees_nothing(): void
@@ -60,14 +81,14 @@ class RequisitionVisibilityTest extends TestCase
         $this->assertSame([], $this->visibleIdsFor($user));
     }
 
-    public function test_user_can_view_matches_stage_queue_rules(): void
+    public function test_user_can_view_matches_stage_sequence_rules(): void
     {
-        $user = $this->makeStageUser($this->stageIds["Director's Approval"]);
+        $user = $this->makeStageUser($this->stageIds['Budget Officer']);
 
         $visible = Requisition::findOrFail($this->createTestRequisition(
-            $this->stageIds["Director's Approval"],
+            $this->stageIds['VP Approval'],
             $this->statusIds['Pending'],
-            2
+            4
         ));
         $visible->setRelation('status', (object) [
             'id' => $this->statusIds['Pending'],
@@ -75,9 +96,9 @@ class RequisitionVisibilityTest extends TestCase
         ]);
 
         $hidden = Requisition::findOrFail($this->createTestRequisition(
-            $this->stageIds['Budget Officer'],
+            $this->stageIds["Director's Approval"],
             $this->statusIds['Pending'],
-            3
+            2
         ));
         $hidden->setRelation('status', (object) [
             'id' => $this->statusIds['Pending'],
