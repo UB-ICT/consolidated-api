@@ -2,22 +2,22 @@
 
 namespace Modules\RequisitionSystem\Services;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+use iio\libmergepdf\Merger;
 use Illuminate\Support\Facades\Storage;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Requisition;
-use ZipArchive;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class RequisitionExportService
 {
     /**
-     * Build a ZIP archive with a summary PDF, quotation PDFs, and any
-     * supporting documents from activity-log comments.
+     * Build a single printable PDF: requisition details, then quotation
+     * PDFs, then the activity log.
      *
      * @return array{path: string, download_name: string}
      */
-    public function buildZip(Requisition $requisition): array
+    public function buildPrintPdf(Requisition $requisition): array
     {
         $requisition->load([
             'items.chartOfAccount',
@@ -40,75 +40,52 @@ class RequisitionExportService
             ? Currency::query()->find($requisition->currency_id)
             : null;
 
-        $summaryPdf = Pdf::loadView('requisitionsystem::exports.requisition-summary', [
+        $generatedAt = now();
+
+        $detailsPdf = Pdf::loadView('requisitionsystem::exports.requisition-summary', [
             'requisition' => $requisition,
             'currency' => $currency,
-            'logUsers' => $logUsers,
-            'generatedAt' => now(),
+            'generatedAt' => $generatedAt,
         ])->setPaper('a4');
+
+        $activityPdf = Pdf::loadView('requisitionsystem::exports.requisition-activity-log', [
+            'requisition' => $requisition,
+            'logUsers' => $logUsers,
+        ])->setPaper('a4');
+
+        $merger = new Merger();
+        $merger->addRaw($detailsPdf->output());
+
+        foreach ($requisition->attachments as $attachment) {
+            if (!$attachment->file_path || !Storage::disk('local')->exists($attachment->file_path)) {
+                continue;
+            }
+
+            $absolutePath = Storage::disk('local')->path($attachment->file_path);
+
+            try {
+                $merger->addFile($absolutePath);
+            } catch (\Throwable $exception) {
+                // Skip unreadable/non-PDF quote files so the rest of the print still works.
+                continue;
+            }
+        }
+
+        $merger->addRaw($activityPdf->output());
 
         $tmpDir = storage_path('app/tmp');
         if (!is_dir($tmpDir)) {
             mkdir($tmpDir, 0755, true);
         }
 
-        $zipPath = $tmpDir . '/requisition-export-' . $requisition->id . '-' . uniqid('', true) . '.zip';
-        $zip = new ZipArchive();
-
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('Unable to create requisition export archive.');
-        }
-
         $number = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $requisition->number) ?: (string) $requisition->id;
-        $zip->addFromString(
-            "requisition-{$number}-summary.pdf",
-            $summaryPdf->output()
-        );
+        $pdfPath = $tmpDir . '/requisition-print-' . $requisition->id . '-' . uniqid('', true) . '.pdf';
 
-        foreach ($requisition->attachments as $index => $attachment) {
-            if (!$attachment->file_path || !Storage::disk('local')->exists($attachment->file_path)) {
-                continue;
-            }
-
-            $supplierName = $attachment->supplier?->name ?? 'supplier';
-            $safeSupplier = $this->safeFilePart($supplierName);
-            $safeName = $this->safeFilePart($attachment->file_name ?: 'quote.pdf');
-            $zip->addFile(
-                Storage::disk('local')->path($attachment->file_path),
-                sprintf('quotes/%02d-%s-%s', $index + 1, $safeSupplier, $safeName)
-            );
-        }
-
-        $logAttachmentIndex = 0;
-        foreach ($requisition->logs->sortBy('created_at') as $log) {
-            if (!$log->file_path || !Storage::disk('local')->exists($log->file_path)) {
-                continue;
-            }
-
-            $logAttachmentIndex++;
-            $safeName = $this->safeFilePart($log->file_name ?: 'supporting-document.pdf');
-            $zip->addFile(
-                Storage::disk('local')->path($log->file_path),
-                sprintf(
-                    'activity-attachments/%02d-%s',
-                    $logAttachmentIndex,
-                    $safeName
-                )
-            );
-        }
-
-        $zip->close();
+        file_put_contents($pdfPath, $merger->merge());
 
         return [
-            'path' => $zipPath,
-            'download_name' => "requisition-{$number}-export.zip",
+            'path' => $pdfPath,
+            'download_name' => "requisition-{$number}.pdf",
         ];
-    }
-
-    private function safeFilePart(string $value): string
-    {
-        $safe = preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?: 'file';
-
-        return trim($safe, '-') ?: 'file';
     }
 }

@@ -55,7 +55,7 @@
 </head>
 <body>
     <h1>Requisition {{ $requisition->number }}</h1>
-    <p class="meta">Exported {{ $generatedAt->timezone(config('app.timezone'))->format('M j, Y g:i A') }}</p>
+    <p class="meta">Printed {{ $generatedAt->timezone(config('app.timezone'))->format('M j, Y g:i A') }}</p>
 
     <h2>Requisition details</h2>
     <table>
@@ -172,7 +172,7 @@
     @endif
 
     <h2>Supplier quotes</h2>
-    <p class="section-note">Quotation PDF files are included in the quotes/ folder of this export.</p>
+    <p class="section-note">Quotation PDF files are appended after this summary.</p>
     @if($requisition->suppliers->isEmpty() && $requisition->attachments->isEmpty())
         <p class="muted">No supplier quotes.</p>
     @else
@@ -215,38 +215,6 @@
                         </tr>
                     @endforeach
                 @endforelse
-            </tbody>
-        </table>
-    @endif
-
-    <h2>Activity log</h2>
-    @if($requisition->logs->isEmpty())
-        <p class="muted">No activity recorded.</p>
-    @else
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Date &amp; time</th>
-                    <th>Detail</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($requisition->logs->sortByDesc('created_at') as $log)
-                    @php
-                        $actor = $logUsers->get($log->user_id);
-                        $detailParts = array_filter([
-                            $log->summary,
-                            $log->comments,
-                            $log->file_name ? 'Attachment: '.$log->file_name : null,
-                        ]);
-                    @endphp
-                    <tr>
-                        <td>{{ $actor?->name ?? 'Unknown user' }}</td>
-                        <td>{{ optional($log->created_at)->timezone(config('app.timezone'))->format('M j, Y g:i A') ?? '—' }}</td>
-                        <td>{{ $detailParts ? implode(' — ', $detailParts) : '—' }}</td>
-                    </tr>
-                @endforeach
             </tbody>
         </table>
     @endif

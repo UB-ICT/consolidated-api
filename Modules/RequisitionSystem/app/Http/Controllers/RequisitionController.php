@@ -601,22 +601,22 @@ class RequisitionController extends Controller
         $this->assertUserCanViewRequisition($requisition->loadMissing('status'), $user);
 
         try {
-            $archive = $this->exportService->buildZip($requisition);
+            $printPdf = $this->exportService->buildPrintPdf($requisition);
         } catch (\Throwable $exception) {
-            Log::error('Requisition export failed.', [
+            Log::error('Requisition print PDF failed.', [
                 'requisition_id' => $requisition->id,
                 'message' => $exception->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to export requisition.',
+                'message' => 'Failed to generate requisition PDF.',
             ], 500);
         }
 
         return response()
-            ->download($archive['path'], $archive['download_name'], [
-                'Content-Type' => 'application/zip',
+            ->download($printPdf['path'], $printPdf['download_name'], [
+                'Content-Type' => 'application/pdf',
             ])
             ->deleteFileAfterSend(true);
     }
