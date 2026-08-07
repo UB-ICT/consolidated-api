@@ -593,7 +593,7 @@ class RequisitionController extends Controller
         ]);
     }
 
-    public function export(Requisition $requisition): StreamedResponse|JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function print(Requisition $requisition): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
     {
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
@@ -615,10 +615,18 @@ class RequisitionController extends Controller
         }
 
         return response()
-            ->download($printPdf['path'], $printPdf['download_name'], [
+            ->file($printPdf['path'], [
                 'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="'.$printPdf['download_name'].'"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
             ])
             ->deleteFileAfterSend(true);
+    }
+
+    /** @deprecated Use print() — kept as an alias for older clients. */
+    public function export(Requisition $requisition): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+    {
+        return $this->print($requisition);
     }
 
     private function formatRequisitionListItem(Requisition $requisition): array

@@ -69,7 +69,8 @@ Route::group([
     Route::post('requisitions/{requisition}/purchase-order', [RequisitionController::class, 'uploadPurchaseOrder']);
     Route::get('requisitions/{requisition}/purchase-order/download', [RequisitionController::class, 'downloadPurchaseOrder']);
     Route::post('requisitions/{requisition}/purchase-order/email', [RequisitionController::class, 'emailPurchaseOrder']);
-    Route::get('requisitions/{requisition}/export', [RequisitionController::class, 'export']);
+    Route::get('requisitions/{requisition}/print', [RequisitionController::class, 'print']);
+    Route::get('requisitions/{requisition}/export', [RequisitionController::class, 'print']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
     Route::get('logs/{log}/attachment', [RequisitionLogController::class, 'showAttachment']);

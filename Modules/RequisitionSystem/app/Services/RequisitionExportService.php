@@ -4,6 +4,7 @@ namespace Modules\RequisitionSystem\Services;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use iio\libmergepdf\Merger;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Currency;
@@ -13,9 +14,9 @@ class RequisitionExportService
 {
     /**
      * Build a single printable PDF: requisition details, then quotation
-     * PDFs, then the activity log.
+     * PDFs embedded in-line, then the activity log.
      *
-     * @return array{path: string, download_name: string}
+     * @return array{path: string, download_name: string, mime: string}
      */
     public function buildPrintPdf(Requisition $requisition): array
     {
@@ -46,15 +47,14 @@ class RequisitionExportService
             'requisition' => $requisition,
             'currency' => $currency,
             'generatedAt' => $generatedAt,
-        ])->setPaper('a4');
+        ])->setPaper('a4')->output();
 
         $activityPdf = Pdf::loadView('requisitionsystem::exports.requisition-activity-log', [
             'requisition' => $requisition,
             'logUsers' => $logUsers,
-        ])->setPaper('a4');
+        ])->setPaper('a4')->output();
 
-        $merger = new Merger();
-        $merger->addRaw($detailsPdf->output());
+        $parts = [$detailsPdf];
 
         foreach ($requisition->attachments as $attachment) {
             if (!$attachment->file_path || !Storage::disk('local')->exists($attachment->file_path)) {
@@ -62,16 +62,30 @@ class RequisitionExportService
             }
 
             $absolutePath = Storage::disk('local')->path($attachment->file_path);
+            $contents = @file_get_contents($absolutePath);
 
-            try {
-                $merger->addFile($absolutePath);
-            } catch (\Throwable $exception) {
-                // Skip unreadable/non-PDF quote files so the rest of the print still works.
+            if ($contents === false || !str_starts_with($contents, '%PDF')) {
+                Log::warning('Skipping non-PDF quotation attachment during print.', [
+                    'requisition_id' => $requisition->id,
+                    'attachment_id' => $attachment->id,
+                ]);
                 continue;
             }
+
+            if (!$this->canMergePdf($contents)) {
+                Log::warning('Skipping unreadable quotation PDF during print merge.', [
+                    'requisition_id' => $requisition->id,
+                    'attachment_id' => $attachment->id,
+                ]);
+                continue;
+            }
+
+            $parts[] = $contents;
         }
 
-        $merger->addRaw($activityPdf->output());
+        $parts[] = $activityPdf;
+
+        $merged = $this->mergeParts($parts, $requisition->id, $detailsPdf, $activityPdf);
 
         $tmpDir = storage_path('app/tmp');
         if (!is_dir($tmpDir)) {
@@ -81,11 +95,55 @@ class RequisitionExportService
         $number = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $requisition->number) ?: (string) $requisition->id;
         $pdfPath = $tmpDir . '/requisition-print-' . $requisition->id . '-' . uniqid('', true) . '.pdf';
 
-        file_put_contents($pdfPath, $merger->merge());
+        file_put_contents($pdfPath, $merged);
 
         return [
             'path' => $pdfPath,
             'download_name' => "requisition-{$number}.pdf",
+            'mime' => 'application/pdf',
         ];
+    }
+
+    private function canMergePdf(string $pdfContents): bool
+    {
+        try {
+            $probe = new Merger();
+            $probe->addRaw($pdfContents);
+            $probe->merge();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @param  list<string>  $parts
+     */
+    private function mergeParts(
+        array $parts,
+        int $requisitionId,
+        string $detailsPdf,
+        string $activityPdf
+    ): string {
+        try {
+            $merger = new Merger();
+            foreach ($parts as $part) {
+                $merger->addRaw($part);
+            }
+
+            return $merger->merge();
+        } catch (\Throwable $exception) {
+            Log::error('Full print merge failed; returning details + activity only.', [
+                'requisition_id' => $requisitionId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            $fallback = new Merger();
+            $fallback->addRaw($detailsPdf);
+            $fallback->addRaw($activityPdf);
+
+            return $fallback->merge();
+        }
     }
 }
