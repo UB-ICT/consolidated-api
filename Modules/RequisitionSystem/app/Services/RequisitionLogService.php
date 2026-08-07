@@ -16,7 +16,9 @@ class RequisitionLogService
         User $user,
         string $action,
         ?string $summary = null,
-        ?string $comments = null
+        ?string $comments = null,
+        ?string $fileName = null,
+        ?string $filePath = null
     ): Logs {
         return Logs::create([
             'requisition_id' => $requisition->id,
@@ -24,6 +26,8 @@ class RequisitionLogService
             'action'         => $action,
             'summary'        => $summary,
             'comments'       => $comments,
+            'file_name'      => $fileName,
+            'file_path'      => $filePath,
         ]);
     }
 
@@ -173,14 +177,22 @@ class RequisitionLogService
     public function recordComment(
         Requisition $requisition,
         User $user,
-        string $comments
+        string $comments,
+        ?string $fileName = null,
+        ?string $filePath = null
     ): Logs {
+        $summary = $fileName
+            ? sprintf('Comment added with supporting document (%s).', $fileName)
+            : 'Comment added.';
+
         return $this->record(
             $requisition,
             $user,
             RequisitionLogAction::COMMENT,
-            'Comment added.',
-            $comments
+            $summary,
+            $comments,
+            $fileName,
+            $filePath
         );
     }
 
@@ -244,6 +256,7 @@ class RequisitionLogService
 
         $fieldLabels = [
             'priority'               => 'Priority',
+            'description'            => 'Description',
             'expected_delivery_date' => 'Expected delivery date',
             'is_recurring'           => 'Recurring flag',
             'requires_downpayment'   => '50% downpayment required',
@@ -311,20 +324,22 @@ class RequisitionLogService
 
         $previous = $previousItems
             ->map(fn ($item) => [
-                'description' => $item->description,
-                'quantity'    => (int) $item->quantity,
-                'unit_cost'   => (float) $item->unit_cost,
-                'comments'    => $item->comments,
+                'chart_of_account_id' => (int) $item->chart_of_account_id,
+                'quantity'            => round((float) $item->quantity, 4),
+                'unit_cost'           => (float) $item->unit_cost,
+                'gst_applicable'      => (bool) ($item->gst_applicable ?? false),
+                'comments'            => $item->comments,
             ])
             ->values()
             ->all();
 
         $next = $newItems
             ->map(fn (array $item) => [
-                'description' => $item['description'],
-                'quantity'    => (int) $item['quantity'],
-                'unit_cost'   => (float) $item['unit_cost'],
-                'comments'    => $item['comments'] ?? null,
+                'chart_of_account_id' => (int) ($item['chart_of_account_id'] ?? 0),
+                'quantity'            => round((float) ($item['quantity'] ?? 0), 4),
+                'unit_cost'           => (float) ($item['unit_cost'] ?? 0),
+                'gst_applicable'      => (bool) ($item['gst_applicable'] ?? false),
+                'comments'            => $item['comments'] ?? null,
             ])
             ->values()
             ->all();

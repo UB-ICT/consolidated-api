@@ -21,14 +21,10 @@ class RequisitionStoreRequest extends FormRequest
     public function rules(): array
     {
         $requisition = $this->route('requisition');
+        $isDraft = !$this->boolean('submit');
 
         return [
-            'number' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('porsql.requisitions', 'number')->ignore($requisition?->id),
-            ],
+            'number' => 'prohibited',
             'purchase_order_number' => 'prohibited',
 
             'cost_center_id' => 'required|integer|exists:porsql.cost_centers,id',
@@ -46,6 +42,7 @@ class RequisitionStoreRequest extends FormRequest
             'stage_id' => 'nullable|integer|exists:porsql.stages,id',
 
             'priority' => 'required|string|in:standard,urgent,critical',
+            'description' => 'nullable|string|max:5000',
             'expected_delivery_date' => 'nullable|date|after_or_equal:today',
 
             'is_recurring' => 'required|boolean',
@@ -58,11 +55,15 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.is_recommended' => 'required|boolean',
             'suppliers.*.quoted_total' => 'nullable|numeric|min:0',
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
+            'quote_waiver_reason' => 'nullable|string|max:2000',
 
-            'items' => 'required|array|min:1',
-            'items.*.chart_of_account_id' => 'required|integer|exists:porsql.chart_of_accounts,id',
-            'items.*.quantity' => 'required|numeric',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            // Drafts may be saved with no complete line items yet; submit still requires ≥1.
+            'items' => $isDraft ? 'nullable|array' : 'required|array|min:1',
+            'items.*.chart_of_account_id' => $isDraft
+                ? 'nullable|integer|exists:porsql.chart_of_accounts,id'
+                : 'required|integer|exists:porsql.chart_of_accounts,id',
+            'items.*.quantity' => $isDraft ? 'nullable|numeric' : 'required|numeric',
+            'items.*.unit_cost' => $isDraft ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'items.*.gst_applicable' => 'sometimes|boolean',
             'items.*.comments' => 'nullable|string|max:1000',
 
@@ -155,7 +156,8 @@ class RequisitionStoreRequest extends FormRequest
 
             $errors = RequisitionSupplierQuoteRules::validateSuppliers(
                 $this->input('suppliers', []),
-                $total
+                $total,
+                $this->input('quote_waiver_reason')
             );
 
             foreach ($errors as $field => $message) {

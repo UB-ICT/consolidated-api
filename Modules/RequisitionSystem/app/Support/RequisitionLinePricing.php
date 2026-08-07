@@ -49,7 +49,7 @@ final class RequisitionLinePricing
 
             $prepared[] = [
                 'chart_of_account_id' => $item['chart_of_account_id'] ?? null,
-                'quantity' => (int) $quantity,
+                'quantity' => round($quantity, 4),
                 'unit_cost' => round($unitCost, 2),
                 'subtotal' => $subtotal,
                 'gst_applicable' => (bool) ($item['gst_applicable'] ?? false),

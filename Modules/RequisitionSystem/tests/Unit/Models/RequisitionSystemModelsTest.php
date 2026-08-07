@@ -72,7 +72,7 @@ class RequisitionSystemModelsTest extends TestCase
 
     public function test_cost_center_model_configuration(): void
     {
-        $this->assertModelFillable(CostCenter::class, ['name']);
+        $this->assertModelFillable(CostCenter::class, ['name', 'number']);
     }
 
     public function test_country_model_configuration(): void
@@ -90,6 +90,10 @@ class RequisitionSystemModelsTest extends TestCase
         $this->assertModelFillable(Item::class, [
             'quantity',
             'unit_cost',
+            'subtotal',
+            'discount_amount',
+            'gst_applicable',
+            'gst_amount',
             'total',
             'comments',
             'requisition_id',
@@ -119,11 +123,13 @@ class RequisitionSystemModelsTest extends TestCase
             'discount_value',
             'discount_amount',
             'priority',
+            'description',
             'expected_delivery_date',
             'stage_id',
             'date_prepared',
             'is_recurring',
             'requires_downpayment',
+            'quote_waiver_reason',
             'reminder_date',
             'current_stage_sequence',
         ]);

@@ -10,7 +10,7 @@ class RequisitionSubmittedNotification extends Notification
 {
     public function __construct(
         private readonly Requisition $requisition,
-        private readonly ?User $submitter,
+        private readonly ?User $actor,
     ) {}
 
     public function via($notifiable): array
@@ -20,14 +20,17 @@ class RequisitionSubmittedNotification extends Notification
 
     public function toDatabase($notifiable): array
     {
+        $actorName = $this->actor?->name ?? 'A requester';
+
         return [
-            'type'               => 'requisition_submitted',
+            'type'               => 'requisition_pending_review',
             'requisition_id'     => $this->requisition->id,
             'requisition_number' => $this->requisition->number,
-            'submitted_by'       => $this->submitter?->name,
+            'submitted_by'       => $this->actor?->name,
+            'stage_id'           => $this->requisition->stage_id,
             'message'            => sprintf(
-                '%s submitted requisition %s for your review.',
-                $this->submitter?->name ?? 'A requester',
+                '%s sent requisition %s for your review.',
+                $actorName,
                 $this->requisition->number
             ),
         ];

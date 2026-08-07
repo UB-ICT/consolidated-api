@@ -41,7 +41,15 @@ class AttachmentController extends Controller
     public function store(Request $request, Requisition $requisition): JsonResponse
     {
         $validated = $request->validate([
-            'file'                   => 'required|file|mimes:pdf|max:10240',
+            'file'                   => [
+                'required',
+                'file',
+                'max:10240',
+                // Browsers (especially macOS) often omit or mis-report PDF MIME
+                // types as application/octet-stream — accept by extension too.
+                'mimetypes:application/pdf,application/x-pdf,application/octet-stream',
+                'extensions:pdf',
+            ],
             'supplier_id'            => 'required|integer|exists:porsql.suppliers,id',
             'is_recommended'         => 'sometimes|boolean',
             'quoted_total'           => 'nullable|numeric|min:0',
@@ -62,6 +70,20 @@ class AttachmentController extends Controller
         $fileName = Str::uuid() . '.pdf';
         $storedPath = $file->storeAs('uploads/quotes', $fileName, 'local');
 
+        // One quote PDF per supplier per requisition — replace any prior upload
+        // so draft autosaves cannot accumulate duplicates.
+        $existingAttachments = Attachment::query()
+            ->where('requisition_id', $requisition->id)
+            ->where('supplier_id', $validated['supplier_id'])
+            ->get();
+
+        foreach ($existingAttachments as $existing) {
+            if ($existing->file_path && Storage::disk('local')->exists($existing->file_path)) {
+                Storage::disk('local')->delete($existing->file_path);
+            }
+            $existing->delete();
+        }
+
         $attachment = Attachment::create([
             'file_name'      => $file->getClientOriginalName(),
             'file_path'      => $storedPath,
@@ -75,6 +97,14 @@ class AttachmentController extends Controller
             'quoted_total'           => $validated['quoted_total'] ?? null,
             'quote_reference_number' => $validated['quote_reference_number'] ?? null,
         ];
+
+        if ($pivotData['is_recommended']) {
+            // Exactly one preferred supplier at a time.
+            DB::connection('porsql')->table('requisition_suppliers')
+                ->where('requisition_id', $requisition->id)
+                ->where('supplier_id', '!=', $validated['supplier_id'])
+                ->update(['is_recommended' => false]);
+        }
 
         $requisition->suppliers()->syncWithoutDetaching([
             $validated['supplier_id'] => $pivotData,

@@ -17,6 +17,7 @@ class RequisitionLogStoreRequest extends FormRequest
     {
         return [
             'comments' => 'required|string|max:2000',
+            'file'     => 'nullable|file|mimes:pdf|max:10240',
             'action'   => [
                 'sometimes',
                 'string',

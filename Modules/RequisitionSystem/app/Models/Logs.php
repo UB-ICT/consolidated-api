@@ -19,6 +19,8 @@ class Logs extends Model
         'action',
         'summary',
         'comments',
+        'file_name',
+        'file_path',
     ];
 
     public function requisition(): BelongsTo
@@ -29,6 +31,11 @@ class Logs extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function hasAttachment(): bool
+    {
+        return filled($this->file_path) && filled($this->file_name);
     }
 
     public function isDecision(): bool

@@ -25,9 +25,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
-        // $middleware->append(ForceJsonRequestHeader::class);
+        // This API has no web login route; never redirect guests to route('login').
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->prepend(Cors::class);
+        $middleware->api(prepend: [
+            ForceJsonRequestHeader::class,
+        ]);
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
@@ -39,10 +43,15 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
+        $exceptions->shouldRenderJsonWhen(function (Request $request) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
+
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-            if ($request->is('api/*')) {
+            if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'message' => $e->getMessage(),
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'Unauthenticated.',
                 ], 401);
             }
         });

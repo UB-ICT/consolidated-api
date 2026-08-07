@@ -16,12 +16,26 @@ final class RequisitionSupplierQuoteRules
         return RequisitionLinePricing::calculate($items)['total'];
     }
 
+    public static function normalizeWaiverReason(?string $reason): ?string
+    {
+        if ($reason === null) {
+            return null;
+        }
+
+        $trimmed = trim($reason);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $suppliers
      * @return array<string, string>
      */
-    public static function validateSuppliers(array $suppliers, float $requisitionTotal): array
-    {
+    public static function validateSuppliers(
+        array $suppliers,
+        float $requisitionTotal,
+        ?string $quoteWaiverReason = null
+    ): array {
         $errors = [];
         $suppliers = collect($suppliers)
             ->filter(fn (array $supplier) => !empty($supplier['supplier_id']))
@@ -29,16 +43,25 @@ final class RequisitionSupplierQuoteRules
 
         $requiredCount = self::requiredQuoteCount($requisitionTotal);
         $quoteCount = $suppliers->count();
+        $waiverReason = self::normalizeWaiverReason($quoteWaiverReason);
+        $hasWaiver = $waiverReason !== null;
 
-        if ($quoteCount < $requiredCount) {
+        if ($quoteCount < 1) {
+            $errors['suppliers'] = 'Add at least one supplier quote.';
+
+            return $errors;
+        }
+
+        if ($quoteCount < $requiredCount && !$hasWaiver) {
             if ($requiredCount === 1) {
                 $errors['suppliers'] = 'Add at least one supplier quote.';
             } else {
                 $errors['suppliers'] = sprintf(
-                    'Requisitions of %s or more require at least %d supplier quotes.',
+                    'Requisitions of %s or more require at least %d supplier quotes, or provide a reason for fewer quotes.',
                     number_format(self::HIGH_VALUE_THRESHOLD, 0),
                     $requiredCount
                 );
+                $errors['quote_waiver_reason'] = 'Provide a reason when submitting fewer than three supplier quotes.';
             }
 
             return $errors;
@@ -57,6 +80,29 @@ final class RequisitionSupplierQuoteRules
         }
 
         return $errors;
+    }
+
+    /**
+     * Keep a waiver reason only when high-value requisitions have fewer than three quotes.
+     *
+     * @param  array<int, array<string, mixed>>  $suppliers
+     */
+    public static function resolveStoredWaiverReason(
+        array $suppliers,
+        float $requisitionTotal,
+        ?string $quoteWaiverReason
+    ): ?string {
+        $quoteCount = collect($suppliers)
+            ->filter(fn (array $supplier) => !empty($supplier['supplier_id']))
+            ->count();
+
+        $requiredCount = self::requiredQuoteCount($requisitionTotal);
+
+        if ($quoteCount >= $requiredCount) {
+            return null;
+        }
+
+        return self::normalizeWaiverReason($quoteWaiverReason);
     }
 
     /**

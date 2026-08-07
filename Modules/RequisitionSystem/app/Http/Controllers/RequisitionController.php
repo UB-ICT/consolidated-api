@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,12 +24,15 @@ use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderUploadRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Mail\PurchaseOrderToSupplierMail;
+use Modules\RequisitionSystem\Services\RequisitionExportService;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
+use Modules\RequisitionSystem\Services\RequisitionNotificationService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionClosure;
 use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\GuardsRequisitionPurchaseOrder;
+use Modules\RequisitionSystem\Support\GuardsRequisitionVisibility;
 use Modules\RequisitionSystem\Support\RequisitionLinePricing;
 use Modules\RequisitionSystem\Support\RequisitionLogAction;
 use Modules\RequisitionSystem\Support\RequisitionSupplierQuoteRules;
@@ -42,49 +46,36 @@ class RequisitionController extends Controller
     use GuardsRequisitionCancellation;
     use GuardsRequisitionClosure;
     use GuardsRequisitionPurchaseOrder;
+    use GuardsRequisitionVisibility;
 
     public function __construct(
-        private readonly RequisitionLogService $logService
+        private readonly RequisitionLogService $logService,
+        private readonly RequisitionNotificationService $notificationService,
+        private readonly RequisitionExportService $exportService,
     ) {}
 
     /**
-     * List all requisitions with their attached suppliers & line items.
-     * * Supports: 
-     * - Sorting: Descending by default (latest)
-     * - Filtering: By priority (?priority=urgent)
-     * - Scoping: By authenticated user's cost centers (?scope=cost_center)
-     * * Budget Officer, VP, Director of Finance, and Payroll Officer bypass isolation.
+     * List requisitions visible to the authenticated user (slim payload + pagination).
+     *
+     * Supports filtering by priority, status, cost center, recurring, and upcoming alerts.
      */
     public function index(Request $request)
     {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
         $query = Requisition::with([
-            'suppliers.status',
-            'items.chartOfAccount',
-            'costCenter',
-            'stage',
-            'status',
-            'attachments.supplier.status',
-            'tags',
+            'suppliers',
+            'costCenter:id,name,number',
+            'stage:id,name',
+            'status:id,name',
         ]);
 
-        if ($request->get('scope') === 'cost_center') {
-            /** @var \Modules\Auth\Models\User $user */
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
-            }
-
-            if (!$this->userHasGlobalRequisitionAccess($user)) {
-                $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
-
-                if ($assignedCostCenterIds->isEmpty()) {
-                    return response()->json(['success' => false, 'message' => 'Unauthorized cost center access.'], 403);
-                }
-
-                $query->whereIn('cost_center_id', $assignedCostCenterIds);
-            }
-        }
+        $this->applyRequisitionVisibilityScope($query, $user);
 
         if ($request->has('cost_center_id')) {
             $query->where('cost_center_id', $request->get('cost_center_id'));
@@ -106,16 +97,21 @@ class RequisitionController extends Controller
             $query->scopeUpcomingReminders(30);
         }
 
-        $requisitions = $query->latest()->get();
-        /** @var \Modules\Auth\Models\User|null $user */
-        $user = Auth::user();
+        $perPage = min(100, max(1, $request->integer('per_page', 50)));
+        $paginator = $query->latest()->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'count'   => $requisitions->count(),
-            'data'    => $requisitions->map(
-                fn (Requisition $requisition) => $this->formatRequisitionResponse($requisition, $user)
-            ),
+            'count'   => $paginator->total(),
+            'meta'    => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+            ],
+            'data' => collect($paginator->items())->map(
+                fn (Requisition $requisition) => $this->formatRequisitionListItem($requisition)
+            )->values(),
         ]);
     }
 
@@ -145,8 +141,10 @@ class RequisitionController extends Controller
 
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
-        } else {
-            $this->logService->recordCreation($requisition, $user);
+            $this->notificationService->notifyCurrentStageReviewers(
+                $requisition->refresh(),
+                $user
+            );
         }
 
         return response()->json([
@@ -162,6 +160,8 @@ class RequisitionController extends Controller
     {
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
+
+        $this->assertUserCanViewRequisition($requisition->loadMissing('status'), $user);
 
         return response()->json([
             'success' => true,
@@ -205,6 +205,8 @@ class RequisitionController extends Controller
 
         $requisition->load('status');
 
+        // Draft autosaves are frequent; only write activity history on submit
+        // (approvals / cancel / close / PO actions still log elsewhere).
         if ($shouldSubmit) {
             $changeSummary = $this->logService->summarizeChanges(
                 $before,
@@ -218,14 +220,9 @@ class RequisitionController extends Controller
                 $activityComment,
                 $changeSummary
             );
-        } else {
-            $this->logService->recordUpdate(
-                $requisition,
-                $user,
-                $before,
-                $validated,
-                $previousItems,
-                $activityComment
+            $this->notificationService->notifyCurrentStageReviewers(
+                $requisition->refresh(),
+                $user
             );
         }
 
@@ -284,6 +281,8 @@ class RequisitionController extends Controller
             $comments,
             $stageName
         );
+
+        $this->notificationService->notifyAfterStageAdvance($requisition, $user);
 
         return response()->json([
             'success' => true,
@@ -594,6 +593,92 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function print(Requisition $requisition): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanViewRequisition($requisition->loadMissing('status'), $user);
+
+        try {
+            $printPdf = $this->exportService->buildPrintPdf($requisition);
+        } catch (\Throwable $exception) {
+            Log::error('Requisition print PDF failed.', [
+                'requisition_id' => $requisition->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate requisition PDF.',
+            ], 500);
+        }
+
+        return response()
+            ->file($printPdf['path'], [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="'.$printPdf['download_name'].'"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    /** @deprecated Use print() — kept as an alias for older clients. */
+    public function export(Requisition $requisition): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+    {
+        return $this->print($requisition);
+    }
+
+    private function formatRequisitionListItem(Requisition $requisition): array
+    {
+        $preferred = $requisition->preferredSupplier()
+            ?? $requisition->suppliers->first();
+
+        return [
+            'id' => $requisition->id,
+            'number' => $requisition->number,
+            'requisition_number' => $requisition->number,
+            'cost_center_id' => $requisition->cost_center_id,
+            'date_prepared' => $requisition->date_prepared,
+            'status_id' => $requisition->status_id,
+            'stage_id' => $requisition->stage_id,
+            'currency_id' => $requisition->currency_id,
+            'total' => $requisition->total,
+            'priority' => $requisition->priority,
+            'current_stage_sequence' => $requisition->current_stage_sequence,
+            'cost_center' => $requisition->costCenter
+                ? [
+                    'id' => $requisition->costCenter->id,
+                    'name' => $requisition->costCenter->name,
+                    'number' => $requisition->costCenter->number,
+                ]
+                : null,
+            'status' => $requisition->status
+                ? [
+                    'id' => $requisition->status->id,
+                    'name' => $requisition->status->name,
+                ]
+                : null,
+            'stage' => $requisition->stage
+                ? [
+                    'id' => $requisition->stage->id,
+                    'name' => $requisition->stage->name,
+                ]
+                : null,
+            'suppliers' => $preferred
+                ? [[
+                    'id' => $preferred->id,
+                    'name' => $preferred->name,
+                    'pivot' => [
+                        'is_recommended' => (bool) ($preferred->pivot?->is_recommended ?? false),
+                        'quoted_total' => $preferred->pivot?->quoted_total,
+                        'quote_reference_number' => $preferred->pivot?->quote_reference_number,
+                    ],
+                ]]
+                : [],
+        ];
+    }
+
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
         $requisition->loadMissing('status', 'stage', 'tags', 'pipeline.stages', 'suppliers');
@@ -643,6 +728,11 @@ class RequisitionController extends Controller
         );
 
         $requisition->setAttribute(
+            'requisition_number',
+            $requisition->number
+        );
+
+        $requisition->setAttribute(
             'can_cancel',
             $this->userCanCancelRequisition($requisition, $user)
         );
@@ -660,8 +750,13 @@ class RequisitionController extends Controller
         ?Requisition $requisition = null,
         bool $shouldSubmit = false
     ): Requisition {
-        $items = $data['items'];
+        $items = $data['items'] ?? [];
+        $suppliers = $data['suppliers'] ?? [];
         unset($data['items'], $data['suppliers'], $data['submit'], $data['tag_ids']);
+
+        if (!is_array($items)) {
+            $items = [];
+        }
 
         $pricing = RequisitionLinePricing::calculate(
             $items,
@@ -675,8 +770,18 @@ class RequisitionController extends Controller
         $data['total'] = $pricing['total'];
         $pricedItems = $pricing['items'];
 
-        $data['number'] = $data['number']
-            ?? $this->generateRequisitionNumber();
+        $data['quote_waiver_reason'] = RequisitionSupplierQuoteRules::resolveStoredWaiverReason(
+            is_array($suppliers) ? $suppliers : [],
+            (float) $data['total'],
+            $data['quote_waiver_reason'] ?? null
+        );
+
+        if ($requisition) {
+            // Requisition numbers are immutable after creation.
+            unset($data['number']);
+        } else {
+            $data['number'] = $this->generateRequisitionNumber();
+        }
 
         /** @var User|null $submitter */
         $submitter = Auth::user();
@@ -719,6 +824,11 @@ class RequisitionController extends Controller
 
         $data['requires_downpayment'] = (bool) ($data['requires_downpayment'] ?? false);
 
+        $description = $data['description'] ?? null;
+        $data['description'] = is_string($description) && trim($description) !== ''
+            ? trim($description)
+            : null;
+
         if ($requisition) {
             $requisition->update($data);
             $requisition->items()->delete();
@@ -727,15 +837,19 @@ class RequisitionController extends Controller
         }
 
         foreach ($pricedItems as $item) {
+            $accountId = $item['chart_of_account_id'] ?? null;
+
             Item::create([
-                'chart_of_account_id' => (int) $item['chart_of_account_id'],
-                'quantity' => (int) $item['quantity'],
-                'unit_cost' => $item['unit_cost'],
-                'subtotal' => $item['subtotal'],
-                'discount_amount' => $item['discount_amount'],
-                'gst_applicable' => (bool) $item['gst_applicable'],
-                'gst_amount' => $item['gst_amount'],
-                'total' => $item['total'],
+                'chart_of_account_id' => $accountId !== null && $accountId !== ''
+                    ? (int) $accountId
+                    : null,
+                'quantity' => round((float) ($item['quantity'] ?? 0), 4),
+                'unit_cost' => $item['unit_cost'] ?? 0,
+                'subtotal' => $item['subtotal'] ?? 0,
+                'discount_amount' => $item['discount_amount'] ?? 0,
+                'gst_applicable' => (bool) ($item['gst_applicable'] ?? false),
+                'gst_amount' => $item['gst_amount'] ?? 0,
+                'total' => $item['total'] ?? 0,
                 'comments' => $item['comments'] ?? null,
                 'requisition_id' => $requisition->id,
             ]);
@@ -806,11 +920,25 @@ class RequisitionController extends Controller
         }
     }
 
+    /**
+     * Unique 9-digit zero-padded requisition number (e.g. 000000001).
+     */
     private function generateRequisitionNumber(): string
     {
-        $year = now()->format('Y');
-        $count = Requisition::whereYear('created_at', $year)->count() + 1;
+        // Serialize allocation within the surrounding porsql transaction.
+        DB::connection('porsql')->select('SELECT pg_advisory_xact_lock(?)', [872_314_001]);
 
-        return sprintf('REQ-%s-%04d', $year, $count);
+        $max = DB::connection('porsql')
+            ->table('requisitions')
+            ->whereRaw("number ~ '^[0-9]{1,9}$'")
+            ->max(DB::raw('CAST(number AS BIGINT)'));
+
+        $next = ((int) $max) + 1;
+
+        if ($next > 999_999_999) {
+            throw new \RuntimeException('Requisition number space exhausted.');
+        }
+
+        return str_pad((string) $next, 9, '0', STR_PAD_LEFT);
     }
 }

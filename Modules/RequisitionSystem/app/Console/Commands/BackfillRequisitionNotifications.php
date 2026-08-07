@@ -7,21 +7,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Requisition;
+use Modules\RequisitionSystem\Models\UserStage;
 use Modules\RequisitionSystem\Notifications\RequisitionSubmittedNotification;
-use Modules\RequisitionSystem\Support\GuardsRequisitionEditing;
 use Modules\RequisitionSystem\Support\RequisitionWorkflow;
 
 /**
  * Notifies approvers about requisitions already sitting in their queue that
- * never triggered a notification - e.g. submitted before the notification
- * feature existed, or missed by a transient send failure. Safe to re-run:
- * recipients who already have a notification for a given requisition are
- * skipped.
+ * never triggered a notification. Safe to re-run: recipients who already have
+ * a notification for a given requisition are skipped.
  */
 class BackfillRequisitionNotifications extends Command
 {
-    use GuardsRequisitionEditing;
-
     protected $signature = 'requisitions:backfill-notifications {--dry-run : Preview without sending anything}';
 
     protected $description = 'Notify approvers about pending requisitions that never triggered a notification.';
@@ -42,28 +38,21 @@ class BackfillRequisitionNotifications extends Command
         $totalSkipped = 0;
 
         foreach ($requisitions as $requisition) {
-            $role = RequisitionWorkflow::requiredRoleForStageId((int) $requisition->stage_id);
-
-            if ($role === null) {
+            if (!$requisition->stage_id) {
                 continue;
             }
 
-            $recipientsQuery = User::whereHas('roles', fn ($query) => $query->where('role_name', $role));
+            $userIds = UserStage::query()
+                ->where('stage_id', $requisition->stage_id)
+                ->pluck('user_id')
+                ->unique()
+                ->values();
 
-            // Cost-center-scoped roles (e.g. director-dean) only review their own
-            // department; global roles (budget-officer, VP, etc.) see everything.
-            // user_cost_center lives on the 'porsql' connection (different schema
-            // than User's 'pgsql' connection), so it can't be joined via whereHas.
-            if (!in_array($role, $this->globalRequisitionRoles(), true)) {
-                $costCenterUserIds = DB::connection('porsql')
-                    ->table('user_cost_center')
-                    ->where('cost_center_id', $requisition->cost_center_id)
-                    ->pluck('user_id');
-
-                $recipientsQuery->whereIn('id', $costCenterUserIds);
+            if ($userIds->isEmpty()) {
+                continue;
             }
 
-            $recipients = $recipientsQuery->get();
+            $recipients = User::query()->whereIn('id', $userIds->all())->get();
 
             if ($recipients->isEmpty()) {
                 continue;
@@ -86,10 +75,10 @@ class BackfillRequisitionNotifications extends Command
             }
 
             $this->line(sprintf(
-                '%s %s (%s): %d recipient(s) [%s]',
+                '%s %s (stage %s): %d recipient(s) [%s]',
                 $dryRun ? '[dry-run]' : '[sending]',
                 $requisition->number,
-                $role,
+                $requisition->stage_id,
                 $missingRecipients->count(),
                 $missingRecipients->pluck('name')->implode(', ')
             ));

@@ -25,7 +25,7 @@ class PipelineSeeder extends Seeder
             3 => 'Budget Officer',
             4 => 'VP Approval',
             5 => 'Finance Approval',
-            6 => 'Purchase Approval',
+            6 => 'Purchase Officer Approval'
         ];
 
         $keptStageIds = [];

@@ -20,6 +20,23 @@ use Modules\RequisitionSystem\Support\RequisitionWorkflow;
 class RequisitionDashboardController extends Controller
 {
     /**
+     * Highest-to-lowest precedence used to pick a user's primary dashboard
+     * role when they hold more than one (e.g. super-admin + requester).
+     * roles()->first() is unordered, so a user can otherwise land on a
+     * lower-privilege role depending on pivot row order.
+     */
+    private const ROLE_PRIORITY = [
+        'super-admin',
+        'president',
+        'vice-president',
+        'director-of-finance',
+        'director-dean',
+        'budget-officer',
+        'purchase-officer',
+        'requester',
+    ];
+
+    /**
      * GET /requisitions/dashboard-metrics
      */
     public function metrics(Request $request): JsonResponse
@@ -31,7 +48,7 @@ class RequisitionDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+        $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
         $isSubmittedView = $request->get('view') === 'submitted';
 
         $query = Requisition::query();
@@ -104,7 +121,7 @@ class RequisitionDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+        $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
         $isSubmittedView = $request->get('view') === 'submitted';
 
         $targetStageId = $isSubmittedView
@@ -120,7 +137,7 @@ class RequisitionDashboardController extends Controller
         $query = Requisition::with([
             'status',
             'stage',
-            'approvals' => fn ($q) => $q->orderByDesc('signed_at'),
+            'approvals' => fn($q) => $q->orderByDesc('signed_at'),
         ])
             ->select([
                 'requisitions.*',
@@ -158,9 +175,11 @@ class RequisitionDashboardController extends Controller
                 $base = [
                     'id' => $requisition->id,
                     'number' => $requisition->number,
+                    'requisition_number' => $requisition->number,
                     'supplier_name' => $requisition->dynamic_supplier_name ?? 'No Supplier Linked',
                     'date_prepared' => $requisition->date_prepared,
                     'total' => (float) $requisition->total,
+                    'status_name' => $requisition->status?->name,
                     'current_stage_name' => $requisition->stage?->name ?? $requisition->status?->name ?? 'Director review',
                 ];
 
@@ -168,10 +187,10 @@ class RequisitionDashboardController extends Controller
                     $arrivalAt = $previousStageId === null
                         ? $requisition->date_prepared
                         : $requisition->approvals
-                            ->first(fn ($a) => (int) $a->stage_id === $previousStageId && $a->status === 'approved')
-                            ?->signed_at;
+                        ->first(fn($a) => (int) $a->stage_id === $previousStageId && $a->status === 'approved')
+                        ?->signed_at;
 
-                    $ownAction = $requisition->approvals->first(fn ($a) => (int) $a->stage_id === $targetStageId);
+                    $ownAction = $requisition->approvals->first(fn($a) => (int) $a->stage_id === $targetStageId);
 
                     $processingTimeHours = ($arrivalAt && $ownAction?->signed_at)
                         ? round(($ownAction->signed_at->timestamp - $arrivalAt->timestamp) / 3600, 2)
@@ -189,7 +208,7 @@ class RequisitionDashboardController extends Controller
                     return $base;
                 }
 
-                $latestApprovedApproval = $requisition->approvals->first(fn ($a) => $a->status === 'approved');
+                $latestApprovedApproval = $requisition->approvals->first(fn($a) => $a->status === 'approved');
 
                 $processingTimeHours = in_array((int) $requisition->status_id, $terminalStatusIds, true)
                     ? round(($requisition->updated_at->timestamp - $requisition->date_prepared->timestamp) / 3600, 2)
@@ -214,6 +233,16 @@ class RequisitionDashboardController extends Controller
     }
 
     /**
+     * Roles whose view of the cost-center summary is limited to the cost
+     * center(s) they're personally assigned to, rather than every cost
+     * center in the system.
+     */
+    private const COST_CENTER_SUMMARY_SCOPED_ROLES = [
+        'requester',
+        'director-dean',
+    ];
+
+    /**
      * GET /requisitions/summary-by-cost-center
      */
     public function summaryByCostCenter(Request $request): JsonResponse
@@ -225,15 +254,24 @@ class RequisitionDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $authorizedRole = $user->roles()
-            ->whereIn('role_name', ['purchase-officer', 'super-admin'])
-            ->value('role_name');
+        $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
+        $isScoped = in_array($currentRole, self::COST_CENTER_SUMMARY_SCOPED_ROLES, true);
 
-        if (!$authorizedRole) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only Purchase Officers and Super Admins may view this summary.',
-            ], 403);
+        $assignedCostCenterIds = null;
+
+        if ($isScoped) {
+            $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
+
+            if ($assignedCostCenterIds->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'role_context' => $currentRole,
+                    'scope' => 'assigned',
+                    'stages' => [],
+                    'data' => [],
+                    'totals' => ['by_stage' => [], 'grand_total' => 0],
+                ]);
+            }
         }
 
         $pipelineId = RequisitionWorkflow::defaultPipelineId();
@@ -247,6 +285,9 @@ class RequisitionDashboardController extends Controller
 
         $counts = Requisition::query()
             ->select('cost_center_id', 'stage_id', DB::raw('COUNT(*) as requisition_count'))
+            ->when($assignedCostCenterIds !== null, function ($query) use ($assignedCostCenterIds) {
+                $query->whereIn('cost_center_id', $assignedCostCenterIds);
+            })
             ->groupBy('cost_center_id', 'stage_id')
             ->get();
 
@@ -283,7 +324,8 @@ class RequisitionDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'role_context' => $authorizedRole,
+            'role_context' => $currentRole,
+            'scope' => $isScoped ? 'assigned' : 'all',
             'stages' => $stages,
             'data' => $data,
             'totals' => [
@@ -359,7 +401,7 @@ class RequisitionDashboardController extends Controller
             ->whereIn('cost_center_id', $costCenterIds)
             ->with('lineItems')
             ->get()
-            ->mapWithKeys(fn (Budget $budget) => [
+            ->mapWithKeys(fn(Budget $budget) => [
                 $budget->cost_center_id => (float) $budget->lineItems->sum('amount'),
             ]);
 
@@ -407,6 +449,23 @@ class RequisitionDashboardController extends Controller
             'success' => true,
             'data' => $series,
         ]);
+    }
+
+    /**
+     * Picks the user's highest-precedence role per ROLE_PRIORITY, falling
+     * back to whatever role they have if none of the ranked ones match.
+     */
+    protected function resolvePrimaryRole(User $user): string
+    {
+        $userRoles = $user->roles()->pluck('role_name');
+
+        foreach (self::ROLE_PRIORITY as $role) {
+            if ($userRoles->contains($role)) {
+                return $role;
+            }
+        }
+
+        return $userRoles->first() ?? 'requester';
     }
 
     /**
