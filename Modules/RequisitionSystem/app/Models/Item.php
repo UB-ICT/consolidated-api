@@ -23,7 +23,7 @@ class Item extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:4',
         'unit_cost' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',

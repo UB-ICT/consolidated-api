@@ -843,7 +843,7 @@ class RequisitionController extends Controller
                 'chart_of_account_id' => $accountId !== null && $accountId !== ''
                     ? (int) $accountId
                     : null,
-                'quantity' => (int) ($item['quantity'] ?? 0),
+                'quantity' => round((float) ($item['quantity'] ?? 0), 4),
                 'unit_cost' => $item['unit_cost'] ?? 0,
                 'subtotal' => $item['subtotal'] ?? 0,
                 'discount_amount' => $item['discount_amount'] ?? 0,

@@ -41,7 +41,15 @@ class AttachmentController extends Controller
     public function store(Request $request, Requisition $requisition): JsonResponse
     {
         $validated = $request->validate([
-            'file'                   => 'required|file|mimes:pdf|max:10240',
+            'file'                   => [
+                'required',
+                'file',
+                'max:10240',
+                // Browsers (especially macOS) often omit or mis-report PDF MIME
+                // types as application/octet-stream — accept by extension too.
+                'mimetypes:application/pdf,application/x-pdf,application/octet-stream',
+                'extensions:pdf',
+            ],
             'supplier_id'            => 'required|integer|exists:porsql.suppliers,id',
             'is_recommended'         => 'sometimes|boolean',
             'quoted_total'           => 'nullable|numeric|min:0',

@@ -24,8 +24,14 @@ class ForceJsonRequestHeader
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Do not override Accept on multipart uploads — some clients send
+        // file parts and still need the original negotiation headers intact.
+        if (!$request->isMethod('GET') && str_contains((string) $request->header('Content-Type'), 'multipart/form-data')) {
+            return $next($request);
+        }
+
         $request->headers->set('Accept', 'application/json');
-        
+
         return $next($request);
     }
 }

@@ -160,7 +160,7 @@
                                 — {{ $item->chartOfAccount->description }}
                             @endif
                         </td>
-                        <td>{{ $item->quantity }}</td>
+                        <td>{{ rtrim(rtrim(number_format((float) $item->quantity, 4, '.', ''), '0'), '.') }}</td>
                         <td>{{ number_format((float) $item->unit_cost, 2) }}</td>
                         <td>{{ $item->gst_applicable ? 'Yes' : 'No' }}</td>
                         <td>{{ number_format((float) $item->total, 2) }}</td>

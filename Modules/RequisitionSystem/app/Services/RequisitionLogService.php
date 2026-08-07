@@ -325,7 +325,7 @@ class RequisitionLogService
         $previous = $previousItems
             ->map(fn ($item) => [
                 'chart_of_account_id' => (int) $item->chart_of_account_id,
-                'quantity'            => (int) $item->quantity,
+                'quantity'            => round((float) $item->quantity, 4),
                 'unit_cost'           => (float) $item->unit_cost,
                 'gst_applicable'      => (bool) ($item->gst_applicable ?? false),
                 'comments'            => $item->comments,
@@ -336,7 +336,7 @@ class RequisitionLogService
         $next = $newItems
             ->map(fn (array $item) => [
                 'chart_of_account_id' => (int) ($item['chart_of_account_id'] ?? 0),
-                'quantity'            => (int) ($item['quantity'] ?? 0),
+                'quantity'            => round((float) ($item['quantity'] ?? 0), 4),
                 'unit_cost'           => (float) ($item['unit_cost'] ?? 0),
                 'gst_applicable'      => (bool) ($item['gst_applicable'] ?? false),
                 'comments'            => $item['comments'] ?? null,
