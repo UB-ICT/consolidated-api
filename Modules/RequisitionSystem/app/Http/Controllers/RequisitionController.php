@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderUploadRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionStoreRequest;
 use Modules\RequisitionSystem\Mail\PurchaseOrderToSupplierMail;
+use Modules\RequisitionSystem\Services\RequisitionExportService;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Services\RequisitionNotificationService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
@@ -49,6 +51,7 @@ class RequisitionController extends Controller
     public function __construct(
         private readonly RequisitionLogService $logService,
         private readonly RequisitionNotificationService $notificationService,
+        private readonly RequisitionExportService $exportService,
     ) {}
 
     /**
@@ -588,6 +591,34 @@ class RequisitionController extends Controller
             'success' => true,
             'message' => 'Requisition deleted successfully.',
         ]);
+    }
+
+    public function export(Requisition $requisition): StreamedResponse|JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanViewRequisition($requisition->loadMissing('status'), $user);
+
+        try {
+            $archive = $this->exportService->buildZip($requisition);
+        } catch (\Throwable $exception) {
+            Log::error('Requisition export failed.', [
+                'requisition_id' => $requisition->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export requisition.',
+            ], 500);
+        }
+
+        return response()
+            ->download($archive['path'], $archive['download_name'], [
+                'Content-Type' => 'application/zip',
+            ])
+            ->deleteFileAfterSend(true);
     }
 
     private function formatRequisitionListItem(Requisition $requisition): array

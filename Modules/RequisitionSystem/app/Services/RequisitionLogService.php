@@ -16,7 +16,9 @@ class RequisitionLogService
         User $user,
         string $action,
         ?string $summary = null,
-        ?string $comments = null
+        ?string $comments = null,
+        ?string $fileName = null,
+        ?string $filePath = null
     ): Logs {
         return Logs::create([
             'requisition_id' => $requisition->id,
@@ -24,6 +26,8 @@ class RequisitionLogService
             'action'         => $action,
             'summary'        => $summary,
             'comments'       => $comments,
+            'file_name'      => $fileName,
+            'file_path'      => $filePath,
         ]);
     }
 
@@ -173,14 +177,22 @@ class RequisitionLogService
     public function recordComment(
         Requisition $requisition,
         User $user,
-        string $comments
+        string $comments,
+        ?string $fileName = null,
+        ?string $filePath = null
     ): Logs {
+        $summary = $fileName
+            ? sprintf('Comment added with supporting document (%s).', $fileName)
+            : 'Comment added.';
+
         return $this->record(
             $requisition,
             $user,
             RequisitionLogAction::COMMENT,
-            'Comment added.',
-            $comments
+            $summary,
+            $comments,
+            $fileName,
+            $filePath
         );
     }
 
