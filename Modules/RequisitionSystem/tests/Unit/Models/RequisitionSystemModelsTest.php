@@ -123,11 +123,13 @@ class RequisitionSystemModelsTest extends TestCase
             'discount_value',
             'discount_amount',
             'priority',
+            'description',
             'expected_delivery_date',
             'stage_id',
             'date_prepared',
             'is_recurring',
             'requires_downpayment',
+            'quote_waiver_reason',
             'reminder_date',
             'current_stage_sequence',
         ]);
