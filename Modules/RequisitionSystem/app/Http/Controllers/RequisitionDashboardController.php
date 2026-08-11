@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
+use Modules\RequisitionSystem\Models\Budget;
 use Modules\RequisitionSystem\Models\CostCenter;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
@@ -331,6 +332,136 @@ class RequisitionDashboardController extends Controller
                 'by_stage' => $stageTotals,
                 'grand_total' => array_sum($stageTotals),
             ],
+        ]);
+    }
+
+    /**
+     * Longest span the caller may request in one call — keeps the per-day
+     * response bounded regardless of what date_from/date_to they send.
+     */
+    private const BALANCE_OVER_TIME_MAX_DAYS = 366;
+
+    /**
+     * GET /requisitions/balance-over-time
+     *
+     * Cumulative "Closed" spend vs. the operational (Active) budget's
+     * allocated total, per day, for one cost center or every cost center the
+     * caller is assigned to. "Closed" is used as the spend signal because
+     * that's the Purchase Officer's terminal "this was actually bought"
+     * status — Approved only means it cleared the workflow, not that money
+     * moved.
+     */
+    public function balanceOverTime(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $validated = $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+            'cost_center_id' => 'nullable|integer|exists:porsql.cost_centers,id',
+        ]);
+
+        $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
+        $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
+
+        if ($dateFrom->diffInDays($dateTo) > self::BALANCE_OVER_TIME_MAX_DAYS) {
+            $dateFrom = $dateTo->copy()->subDays(self::BALANCE_OVER_TIME_MAX_DAYS)->startOfDay();
+        }
+
+        $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
+        $hasGlobalAccess = $this->userHasDashboardGlobalAccess($user, $currentRole);
+        $requestedCostCenterId = $request->filled('cost_center_id') ? (int) $validated['cost_center_id'] : null;
+
+        if ($requestedCostCenterId !== null) {
+            if (!$hasGlobalAccess && !$user->costCenters()->where('cost_centers.id', $requestedCostCenterId)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to this cost center.',
+                ], 403);
+            }
+
+            $costCenterIds = collect([$requestedCostCenterId]);
+        } elseif ($hasGlobalAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'cost_center_id is required for this role.',
+            ], 422);
+        } else {
+            $costCenterIds = $user->costCenters()->pluck('cost_centers.id');
+
+            if ($costCenterIds->isEmpty()) {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+        }
+
+        $allocatedByCostCenter = Budget::query()
+            ->operational()
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->withSum('lineItems as allocated', 'amount')
+            ->get()
+            ->keyBy('cost_center_id');
+
+        $closedStatusId = RequisitionWorkflow::closedStatusId() ?? 0;
+
+        // Spend that happened before the window, so the cumulative line
+        // starts at the right height instead of resetting to 0.
+        $priorSpend = Requisition::query()
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->where('status_id', $closedStatusId)
+            ->where('updated_at', '<', $dateFrom)
+            ->groupBy('cost_center_id')
+            ->select('cost_center_id', DB::raw('COALESCE(SUM(total), 0) as total'))
+            ->pluck('total', 'cost_center_id');
+
+        $dailySpend = Requisition::query()
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->where('status_id', $closedStatusId)
+            ->whereBetween('updated_at', [$dateFrom, $dateTo])
+            ->select(
+                'cost_center_id',
+                DB::raw('DATE(updated_at) as spend_date'),
+                DB::raw('SUM(total) as total')
+            )
+            ->groupBy('cost_center_id', 'spend_date')
+            ->get()
+            ->groupBy('cost_center_id');
+
+        $costCenterNames = CostCenter::whereIn('id', $costCenterIds)->pluck('name', 'id');
+
+        $dates = [];
+        for ($cursor = $dateFrom->copy(); $cursor->lte($dateTo); $cursor->addDay()) {
+            $dates[] = $cursor->toDateString();
+        }
+
+        $data = [];
+
+        foreach ($costCenterIds as $costCenterId) {
+            $allocated = (float) ($allocatedByCostCenter->get($costCenterId)?->allocated ?? 0);
+            $cumulative = (float) ($priorSpend->get($costCenterId) ?? 0);
+            $spendByDate = collect($dailySpend->get($costCenterId, []))->keyBy('spend_date');
+
+            foreach ($dates as $date) {
+                $cumulative += (float) ($spendByDate->get($date)?->total ?? 0);
+
+                $data[] = [
+                    'date' => $date,
+                    'cost_center_id' => $costCenterId,
+                    'cost_center_name' => $costCenterNames->get($costCenterId),
+                    'spent_cumulative' => round($cumulative, 2),
+                    'allocated' => round($allocated, 2),
+                    'balance' => round($allocated - $cumulative, 2),
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
         ]);
     }
 
