@@ -86,8 +86,9 @@ class GoogleAuthController extends Controller
                 return redirect($callerDomain . '?error=unauthorized');
             }
 
-            if (empty($_user->google_id)) {
+            if (empty($_user->google_id) || $_user->profile_picture !== $user->avatar) {
                 $_user->google_id = $user->id;
+                $_user->profile_picture = $user->avatar;
                 $_user->save();
             }
         } else {
@@ -99,12 +100,14 @@ class GoogleAuthController extends Controller
                     [
                         'name' => $user->name,
                         'google_id' => $user->id,
+                        'profile_picture' => $user->avatar,
                         'password' => bcrypt(Str::random(16)),
                         'email_verified_at' => now(),
                     ]
                 );
-            } elseif (empty($_user->google_id)) {
+            } elseif (empty($_user->google_id) || $_user->profile_picture !== $user->avatar) {
                 $_user->google_id = $user->id;
+                $_user->profile_picture = $user->avatar;
                 $_user->save();
             }
         }
