@@ -119,6 +119,8 @@ class GoogleAuthController extends Controller
 
         Auth::login($_user);
 
+        $_user->forceFill(['last_active' => now()])->save();
+
         // Default Sanctum ability so token checks behave like a normal PAT (empty [] can confuse tooling).
         $token = $_user->createToken('google-login', ['*'])->plainTextToken;
 
