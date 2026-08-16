@@ -369,8 +369,9 @@ class RequisitionDashboardController extends Controller
         $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
         $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
 
-        if ($dateFrom->diffInDays($dateTo) > self::BALANCE_OVER_TIME_MAX_DAYS) {
-            $dateFrom = $dateTo->copy()->subDays(self::BALANCE_OVER_TIME_MAX_DAYS)->startOfDay();
+        $spanDays = $dateFrom->diffInDays($dateTo) + 1;
+        if ($spanDays > self::BALANCE_OVER_TIME_MAX_DAYS) {
+            $dateFrom = $dateTo->copy()->subDays(self::BALANCE_OVER_TIME_MAX_DAYS - 1)->startOfDay();
         }
 
         $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
