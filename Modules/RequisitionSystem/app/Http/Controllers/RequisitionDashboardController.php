@@ -369,9 +369,9 @@ class RequisitionDashboardController extends Controller
         $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
         $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
 
-        if ($dateFrom->diffInDays($dateTo) > self::BALANCE_OVER_TIME_MAX_DAYS) {
-            $dateFrom = $dateTo->copy()->subDays(self::BALANCE_OVER_TIME_MAX_DAYS)->startOfDay();
-        }
+if ($dateFrom->diffInDays($dateTo) + 1 > self::BALANCE_OVER_TIME_MAX_DAYS) {
+    $dateFrom = $dateTo->copy()->subDays(self::BALANCE_OVER_TIME_MAX_DAYS - 1)->startOfDay();
+}
 
         $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
         $hasGlobalAccess = $this->userHasDashboardGlobalAccess($user, $currentRole);
@@ -399,12 +399,13 @@ class RequisitionDashboardController extends Controller
             }
         }
 
-        $allocatedByCostCenter = Budget::query()
-            ->operational()
-            ->whereIn('cost_center_id', $costCenterIds)
-            ->withSum('lineItems as allocated', 'amount')
-            ->get()
-            ->keyBy('cost_center_id');
+$allocatedByCostCenter = Budget::query()
+    ->operational()
+    ->whereIn('cost_center_id', $costCenterIds)
+    ->withSum('lineItems as allocated', 'amount')
+    ->get()
+    ->groupBy('cost_center_id')
+    ->map(fn ($budgets) => (float) $budgets->sum('allocated'));
 
         $closedStatusId = RequisitionWorkflow::closedStatusId() ?? 0;
 
