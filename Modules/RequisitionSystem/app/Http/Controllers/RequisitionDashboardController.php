@@ -372,7 +372,7 @@ class RequisitionDashboardController extends Controller
             ], 422);
         }
 
-        $currentRole = $request->get('role') ?? $user->roles()->first()?->role_name ?? 'requester';
+        $currentRole = $request->get('role') ?? $this->resolvePrimaryRole($user);
         $hasGlobalAccess = $this->userHasDashboardGlobalAccess($user, $currentRole);
 
         if ($validated['cost_center_id'] ?? null) {

@@ -13,10 +13,9 @@ class PipelineSeeder extends Seeder
     public function run(): void
     {
         // Operations pipeline, ending at Purchase Approval — reuses the
-        // existing 'Purchase Approval' stage (see UserStageSeeder, where
-        // ccocom@ub.edu.bz / jose.lopez@ub.edu.bz are already assigned to
-        // it) rather than a differently-named duplicate with no one
-        // assigned. User ↔ stage assignments live in UserStageSeeder.
+        // existing 'Purchase Approval' stage (see UserStageSeeder for
+        // stage/user assignments) rather than a differently-named duplicate
+        // with no one assigned. User ↔ stage assignments live in UserStageSeeder.
         $pipeline = Pipeline::firstOrCreate(['name' => RequisitionWorkflow::PIPELINE_NAME]);
 
         $stages = [
