@@ -131,7 +131,7 @@ class AuthTestDataSeeder extends Seeder
             path: '/admin',
             type: Menu::TYPE_USER_MENU,
             attributes: [
-                'label' => 'Admin Console',
+                'label' => 'Identity Console',
                 'icon' => 'squares-plus',
                 'sort_order' => 4,
                 'status' => Menu::STATUS_ACTIVE,
@@ -140,12 +140,12 @@ class AuthTestDataSeeder extends Seeder
         );
 
         $adminConsoleMenuItems = [
-            ['label' => 'Overview', 'path' => '/admin', 'icon' => 'squares-2x2', 'sort_order' => 1],
+            ['label' => 'Overview', 'path' => '/admin', 'icon' => 'layout-dashboard', 'sort_order' => 1],
             ['label' => 'Users', 'path' => '/admin/users', 'icon' => 'users', 'sort_order' => 2],
-            ['label' => 'Apps', 'path' => '/admin/apps', 'icon' => 'shield-check', 'sort_order' => 3],
-            ['label' => 'Roles', 'path' => '/admin/roles', 'icon' => 'shield-check', 'sort_order' => 4],
-            ['label' => 'Menus', 'path' => '/admin/menu', 'icon' => 'bars-3', 'sort_order' => 5],
-            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'shield-check', 'sort_order' => 6],
+            ['label' => 'Apps', 'path' => '/admin/apps', 'icon' => 'grid-3x3', 'sort_order' => 3],
+            ['label' => 'Roles', 'path' => '/admin/roles', 'icon' => 'key-round', 'sort_order' => 4],
+            ['label' => 'Menus', 'path' => '/admin/menu', 'icon' => 'menu', 'sort_order' => 5],
+            ['label' => 'Access Requests', 'path' => '/admin/access-requests', 'icon' => 'eye', 'sort_order' => 6],
             ['label' => 'Audit log', 'path' => '/admin/audit-log', 'icon' => 'shield-check', 'sort_order' => 7],
         ];
 
