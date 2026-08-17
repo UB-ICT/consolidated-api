@@ -25,6 +25,7 @@ class AuthController extends Controller
 
             if (Auth::attempt($credentials)) {
                 $user = Auth::user();
+                $user->forceFill(['last_active' => now()])->save();
 
                 // Get AD groups for the user
                 $adGroups = $this->getUserADGroups($fields['username']);
