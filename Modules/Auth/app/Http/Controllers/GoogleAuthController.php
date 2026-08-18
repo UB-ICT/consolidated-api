@@ -93,7 +93,7 @@ class GoogleAuthController extends Controller
                 $needsSave = true;
             }
 
-            if (empty($_user->profile_picture) && !empty($user->avatar)) {
+            if (empty($_user->profile_picture) && is_string($user->avatar) && filter_var($user->avatar, FILTER_VALIDATE_URL) && Str::length($user->avatar) <= 255) {
                 $_user->profile_picture = $user->avatar;
                 $needsSave = true;
             }
