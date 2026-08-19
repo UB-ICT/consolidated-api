@@ -77,6 +77,10 @@ class RequisitionReportExport implements
             $query->where('requisitions.cost_center_id', $this->filters['cost_center_id']);
         }
 
+        if (!empty($this->filters['status_id'])) {
+            $query->where('requisitions.status_id', $this->filters['status_id']);
+        }
+
         if (!empty($this->filters['number'])) {
             $query->where('requisitions.number', 'ilike', '%' . $this->filters['number'] . '%');
         }
