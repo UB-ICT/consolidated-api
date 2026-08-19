@@ -118,18 +118,6 @@ class RequisitionController extends Controller
     }
 
     /**
-     * Roles allowed to export the requisition report. Mirrors
-     * ALLOWED_REPORT_ROLES in the frontend's PORReportsPage.
-     */
-    private const REPORT_ROLES = [
-        'budget-officer',
-        'director-of-finance',
-        'purchase-officer',
-        'vice-president',
-        'super-admin',
-    ];
-
-    /**
      * GET /requisitions/report
      *
      * Registered as a static path ahead of apiResource('requisitions', ...)
@@ -142,13 +130,6 @@ class RequisitionController extends Controller
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
-        }
-
-        if (!$user->roles()->whereIn('roles.role_name', self::REPORT_ROLES)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You do not have access to this report.',
-            ], 403);
         }
 
         $filters = $request->validate([
