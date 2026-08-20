@@ -84,7 +84,7 @@ trait GuardsRequisitionEditing
             return;
         }
 
-        if ($requisition->status?->name === 'Draft') {
+        if (in_array($requisition->status?->name, $this->costCenterEditableStatuses(), true)) {
             return;
         }
 
