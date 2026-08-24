@@ -164,6 +164,8 @@ class RequisitionSystemModelsTest extends TestCase
             'status_id',
             'notes',
             'approved_by_user_id',
+            'payment_term_id',
+            'prepared_by',
         ]);
     }
 
@@ -175,6 +177,7 @@ class RequisitionSystemModelsTest extends TestCase
             'account_number',
             'account_name',
             'address',
+            'routing_number',
         ]);
     }
 
