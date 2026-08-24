@@ -15,7 +15,7 @@ class UserStageStoreRequest extends FormRequest
     {
         return [
             'user_id'  => 'required|integer|exists:users,id',
-            'stage_id' => 'required|integer|exists:stages,id',
+            'stage_id' => 'required|integer|exists:porsql.stages,id',
         ];
     }
 }
