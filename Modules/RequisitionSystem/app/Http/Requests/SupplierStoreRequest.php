@@ -28,7 +28,6 @@ class SupplierStoreRequest extends FormRequest
             ],
             'contact_person' => 'required|string|max:255',
             'phone_number'   => 'required|string|max:50',
-
             'email'          => [
                 'required',
                 'email',
@@ -41,10 +40,14 @@ class SupplierStoreRequest extends FormRequest
                 'max:100',
                 Rule::unique('porsql.suppliers', 'TAX')->ignore($supplier)
             ],
-
             'notes'          => 'nullable|string|max:1000',
-
             'status_id'      => 'nullable|integer',
+            'payment_term_id' => 'nullable|integer|exists:porsql.payment_terms,id',
+            'prepared_by'    => 'nullable|string|max:255',
+            'address.street' => 'nullable|string|max:255',
+            'bank.bank_id'         => 'nullable|integer|exists:porsql.banks,id',
+            'bank.account_number'  => 'nullable|string|max:255',
+            'bank.routing_number'  => 'nullable|string|max:255',
         ];
     }
 

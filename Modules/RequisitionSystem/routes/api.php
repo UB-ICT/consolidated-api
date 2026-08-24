@@ -13,6 +13,7 @@ use Modules\RequisitionSystem\Http\Controllers\PipelineController;
 use Modules\RequisitionSystem\Http\Controllers\SupplierController;
 use Modules\RequisitionSystem\Http\Controllers\UserStageController;
 use Modules\RequisitionSystem\Http\Controllers\BankController;
+use Modules\RequisitionSystem\Http\Controllers\PaymentTermController;
 use Modules\RequisitionSystem\Http\Controllers\BudgetController;
 use Modules\RequisitionSystem\Http\Controllers\BudgetLogController;
 use Modules\RequisitionSystem\Http\Controllers\BudgetYearController;
@@ -94,6 +95,7 @@ Route::group([
 
     Route::apiResource('userStages', UserStageController::class);
     Route::apiResource('banks', BankController::class);
+    Route::apiResource('paymentTerms', PaymentTermController::class);
     Route::apiResource('chartOfAccounts', ChartOfAccountController::class);
     Route::apiResource('tags', TagController::class);
 

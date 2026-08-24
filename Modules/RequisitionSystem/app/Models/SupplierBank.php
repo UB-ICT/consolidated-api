@@ -20,6 +20,7 @@ class SupplierBank extends Model
         'account_number',
         'account_name',
         'address',
+        'routing_number',
     ];
 
     /**

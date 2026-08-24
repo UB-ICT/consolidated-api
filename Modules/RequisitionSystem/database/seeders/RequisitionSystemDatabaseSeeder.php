@@ -17,6 +17,7 @@ class RequisitionSystemDatabaseSeeder extends Seeder
             CountrySeeder::class,
             CurrencySeeder::class,
             BankSeeder::class,
+            PaymentTermSeeder::class,
             SettingSeeder::class,
             ChartOfAccountSeeder::class,
             SupplierSeeder::class,

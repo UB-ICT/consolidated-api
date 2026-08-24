@@ -24,7 +24,7 @@ class SupplierController extends Controller
         /** @var \Modules\Auth\Models\User|null $user */
         $user = Auth::user();
 
-        $query = Supplier::with('status')->orderBy('name');
+        $query = Supplier::with(['status', 'address', 'bankAccount.bank', 'paymentTerm'])->orderBy('name');
 
         if ($request->boolean('exclude_deleted')) {
             $query->selectable();
@@ -59,7 +59,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier created successfully.',
-            'data'    => $supplier->load('status'),
+            'data'    => $supplier->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ], 201);
     }
 
@@ -67,30 +67,74 @@ class SupplierController extends Controller
     {
         $validated = $request->validated();
 
-        $supplier = Supplier::create([
-            'name'           => $validated['name'],
-            'contact_person' => $validated['contact_person'],
-            'phone_number'   => $validated['phone_number'],
-            'email'          => $validated['email'],
-            'TAX'            => $validated['TAX'],
-            'notes'          => $validated['notes'] ?? null,
-            'status_id'      => $validated['status_id']
-                ?? Status::where('name', 'Pending')->value('id')
-                ?? 2,
-        ]);
+        $supplier = DB::transaction(function () use ($request, $validated) {
+            $supplier = Supplier::create([
+                'name'            => $validated['name'],
+                'contact_person'  => $validated['contact_person'],
+                'phone_number'    => $validated['phone_number'],
+                'email'           => $validated['email'],
+                'TAX'             => $validated['TAX'],
+                'notes'           => $validated['notes'] ?? null,
+                'status_id'       => $validated['status_id']
+                    ?? Status::where('name', 'Pending')->value('id')
+                    ?? 2,
+                'payment_term_id' => $validated['payment_term_id'] ?? null,
+                'prepared_by'     => $validated['prepared_by'] ?? null,
+            ]);
+
+            $this->syncAddress($supplier, $request, $validated);
+            $this->syncBankAccount($supplier, $request, $validated);
+
+            return $supplier;
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Supplier created successfully.',
-            'data'    => $supplier->load('status'),
+            'data'    => $supplier->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ], 201);
+    }
+
+    /**
+     * Create or update the supplier's address from the nested "address" payload.
+     */
+    private function syncAddress(Supplier $supplier, Request $request, array $validated): void
+    {
+        if (!$request->filled('address.street')) {
+            return;
+        }
+
+        $supplier->address()->updateOrCreate(
+            ['supplier_id' => $supplier->id],
+            ['street' => $validated['address']['street']]
+        );
+    }
+
+    /**
+     * Create or update the supplier's bank account from the nested "bank" payload.
+     */
+    private function syncBankAccount(Supplier $supplier, Request $request, array $validated): void
+    {
+        if (!$request->filled('bank.bank_id')) {
+            return;
+        }
+
+        $supplier->bankAccount()->updateOrCreate(
+            ['supplier_id' => $supplier->id],
+            [
+                'bank_id'        => $validated['bank']['bank_id'],
+                'account_number' => $validated['bank']['account_number'] ?? '',
+                'account_name'   => $supplier->name,
+                'routing_number' => $validated['bank']['routing_number'] ?? null,
+            ]
+        );
     }
 
     public function show(Supplier $supplier): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'data' => $supplier->load('status'),
+            'data' => $supplier->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 
@@ -105,20 +149,27 @@ class SupplierController extends Controller
 
         $validated = $request->validated();
 
-        $supplier->update([
-            'name'           => $validated['name'],
-            'contact_person' => $validated['contact_person'],
-            'phone_number'   => $validated['phone_number'],
-            'email'          => $validated['email'],
-            'TAX'            => $validated['TAX'],
-            'notes'          => $validated['notes'] ?? null,
-            'status_id'      => $validated['status_id'] ?? $supplier->status_id,
-        ]);
+        DB::transaction(function () use ($request, $supplier, $validated) {
+            $supplier->update([
+                'name'            => $validated['name'],
+                'contact_person'  => $validated['contact_person'],
+                'phone_number'    => $validated['phone_number'],
+                'email'           => $validated['email'],
+                'TAX'             => $validated['TAX'],
+                'notes'           => $validated['notes'] ?? null,
+                'status_id'       => $validated['status_id'] ?? $supplier->status_id,
+                'payment_term_id' => $validated['payment_term_id'] ?? null,
+                'prepared_by'     => $validated['prepared_by'] ?? null,
+            ]);
+
+            $this->syncAddress($supplier, $request, $validated);
+            $this->syncBankAccount($supplier, $request, $validated);
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Supplier updated successfully.',
-            'data'    => $supplier->refresh()->load('status'),
+            'data'    => $supplier->refresh()->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 
@@ -128,7 +179,7 @@ class SupplierController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Supplier is already deleted.',
-                'data'    => $supplier->load('status'),
+                'data'    => $supplier->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
             ]);
         }
 
@@ -142,7 +193,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier deleted successfully.',
-            'data'    => $supplier->refresh()->load('status'),
+            'data'    => $supplier->refresh()->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 
@@ -172,7 +223,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier approved successfully.',
-            'data'    => $supplier->refresh()->load('status'),
+            'data'    => $supplier->refresh()->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 
@@ -202,7 +253,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier rejected successfully.',
-            'data'    => $supplier->refresh()->load('status'),
+            'data'    => $supplier->refresh()->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 
@@ -229,7 +280,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier set to active successfully.',
-            'data'    => $supplier->refresh()->load('status'),
+            'data'    => $supplier->refresh()->load(['status', 'address', 'bankAccount.bank', 'paymentTerm']),
         ]);
     }
 

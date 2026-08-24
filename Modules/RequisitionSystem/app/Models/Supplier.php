@@ -22,6 +22,8 @@ class Supplier extends Model
         'status_id',
         'notes',
         'approved_by_user_id',
+        'payment_term_id',
+        'prepared_by',
     ];
 
     public function scopeSelectable(Builder $query): Builder
@@ -80,5 +82,18 @@ class Supplier extends Model
         return $this->belongsToMany(Requisition::class, 'requisition_suppliers', 'supplier_id', 'requisition_id')
             ->withPivot('is_recommended', 'quoted_total', 'quote_reference_number')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the address for the supplier.
+     */
+    public function address(): HasOne
+    {
+        return $this->hasOne(Address::class, 'supplier_id');
+    }
+
+    public function paymentTerm(): BelongsTo
+    {
+        return $this->belongsTo(PaymentTerm::class, 'payment_term_id');
     }
 }
