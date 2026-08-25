@@ -972,7 +972,7 @@ class RequisitionController extends Controller
     }
 
     /**
-     * Unique 9-digit zero-padded requisition number (e.g. 000000001).
+     * Unique requisition number, zero-padded to at least 3 digits (e.g. 001, 999, 1000, 1001).
      */
     private function generateRequisitionNumber(): string
     {
@@ -981,15 +981,11 @@ class RequisitionController extends Controller
 
         $max = DB::connection('porsql')
             ->table('requisitions')
-            ->whereRaw("number ~ '^[0-9]{1,9}$'")
+            ->whereRaw("number ~ '^[0-9]+$'")
             ->max(DB::raw('CAST(number AS BIGINT)'));
 
         $next = ((int) $max) + 1;
 
-        if ($next > 999_999_999) {
-            throw new \RuntimeException('Requisition number space exhausted.');
-        }
-
-        return str_pad((string) $next, 9, '0', STR_PAD_LEFT);
+        return str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 }
