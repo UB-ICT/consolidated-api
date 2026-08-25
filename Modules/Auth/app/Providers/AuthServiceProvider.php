@@ -51,7 +51,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([\Modules\Auth\Console\Commands\GenerateVapidKeysCommand::class]);
     }
 
     /**

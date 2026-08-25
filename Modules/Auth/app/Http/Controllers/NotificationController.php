@@ -78,4 +78,24 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function destroy(string $notification): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $record = $user->notifications()->where('id', $notification)->first();
+
+        if (!$record) {
+            return response()->json(['success' => false, 'message' => 'Notification not found.'], 404);
+        }
+
+        $record->delete();
+
+        return response()->json(['success' => true]);
+    }
 }
