@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Models\CostCenter;
+use Modules\Auth\Models\PushSubscription;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -151,5 +152,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function suppliers(): HasOne
     {
         return $this->hasOne(Supplier::class, 'approved_by_user_id');
+    }
+
+    /**
+     * Web push subscriptions for this user.
+     */
+    public function pushSubscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 }

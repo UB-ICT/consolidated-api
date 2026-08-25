@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\GoogleAuthController;
 use Modules\Auth\Http\Controllers\MenuController;
+use Modules\Auth\Http\Controllers\NotificationController;
 use Modules\Auth\Http\Controllers\PermissionController;
+use Modules\Auth\Http\Controllers\PushSubscriptionController;
 use Modules\Auth\Http\Controllers\RoleController;
 use Modules\Auth\Http\Controllers\RolePermissionController;
 use Modules\Auth\Http\Controllers\UserController;
@@ -91,4 +93,16 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Replace one role-permission assignment.
     Route::patch('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Partially replace one role-permission assignment.
     Route::delete('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'destroy']); // Delete one role-permission assignment.
+
+    // In-app notification endpoints.
+    Route::get('/notifications', [NotificationController::class, 'index']); // List notifications for the authenticated user.
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']); // Get unread notification count.
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']); // Mark all notifications as read.
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead']); // Mark one notification as read.
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']); // Delete one notification.
+
+    // Web push subscription endpoints.
+    Route::get('/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey']); // Return the VAPID public key for browser subscription.
+    Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store']); // Save a browser push subscription.
+    Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy']); // Remove a browser push subscription.
 });
