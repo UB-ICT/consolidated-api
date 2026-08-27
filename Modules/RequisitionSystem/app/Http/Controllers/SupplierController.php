@@ -158,8 +158,8 @@ class SupplierController extends Controller
                 'TAX'             => $validated['TAX'],
                 'notes'           => $validated['notes'] ?? null,
                 'status_id'       => $validated['status_id'] ?? $supplier->status_id,
-                'payment_term_id' => $validated['payment_term_id'] ?? null,
-                'prepared_by'     => $validated['prepared_by'] ?? null,
+                'payment_term_id' => $validated['payment_term_id'] ?? $supplier->payment_term_id,
+                'prepared_by'     => $validated['prepared_by'] ?? $supplier->prepared_by,
             ]);
 
             $this->syncAddress($supplier, $request, $validated);
