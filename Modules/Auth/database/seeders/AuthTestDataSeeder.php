@@ -94,6 +94,7 @@ class AuthTestDataSeeder extends Seeder
             ['label' => 'Cost Centers', 'path' => '/requisitions/cost-centers', 'icon' => 'building-2', 'sort_order' => 5],
             ['label' => 'Budget', 'path' => '/requisitions/budgets', 'icon' => 'clipboard-list', 'sort_order' => 6],
             ['label' => 'Pipelines', 'path' => '/requisitions/pipelines', 'icon' => 'git-branch', 'sort_order' => 7],
+            ['label' => 'Reports', 'path' => '/requisitions/reports', 'icon' => 'chart-bar', 'sort_order' => 8],
         ];
 
         $allRoleIds = array_values($roleMap);

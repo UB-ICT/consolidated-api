@@ -28,11 +28,11 @@ class RequisitionReportExport implements
         'cost_center' => 'cost_centers.name',
         'supplier' => 'suppliers.name',
         'status' => 'statuses.name',
+        'date_from' => 'requisitions.date_from',
+        'date_to' => 'requisitions.date_to',
     ];
 
-    public function __construct(private readonly array $filters)
-    {
-    }
+    public function __construct(private readonly array $filters) {}
 
     public function query(): Builder
     {
@@ -52,7 +52,7 @@ class RequisitionReportExport implements
             ->leftJoinSub(
                 $recommendedSuppliers,
                 'recommended_suppliers',
-                fn ($join) => $join->on('requisitions.id', '=', 'recommended_suppliers.requisition_id')
+                fn($join) => $join->on('requisitions.id', '=', 'recommended_suppliers.requisition_id')
             )
             ->leftJoin('suppliers', 'suppliers.id', '=', 'recommended_suppliers.supplier_id')
             ->leftJoin('cost_centers', 'cost_centers.id', '=', 'requisitions.cost_center_id')
@@ -75,6 +75,10 @@ class RequisitionReportExport implements
 
         if (!empty($this->filters['cost_center_id'])) {
             $query->where('requisitions.cost_center_id', $this->filters['cost_center_id']);
+        }
+
+        if (!empty($this->filters['status_id'])) {
+            $query->where('requisitions.status_id', $this->filters['status_id']);
         }
 
         if (!empty($this->filters['number'])) {
@@ -103,6 +107,8 @@ class RequisitionReportExport implements
             'Department / Cost Center',
             'Supplier',
             'Status',
+            'Date To',
+            'Date From',
         ];
     }
 
@@ -114,6 +120,8 @@ class RequisitionReportExport implements
             $requisition->cost_center_name ?? '—',
             $requisition->supplier_name ?? '—',
             $requisition->status_name ?? '—',
+            $requisition->date_to ?? '—',
+            $requisition->date_from ?? '—',
         ];
     }
 

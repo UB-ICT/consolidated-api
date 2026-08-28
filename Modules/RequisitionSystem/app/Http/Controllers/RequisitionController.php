@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 use Modules\Auth\Models\User;
+use Modules\RequisitionSystem\Exports\RequisitionReportExport;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Attachment;
 use Modules\RequisitionSystem\Models\Currency;
@@ -114,6 +116,40 @@ class RequisitionController extends Controller
                 fn (Requisition $requisition) => $this->formatRequisitionListItem($requisition)
             )->values(),
         ]);
+    }
+
+    /**
+     * GET /requisitions/report
+     *
+     * Registered as a static path ahead of apiResource('requisitions', ...)
+     * in routes/api.php so "report" isn't captured as {requisition}.
+     */
+    public function report(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $filters = $request->validate([
+            'date_from' => ['required', 'date'],
+            'date_to' => ['required', 'date'],
+            'supplier_id' => ['nullable', 'integer'],
+            'cost_center_id' => ['nullable', 'integer'],
+            'status_id' => ['nullable', 'integer'],
+            'number' => ['nullable', 'string'],
+            'amount_min' => ['nullable', 'numeric'],
+            'amount_max' => ['nullable', 'numeric'],
+            'sort_by' => ['nullable', 'string'],
+            'sort_dir' => ['nullable', 'in:asc,desc'],
+        ]);
+
+        return Excel::download(
+            new RequisitionReportExport($filters),
+            'requisition-report_' . now()->format('Ymd_His') . '.xlsx'
+        );
     }
 
     public function store(RequisitionStoreRequest $request): JsonResponse
