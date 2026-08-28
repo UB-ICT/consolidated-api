@@ -46,7 +46,7 @@ class SupplierStoreRequest extends FormRequest
             'prepared_by'    => 'nullable|string|max:255',
             'address.street' => 'nullable|string|max:255',
             'bank.bank_id'         => 'nullable|integer|exists:porsql.banks,id',
-            'bank.account_number'  => 'nullable|string|max:255',
+            'bank.account_number'  => 'required_with:bank.bank_id|string|max:255',
             'bank.routing_number'  => 'nullable|string|max:255',
         ];
     }

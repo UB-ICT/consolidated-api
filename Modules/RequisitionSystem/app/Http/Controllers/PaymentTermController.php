@@ -66,7 +66,7 @@ class PaymentTermController extends Controller
         if ($paymentTerm->suppliers()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete this payment term because it is currently linked to active suppliers.',
+                'message' => 'Cannot delete this payment term because it is currently linked to suppliers.',
             ], 422);
         }
 

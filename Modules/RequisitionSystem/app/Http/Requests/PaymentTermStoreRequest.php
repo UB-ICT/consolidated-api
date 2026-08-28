@@ -23,7 +23,7 @@ class PaymentTermStoreRequest extends FormRequest
         $paymentTermId = $this->route('paymentTerm') ? $this->route('paymentTerm')->id : null;
 
         return [
-            'name' => 'required|string|max:255|unique:payment_terms,name,' . $paymentTermId,
+            'name' => 'required|string|max:255|unique:porsql.payment_terms,name,' . $paymentTermId,
         ];
     }
 }
