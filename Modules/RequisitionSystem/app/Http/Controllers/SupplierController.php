@@ -119,15 +119,16 @@ class SupplierController extends Controller
             return;
         }
 
-            $supplier->bankAccount()->updateOrCreate(
-                ['supplier_id' => $supplier->id],
-                [
-                    'bank_id'        => $validated['bank']['bank_id'],
-                    'account_number' => $validated['bank']['account_number'],
-                    'account_name'   => $supplier->name,
-                    'routing_number' => $validated['bank']['routing_number'] ?? null,
-                ]
-            );
+        $supplier->bankAccount()->updateOrCreate(
+            ['supplier_id' => $supplier->id],
+            [
+                'bank_id'        => $validated['bank']['bank_id'],
+                'account_number' => $validated['bank']['account_number'],
+                'account_name'   => $supplier->name,
+                'routing_number' => $validated['bank']['routing_number'] ?? null,
+            ]
+        );
+    }
 
     public function show(Supplier $supplier): JsonResponse
     {
