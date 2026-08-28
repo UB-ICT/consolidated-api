@@ -183,4 +183,52 @@ class RequisitionSupplierQuoteRulesTest extends TestCase
 
         $this->assertSame('Sole source', $reason);
     }
+
+    public function test_reassign_quote_attachment_follows_explicit_attachment_id(): void
+    {
+        $assignments = RequisitionSupplierQuoteRules::reassignQuoteAttachmentSuppliers(
+            [
+                ['id' => 11, 'supplier_id' => 1],
+            ],
+            [
+                [
+                    'supplier_id' => 2,
+                    'is_recommended' => true,
+                    'attachment_id' => 11,
+                ],
+            ]
+        );
+
+        $this->assertSame([11 => 2], $assignments);
+    }
+
+    public function test_reassign_quote_attachment_falls_back_to_one_to_one_swap(): void
+    {
+        $assignments = RequisitionSupplierQuoteRules::reassignQuoteAttachmentSuppliers(
+            [
+                ['id' => 11, 'supplier_id' => 1],
+            ],
+            [
+                ['supplier_id' => 2, 'is_recommended' => true],
+            ]
+        );
+
+        $this->assertSame([11 => 2], $assignments);
+    }
+
+    public function test_reassign_quote_attachment_does_not_guess_when_ambiguous(): void
+    {
+        $assignments = RequisitionSupplierQuoteRules::reassignQuoteAttachmentSuppliers(
+            [
+                ['id' => 11, 'supplier_id' => 1],
+                ['id' => 12, 'supplier_id' => 2],
+            ],
+            [
+                ['supplier_id' => 3, 'is_recommended' => true],
+                ['supplier_id' => 4, 'is_recommended' => false],
+            ]
+        );
+
+        $this->assertSame([], $assignments);
+    }
 }

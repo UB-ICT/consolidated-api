@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
+use Modules\RequisitionSystem\Models\Attachment;
 use Modules\RequisitionSystem\Models\Currency;
 use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Requisition;
@@ -917,6 +918,56 @@ class RequisitionController extends Controller
 
         if (!empty($syncData)) {
             $requisition->suppliers()->sync($syncData);
+            $this->syncQuoteAttachmentSuppliers($requisition, $suppliers);
+        }
+    }
+
+    /**
+     * Keep quote PDFs pointed at the suppliers currently selected on the form.
+     *
+     * @param  array<int, array<string, mixed>>  $suppliers
+     */
+    private function syncQuoteAttachmentSuppliers(
+        Requisition $requisition,
+        array $suppliers
+    ): void {
+        $attachments = $requisition->attachments()
+            ->get(['id', 'supplier_id', 'file_path']);
+
+        if ($attachments->isEmpty()) {
+            return;
+        }
+
+        $assignments = RequisitionSupplierQuoteRules::reassignQuoteAttachmentSuppliers(
+            $attachments
+                ->map(fn (Attachment $attachment) => [
+                    'id' => $attachment->id,
+                    'supplier_id' => $attachment->supplier_id,
+                ])
+                ->all(),
+            $suppliers
+        );
+
+        foreach ($assignments as $attachmentId => $supplierId) {
+            $attachment = $attachments->firstWhere('id', $attachmentId);
+
+            if (!$attachment || (int) $attachment->supplier_id === (int) $supplierId) {
+                continue;
+            }
+
+            $duplicates = $requisition->attachments()
+                ->where('supplier_id', $supplierId)
+                ->where('id', '!=', $attachment->id)
+                ->get();
+
+            foreach ($duplicates as $duplicate) {
+                if ($duplicate->file_path && Storage::disk('local')->exists($duplicate->file_path)) {
+                    Storage::disk('local')->delete($duplicate->file_path);
+                }
+                $duplicate->delete();
+            }
+
+            $attachment->update(['supplier_id' => $supplierId]);
         }
     }
 

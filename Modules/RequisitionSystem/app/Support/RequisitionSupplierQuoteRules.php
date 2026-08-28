@@ -124,4 +124,77 @@ final class RequisitionSupplierQuoteRules
 
         return $suppliers;
     }
+
+    /**
+     * Map quote PDFs onto the suppliers currently selected on the requisition.
+     *
+     * Changing a quote's supplier updates the pivot immediately, but the PDF
+     * row still points at the previous supplier until we reassign it. Refresh
+     * then rebuilds the form from attachments and writes the old supplier
+     * back.
+     *
+     * @param  array<int, array{id: int, supplier_id: int}>  $attachments
+     * @param  array<int, array<string, mixed>>  $suppliers
+     * @return array<int, int>  attachment id => supplier id
+     */
+    public static function reassignQuoteAttachmentSuppliers(
+        array $attachments,
+        array $suppliers
+    ): array {
+        $assignments = [];
+        $claimedAttachmentIds = [];
+        $supplierIds = collect($suppliers)
+            ->filter(fn (array $supplier) => !empty($supplier['supplier_id']))
+            ->pluck('supplier_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        foreach ($suppliers as $supplier) {
+            $attachmentId = isset($supplier['attachment_id'])
+                ? (int) $supplier['attachment_id']
+                : 0;
+            $supplierId = (int) ($supplier['supplier_id'] ?? 0);
+
+            if ($attachmentId < 1 || $supplierId < 1) {
+                continue;
+            }
+
+            $attachment = collect($attachments)->firstWhere('id', $attachmentId);
+
+            if (!$attachment) {
+                continue;
+            }
+
+            $assignments[$attachmentId] = $supplierId;
+            $claimedAttachmentIds[] = $attachmentId;
+        }
+
+        $suppliersWithAttachment = collect($attachments)
+            ->map(function (array $attachment) use ($assignments) {
+                $id = (int) $attachment['id'];
+
+                return $assignments[$id] ?? (int) $attachment['supplier_id'];
+            })
+            ->unique()
+            ->values();
+
+        $suppliersNeedingAttachment = $supplierIds->diff($suppliersWithAttachment);
+        $orphans = collect($attachments)
+            ->reject(fn (array $attachment) => in_array(
+                (int) $attachment['id'],
+                $claimedAttachmentIds,
+                true
+            ))
+            ->reject(fn (array $attachment) => $supplierIds->contains(
+                (int) $attachment['supplier_id']
+            ))
+            ->values();
+
+        if ($orphans->count() === 1 && $suppliersNeedingAttachment->count() === 1) {
+            $assignments[(int) $orphans->first()['id']] = (int) $suppliersNeedingAttachment->first();
+        }
+
+        return $assignments;
+    }
 }

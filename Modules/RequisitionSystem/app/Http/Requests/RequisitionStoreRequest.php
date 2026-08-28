@@ -55,6 +55,7 @@ class RequisitionStoreRequest extends FormRequest
             'suppliers.*.is_recommended' => 'required|boolean',
             'suppliers.*.quoted_total' => 'nullable|numeric|min:0',
             'suppliers.*.quote_reference_number' => 'nullable|string|max:100',
+            'suppliers.*.attachment_id' => 'nullable|integer',
             'quote_waiver_reason' => 'nullable|string|max:2000',
 
             // Drafts may be saved with no complete line items yet; submit still requires ≥1.
