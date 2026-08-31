@@ -78,4 +78,27 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function updateDeviceToken(Request $request): JsonResponse
+    {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $validated = $request->validate([
+            'device_token' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'device_token' => $validated['device_token'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device token updated successfully.',
+        ]);
+    }
 }

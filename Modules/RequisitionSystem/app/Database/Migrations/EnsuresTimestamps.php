@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\RequisitionSystem\database\migrations;
+namespace Modules\RequisitionSystem\Database\Migrations;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

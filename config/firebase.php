@@ -41,4 +41,7 @@ return [
 
     /** Firebase / GCP project ID for the database (e.g. ubapps-450f8). */
     'database_project_id' => is_string($projectId) ? trim($projectId) : null,
+
+    /** Icon shown in browser push notifications. */
+    'web_push_icon' => env('FIREBASE_WEB_PUSH_ICON', '/vite.svg'),
 ];

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\GoogleAuthController;
+use Modules\Auth\Http\Controllers\NotificationController;
 use Modules\Auth\Http\Controllers\MenuController;
 use Modules\Auth\Http\Controllers\PermissionController;
 use Modules\Auth\Http\Controllers\RoleController;
@@ -91,4 +92,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Replace one role-permission assignment.
     Route::patch('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'update']); // Partially replace one role-permission assignment.
     Route::delete('/role-permissions/{roleId}/{permissionId}', [RolePermissionController::class, 'destroy']); // Delete one role-permission assignment.
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/device-token', [NotificationController::class, 'updateDeviceToken']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 });
