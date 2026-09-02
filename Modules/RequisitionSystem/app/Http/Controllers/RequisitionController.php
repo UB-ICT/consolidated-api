@@ -42,6 +42,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RequisitionController extends Controller
 {
+    /**
+     * Relations required for the requisition detail form (show + mutation responses).
+     *
+     * @var list<string>
+     */
+    private const REQUISITION_DETAIL_RELATIONS = [
+        'suppliers.status',
+        'items.chartOfAccount',
+        'costCenter',
+        'stage',
+        'status',
+        'attachments.supplier.status',
+        'tags',
+    ];
+
     use GuardsRequisitionEditing;
     use GuardsRequisitionApproval;
     use GuardsRequisitionCancellation;
@@ -166,10 +181,7 @@ class RequisitionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->formatRequisitionResponse(
-                $requisition->load(['suppliers.status', 'items.chartOfAccount', 'costCenter', 'stage', 'status', 'attachments.supplier.status', 'tags']),
-                $user
-            ),
+            'data' => $this->formatRequisitionResponse($requisition, $user),
         ]);
     }
 
@@ -273,7 +285,7 @@ class RequisitionController extends Controller
             );
         });
 
-        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'stage', 'status']);
+        $requisition->refresh();
 
         $this->logService->recordApprovalDecision(
             $requisition,
@@ -680,9 +692,15 @@ class RequisitionController extends Controller
         ];
     }
 
+    private function loadRequisitionDetailRelations(Requisition $requisition): Requisition
+    {
+        return $requisition->load(self::REQUISITION_DETAIL_RELATIONS);
+    }
+
     private function formatRequisitionResponse(Requisition $requisition, $user): Requisition
     {
-        $requisition->loadMissing('status', 'stage', 'tags', 'pipeline.stages', 'suppliers');
+        $requisition = $this->loadRequisitionDetailRelations($requisition);
+        $requisition->loadMissing('pipeline.stages');
 
         $requisition->setAttribute(
             'is_editable',
