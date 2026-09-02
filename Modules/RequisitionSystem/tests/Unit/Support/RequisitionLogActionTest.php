@@ -7,6 +7,22 @@ use PHPUnit\Framework\TestCase;
 
 class RequisitionLogActionTest extends TestCase
 {
+    public function test_all_includes_forwarded_for_review(): void
+    {
+        $this->assertContains(
+            RequisitionLogAction::FORWARDED_FOR_REVIEW,
+            RequisitionLogAction::all()
+        );
+    }
+
+    public function test_all_includes_delegated_review_submitted(): void
+    {
+        $this->assertContains(
+            RequisitionLogAction::DELEGATED_REVIEW_SUBMITTED,
+            RequisitionLogAction::all()
+        );
+    }
+
     public function test_all_includes_cost_center_review(): void
     {
         $this->assertContains(

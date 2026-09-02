@@ -110,7 +110,7 @@ class BudgetController extends Controller
         if (
             !$this->userIsBudgetFinanceEditor($user)
             && !$user->costCenters()->where('cost_centers.id', $costCenterId)->exists()
-            && !RequisitionVisibility::userCanViewOperationalBudget($user)
+            && !RequisitionVisibility::userCanViewOperationalBudgetForCostCenter($user, $costCenterId)
         ) {
             return response()->json([
                 'success' => false,

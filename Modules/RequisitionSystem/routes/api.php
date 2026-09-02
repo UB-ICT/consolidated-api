@@ -66,6 +66,7 @@ Route::group([
     Route::post('requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
     Route::post('requisitions/{requisition}/request-review', [RequisitionController::class, 'requestReview']);
+    Route::post('requisitions/{requisition}/forward-review', [RequisitionController::class, 'forwardReview']);
     Route::post('requisitions/{requisition}/cancel', [RequisitionController::class, 'cancel']);
     Route::post('requisitions/{requisition}/close', [RequisitionController::class, 'close']);
     Route::patch('requisitions/{requisition}/purchase-order-number', [RequisitionController::class, 'updatePurchaseOrderNumber']);

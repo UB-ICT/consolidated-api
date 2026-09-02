@@ -8,6 +8,8 @@ use Modules\RequisitionSystem\Models\Requisition;
 
 trait GuardsRequisitionEditing
 {
+    use GuardsRequisitionCostCenterReview;
+
     protected function costCenterEditableStatuses(): array
     {
         return ['Draft', 'Cost Center Review'];
@@ -35,10 +37,21 @@ trait GuardsRequisitionEditing
 
         $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
+        if ($this->userCanEditAsDelegatedReviewer($requisition, $user, $assignedCostCenterIds)) {
+            return;
+        }
+
         if (!$assignedCostCenterIds->contains($requisition->cost_center_id)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to edit this requisition.',
+            ], 403));
+        }
+
+        if ($this->requisitionHasDelegatedReview($requisition)) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'message' => 'This requisition is currently assigned to another cost center for review.',
             ], 403));
         }
 
@@ -64,7 +77,15 @@ trait GuardsRequisitionEditing
 
         $assignedCostCenterIds = $user->costCenters()->pluck('cost_centers.id');
 
+        if ($this->userCanEditAsDelegatedReviewer($requisition, $user, $assignedCostCenterIds)) {
+            return true;
+        }
+
         if (!$assignedCostCenterIds->contains($requisition->cost_center_id)) {
+            return false;
+        }
+
+        if ($this->requisitionHasDelegatedReview($requisition)) {
             return false;
         }
 
@@ -159,5 +180,24 @@ trait GuardsRequisitionEditing
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, int|string>  $assignedCostCenterIds
+     */
+    protected function userCanEditAsDelegatedReviewer(
+        Requisition $requisition,
+        User $user,
+        $assignedCostCenterIds
+    ): bool {
+        if ($requisition->status?->name !== 'Cost Center Review') {
+            return false;
+        }
+
+        if (!$this->requisitionHasDelegatedReview($requisition)) {
+            return false;
+        }
+
+        return $assignedCostCenterIds->contains((int) $requisition->reviewing_cost_center_id);
     }
 }

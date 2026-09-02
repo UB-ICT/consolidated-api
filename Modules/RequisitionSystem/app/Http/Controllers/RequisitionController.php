@@ -16,10 +16,12 @@ use Modules\Auth\Models\User;
 use Modules\RequisitionSystem\Models\Approval;
 use Modules\RequisitionSystem\Models\Attachment;
 use Modules\RequisitionSystem\Models\Currency;
+use Modules\RequisitionSystem\Models\CostCenter;
 use Modules\RequisitionSystem\Models\Item;
 use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Stage;
 use Modules\RequisitionSystem\Models\Tag;
+use Modules\RequisitionSystem\Http\Requests\RequisitionForwardReviewRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionApprovalRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderEmailRequest;
 use Modules\RequisitionSystem\Http\Requests\RequisitionPurchaseOrderRequest;
@@ -53,6 +55,7 @@ class RequisitionController extends Controller
         'suppliers.status',
         'items.chartOfAccount',
         'costCenter',
+        'reviewingCostCenter',
         'stage',
         'status',
         'attachments.supplier.status',
@@ -90,6 +93,7 @@ class RequisitionController extends Controller
         $query = Requisition::with([
             'suppliers',
             'costCenter:id,name,number',
+            'reviewingCostCenter:id,name,number',
             'stage:id,name',
             'status:id,name',
         ]);
@@ -218,6 +222,9 @@ class RequisitionController extends Controller
         $previousTagIds = $requisition->tags()->pluck('tags.id')->map(fn ($id) => (int) $id)->all();
         $activityComment = $validated['activity_comment'] ?? null;
         unset($validated['activity_comment']);
+        $requisition->loadMissing('reviewingCostCenter');
+        $wasDelegatedReview = $requisition->reviewing_cost_center_id !== null;
+        $delegatedReviewingCostCenterName = $requisition->reviewingCostCenter?->name;
 
         $requisition = DB::connection('porsql')->transaction(function () use ($validated, $requisition, $shouldSubmit) {
             $tagIds = array_key_exists('tag_ids', $validated) ? $validated['tag_ids'] : null;
@@ -253,6 +260,15 @@ class RequisitionController extends Controller
                 $validated,
                 $previousItems
             );
+
+            if ($wasDelegatedReview) {
+                $this->logService->recordDelegatedReviewSubmission(
+                    $requisition,
+                    $user,
+                    $delegatedReviewingCostCenterName ?? 'Delegated cost center',
+                    $activityComment
+                );
+            }
 
             $this->logService->recordSubmission(
                 $requisition,
@@ -428,6 +444,45 @@ class RequisitionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Requisition sent back to cost center for review.',
+            'data'    => $this->formatRequisitionResponse($requisition, $user),
+        ]);
+    }
+
+    public function forwardReview(
+        RequisitionForwardReviewRequest $request,
+        Requisition $requisition
+    ): JsonResponse {
+        /** @var \Modules\Auth\Models\User|null $user */
+        $user = Auth::user();
+
+        $this->assertUserCanForwardReview($requisition->loadMissing('status'), $user);
+
+        $validated = $request->validated();
+        $reviewingCostCenter = CostCenter::findOrFail((int) $validated['cost_center_id']);
+        $comments = $validated['comments'] ?? null;
+
+        DB::connection('porsql')->transaction(function () use ($requisition, $reviewingCostCenter) {
+            RequisitionWorkflow::applyDelegatedCostCenterReview(
+                $requisition->refresh(),
+                (int) $reviewingCostCenter->id
+            );
+        });
+
+        $requisition->refresh()->load(['suppliers.status', 'items', 'costCenter', 'reviewingCostCenter', 'stage', 'status']);
+
+        $this->logService->recordForwardForReview(
+            $requisition,
+            $user,
+            $reviewingCostCenter->name,
+            $comments
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => sprintf(
+                'Requisition forwarded to %s for review.',
+                $reviewingCostCenter->name
+            ),
             'data'    => $this->formatRequisitionResponse($requisition, $user),
         ]);
     }
@@ -679,6 +734,8 @@ class RequisitionController extends Controller
             'number' => $requisition->number,
             'requisition_number' => $requisition->number,
             'cost_center_id' => $requisition->cost_center_id,
+            'reviewing_cost_center_id' => $requisition->reviewing_cost_center_id,
+            'is_delegated_cost_center_review' => $requisition->isDelegatedCostCenterReview(),
             'date_prepared' => $requisition->date_prepared,
             'status_id' => $requisition->status_id,
             'stage_id' => $requisition->stage_id,
@@ -691,6 +748,13 @@ class RequisitionController extends Controller
                     'id' => $requisition->costCenter->id,
                     'name' => $requisition->costCenter->name,
                     'number' => $requisition->costCenter->number,
+                ]
+                : null,
+            'reviewing_cost_center' => $requisition->reviewingCostCenter
+                ? [
+                    'id' => $requisition->reviewingCostCenter->id,
+                    'name' => $requisition->reviewingCostCenter->name,
+                    'number' => $requisition->reviewingCostCenter->number,
                 ]
                 : null,
             'status' => $requisition->status
@@ -788,6 +852,11 @@ class RequisitionController extends Controller
             $this->userCanCloseRequisition($requisition, $user)
         );
 
+        $requisition->setAttribute(
+            'is_delegated_cost_center_review',
+            $requisition->isDelegatedCostCenterReview()
+        );
+
         return $requisition;
     }
 
@@ -849,8 +918,8 @@ class RequisitionController extends Controller
         );
 
         if ($requisition) {
-            // Requisition numbers are immutable after creation.
-            unset($data['number']);
+            // Owning cost center is immutable after creation.
+            unset($data['cost_center_id']);
         } else {
             $data['number'] = $this->generateRequisitionNumber();
         }
@@ -874,6 +943,7 @@ class RequisitionController extends Controller
 
             if ($requisition->status?->name === 'Cost Center Review') {
                 RequisitionWorkflow::applyResubmitFromCostCenterReview($data, $requisition);
+                $data['reviewing_cost_center_id'] = null;
             } else {
                 RequisitionWorkflow::applySubmitState($data, $pipelineId, $submitter);
                 $skippedDirectorApproval = RequisitionWorkflow::skipsDirectorApprovalOnSubmit($submitter);
@@ -902,6 +972,7 @@ class RequisitionController extends Controller
             : null;
 
         if ($requisition) {
+            unset($data['number']);
             $requisition->update($data);
 
             if ($replaceLineItems) {

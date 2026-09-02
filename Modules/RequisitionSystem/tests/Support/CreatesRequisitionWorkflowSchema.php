@@ -57,6 +57,7 @@ trait CreatesRequisitionWorkflowSchema
             $table->foreignId('pipeline_id')->nullable()->constrained('pipelines');
             $table->unsignedBigInteger('stage_id');
             $table->unsignedBigInteger('status_id');
+            $table->unsignedBigInteger('reviewing_cost_center_id')->nullable();
             $table->unsignedInteger('current_stage_sequence')->nullable();
             $table->timestamps();
         });

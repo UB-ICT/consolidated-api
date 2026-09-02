@@ -116,6 +116,25 @@ class RequisitionWorkflowTest extends TestCase
         $this->assertFalse(RequisitionWorkflow::skipsDirectorApprovalOnSubmit($requester));
     }
 
+    public function test_apply_cost_center_review_clears_delegated_reviewer(): void
+    {
+        $requisitionId = $this->createTestRequisition(
+            $this->stageIds['Budget Officer'],
+            $this->statusIds['Pending'],
+            3
+        );
+
+        $requisition = Requisition::findOrFail($requisitionId);
+        $requisition->update(['reviewing_cost_center_id' => 99]);
+
+        RequisitionWorkflow::applyCostCenterReview($requisition->refresh());
+
+        $requisition->refresh();
+
+        $this->assertSame($this->statusIds['Cost Center Review'], $requisition->status_id);
+        $this->assertNull($requisition->reviewing_cost_center_id);
+    }
+
     public function test_apply_resubmit_from_cost_center_review_preserves_stage(): void
     {
         $requisition = new Requisition([

@@ -19,6 +19,7 @@ class Requisition extends Model
         'purchase_order_file_path',
         'purchase_order_emailed_at',
         'cost_center_id',
+        'reviewing_cost_center_id',
         'pipeline_id',
         'status_id',
         'currency_id',
@@ -87,6 +88,16 @@ class Requisition extends Model
     public function costCenter(): BelongsTo
     {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+
+    public function reviewingCostCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class, 'reviewing_cost_center_id');
+    }
+
+    public function isDelegatedCostCenterReview(): bool
+    {
+        return $this->reviewing_cost_center_id !== null;
     }
 
     public function pipeline(): BelongsTo

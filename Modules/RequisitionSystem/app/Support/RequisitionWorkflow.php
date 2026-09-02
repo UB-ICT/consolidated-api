@@ -363,10 +363,39 @@ final class RequisitionWorkflow
         ]);
     }
 
-    public static function applyCostCenterReview(Requisition $requisition): void
-    {
-        $requisition->update([
+    public static function applyCostCenterReview(
+        Requisition $requisition,
+        bool $clearDelegatedReview = true
+    ): void {
+        $updates = [
             'status_id' => self::costCenterReviewStatusId() ?? $requisition->status_id,
+        ];
+
+        if ($clearDelegatedReview) {
+            $updates['reviewing_cost_center_id'] = null;
+        }
+
+        $requisition->update($updates);
+    }
+
+    public static function applyDelegatedCostCenterReview(
+        Requisition $requisition,
+        int $reviewingCostCenterId
+    ): void {
+        $requisition->update([
+            'status_id'               => self::costCenterReviewStatusId() ?? $requisition->status_id,
+            'reviewing_cost_center_id' => $reviewingCostCenterId,
+        ]);
+    }
+
+    public static function clearDelegatedCostCenterReview(Requisition $requisition): void
+    {
+        if ($requisition->reviewing_cost_center_id === null) {
+            return;
+        }
+
+        $requisition->update([
+            'reviewing_cost_center_id' => null,
         ]);
     }
 

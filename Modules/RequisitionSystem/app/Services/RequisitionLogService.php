@@ -123,15 +123,65 @@ class RequisitionLogService
         ?string $comments = null,
         ?string $stageName = null
     ): Logs {
+        $requisition->loadMissing('costCenter');
+        $ownerName = $requisition->costCenter?->name ?? 'cost center';
         $summary = $stageName
-            ? sprintf('Sent back to cost center for review from %s stage.', $stageName)
-            : 'Sent back to cost center for review.';
+            ? sprintf(
+                'Sent back to %s for review from %s stage.',
+                $ownerName,
+                $stageName
+            )
+            : sprintf('Sent back to %s for review.', $ownerName);
 
         return $this->record(
             $requisition,
             $user,
             RequisitionLogAction::COST_CENTER_REVIEW,
             $summary,
+            $comments
+        );
+    }
+
+    public function recordForwardForReview(
+        Requisition $requisition,
+        User $user,
+        string $reviewingCostCenterName,
+        ?string $comments = null
+    ): Logs {
+        $requisition->loadMissing('costCenter');
+        $ownerName = $requisition->costCenter?->name ?? 'cost center';
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::FORWARDED_FOR_REVIEW,
+            sprintf(
+                'Budget officer forwarded review to %s (owner cost center: %s).',
+                $reviewingCostCenterName,
+                $ownerName
+            ),
+            $comments
+        );
+    }
+
+    public function recordDelegatedReviewSubmission(
+        Requisition $requisition,
+        User $user,
+        string $reviewingCostCenterName,
+        ?string $comments = null
+    ): Logs {
+        $requisition->loadMissing('costCenter');
+        $ownerName = $requisition->costCenter?->name ?? 'cost center';
+
+        return $this->record(
+            $requisition,
+            $user,
+            RequisitionLogAction::DELEGATED_REVIEW_SUBMITTED,
+            sprintf(
+                '%s completed delegated review and returned the requisition to the budget officer (owner cost center: %s).',
+                $reviewingCostCenterName,
+                $ownerName
+            ),
             $comments
         );
     }

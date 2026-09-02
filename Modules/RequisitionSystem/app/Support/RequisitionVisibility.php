@@ -103,9 +103,17 @@ final class RequisitionVisibility
 
             if ($costCenterIds->isNotEmpty()) {
                 if ($matched) {
-                    $visible->orWhereIn('cost_center_id', $costCenterIds->all());
+                    $visible->orWhere(function (Builder $costCenterScope) use ($costCenterIds) {
+                        $costCenterScope
+                            ->whereIn('cost_center_id', $costCenterIds->all())
+                            ->orWhereIn('reviewing_cost_center_id', $costCenterIds->all());
+                    });
                 } else {
-                    $visible->whereIn('cost_center_id', $costCenterIds->all());
+                    $visible->where(function (Builder $costCenterScope) use ($costCenterIds) {
+                        $costCenterScope
+                            ->whereIn('cost_center_id', $costCenterIds->all())
+                            ->orWhereIn('reviewing_cost_center_id', $costCenterIds->all());
+                    });
                 }
                 $matched = true;
             }
@@ -167,6 +175,13 @@ final class RequisitionVisibility
         if (
             $requisition->cost_center_id
             && $costCenterIds->contains((int) $requisition->cost_center_id)
+        ) {
+            return true;
+        }
+
+        if (
+            $requisition->reviewing_cost_center_id
+            && $costCenterIds->contains((int) $requisition->reviewing_cost_center_id)
         ) {
             return true;
         }
@@ -250,6 +265,37 @@ final class RequisitionVisibility
         }
 
         return RequisitionWorkflow::assignedStageIdsForUser($user)->isNotEmpty();
+    }
+
+    public static function userCanViewOperationalBudgetForCostCenter(
+        User $user,
+        int $costCenterId
+    ): bool {
+        if (self::userCanViewOperationalBudget($user)) {
+            return true;
+        }
+
+        if (self::assignedCostCenterIds($user)->contains($costCenterId)) {
+            return true;
+        }
+
+        $reviewStatusId = RequisitionWorkflow::costCenterReviewStatusId();
+
+        if (!$reviewStatusId) {
+            return false;
+        }
+
+        $reviewerCostCenterIds = self::assignedCostCenterIds($user);
+
+        if ($reviewerCostCenterIds->isEmpty()) {
+            return false;
+        }
+
+        return Requisition::query()
+            ->where('cost_center_id', $costCenterId)
+            ->where('status_id', $reviewStatusId)
+            ->whereIn('reviewing_cost_center_id', $reviewerCostCenterIds->all())
+            ->exists();
     }
 
     /**

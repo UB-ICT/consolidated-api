@@ -115,6 +115,7 @@ class RequisitionSystemModelsTest extends TestCase
             'purchase_order_file_path',
             'purchase_order_emailed_at',
             'cost_center_id',
+            'reviewing_cost_center_id',
             'pipeline_id',
             'status_id',
             'currency_id',

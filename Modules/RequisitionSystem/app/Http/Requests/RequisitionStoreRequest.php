@@ -5,6 +5,7 @@ namespace Modules\RequisitionSystem\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\RequisitionSystem\Models\Budget;
+use Modules\RequisitionSystem\Models\Requisition;
 use Modules\RequisitionSystem\Models\Status;
 use Modules\RequisitionSystem\Models\Supplier;
 use Modules\RequisitionSystem\Support\RequisitionLinePricing;
@@ -90,6 +91,16 @@ class RequisitionStoreRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            /** @var Requisition|null $requisition */
+            $requisition = $this->route('requisition');
+
+            if ($requisition && (int) $this->input('cost_center_id') !== (int) $requisition->cost_center_id) {
+                $validator->errors()->add(
+                    'cost_center_id',
+                    'The owning cost center cannot be changed after the requisition is created.'
+                );
+            }
+
             $costCenterId = (int) $this->input('cost_center_id');
             $tagIds = collect($this->input('tag_ids', []))->filter()->unique()->values();
 
