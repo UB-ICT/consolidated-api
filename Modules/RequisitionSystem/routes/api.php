@@ -23,6 +23,7 @@ use Modules\RequisitionSystem\Http\Controllers\SupplierBankController;
 use Modules\RequisitionSystem\Http\Controllers\ApprovalController;
 use Modules\RequisitionSystem\Http\Controllers\ChartOfAccountController;
 use Modules\RequisitionSystem\Http\Controllers\RequisitionLogController;
+use Modules\RequisitionSystem\Http\Controllers\RequisitionUpdateLogController;
 use Modules\RequisitionSystem\Http\Controllers\SettingController;
 use Modules\RequisitionSystem\Http\Controllers\TagController;
 
@@ -75,6 +76,7 @@ Route::group([
     Route::get('requisitions/{requisition}/export', [RequisitionController::class, 'print']);
     Route::get('requisitions/{requisition}/logs', [RequisitionLogController::class, 'index']);
     Route::post('requisitions/{requisition}/logs', [RequisitionLogController::class, 'store']);
+    Route::get('requisitions/{requisition}/update-logs', [RequisitionUpdateLogController::class, 'index']);
     Route::get('logs/{log}/attachment', [RequisitionLogController::class, 'showAttachment']);
     Route::get('logs/{log}/attachment/download', [RequisitionLogController::class, 'downloadAttachment']);
     Route::get('requisitions/{requisition}/attachments', [AttachmentController::class, 'index']);

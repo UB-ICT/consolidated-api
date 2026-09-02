@@ -47,7 +47,7 @@ final class RequisitionVisibility
      * Restrict a requisition query to records the user is allowed to see:
      * - Cost-center members: their cost center's requisitions at any status
      * - Stage assignees: non-draft items at or past their assigned pipeline stage
-     * - Purchase officers: approved items
+     * - Purchase officers: pending at purchase stage and approved items
      * - Global viewers: everything
      */
     public static function constrainQuery(Builder $query, User $user): void
@@ -56,18 +56,22 @@ final class RequisitionVisibility
             return;
         }
 
-        $assignedStageIds = RequisitionWorkflow::assignedStageIdsForUser($user);
+        $assignedStageIds = self::expandedAssignedStageIds($user);
         $costCenterIds = self::assignedCostCenterIds($user);
         $draftStatusId = RequisitionWorkflow::draftStatusId();
         $approvedStatusId = RequisitionWorkflow::approvedStatusId();
+        $pendingStatusId = RequisitionWorkflow::pendingStatusId();
         $canViewApproved = self::userIsPurchaseOfficer($user);
+        $purchaseStageIds = RequisitionWorkflow::purchaseStageIds();
 
         $query->where(function (Builder $visible) use (
             $assignedStageIds,
             $costCenterIds,
             $draftStatusId,
             $approvedStatusId,
-            $canViewApproved
+            $pendingStatusId,
+            $canViewApproved,
+            $purchaseStageIds
         ) {
             $matched = false;
 
@@ -84,10 +88,14 @@ final class RequisitionVisibility
                             ->from('pipeline_stages as user_ps')
                             ->whereColumn('user_ps.pipeline_id', 'requisitions.pipeline_id')
                             ->whereIn('user_ps.stage_id', $assignedStageIds->all())
-                            ->whereColumn(
-                                'user_ps.sequence',
-                                '<=',
-                                'requisitions.current_stage_sequence'
+                            ->whereRaw(
+                                'user_ps.sequence <= COALESCE(requisitions.current_stage_sequence, (
+                                    SELECT ps_current.sequence
+                                    FROM pipeline_stages ps_current
+                                    WHERE ps_current.pipeline_id = requisitions.pipeline_id
+                                    AND ps_current.stage_id = requisitions.stage_id
+                                    LIMIT 1
+                                ))'
                             );
                     });
                 });
@@ -107,6 +115,33 @@ final class RequisitionVisibility
                     $visible->orWhere('status_id', $approvedStatusId);
                 } else {
                     $visible->where('status_id', $approvedStatusId);
+                }
+                $matched = true;
+            }
+
+            if (
+                $canViewApproved
+                && $pendingStatusId
+                && $purchaseStageIds !== []
+            ) {
+                if ($matched) {
+                    $visible->orWhere(function (Builder $purchaseQueue) use (
+                        $pendingStatusId,
+                        $purchaseStageIds
+                    ) {
+                        $purchaseQueue
+                            ->where('status_id', $pendingStatusId)
+                            ->whereIn('stage_id', $purchaseStageIds);
+                    });
+                } else {
+                    $visible->where(function (Builder $purchaseQueue) use (
+                        $pendingStatusId,
+                        $purchaseStageIds
+                    ) {
+                        $purchaseQueue
+                            ->where('status_id', $pendingStatusId)
+                            ->whereIn('stage_id', $purchaseStageIds);
+                    });
                 }
                 $matched = true;
             }
@@ -145,6 +180,14 @@ final class RequisitionVisibility
             return true;
         }
 
+        if (
+            self::userIsPurchaseOfficer($user)
+            && $requisition->status?->name === 'Pending'
+            && self::requisitionIsAtPurchaseStage($requisition)
+        ) {
+            return true;
+        }
+
         if ($requisition->status?->name === 'Draft') {
             return false;
         }
@@ -164,16 +207,29 @@ final class RequisitionVisibility
         }
 
         $pipelineId = RequisitionWorkflow::pipelineIdFor($requisition);
-        $currentSequence = $requisition->current_stage_sequence !== null
-            ? (int) $requisition->current_stage_sequence
-            : RequisitionWorkflow::sequenceForStageId((int) $requisition->stage_id, $pipelineId);
+        $currentSequence = self::currentStageSequence($requisition, $pipelineId);
 
         if ($currentSequence === null) {
             return false;
         }
 
         foreach ($assignedStageIds as $stageId) {
-            $userSequence = RequisitionWorkflow::sequenceForStageId((int) $stageId, $pipelineId);
+            $stageId = (int) $stageId;
+
+            if (
+                RequisitionWorkflow::stagesArePurchaseEquivalent(
+                    $stageId,
+                    (int) $requisition->stage_id
+                )
+            ) {
+                $maxSequence = RequisitionWorkflow::maxPipelineSequence($pipelineId);
+
+                if ($maxSequence !== null && $currentSequence >= $maxSequence) {
+                    return true;
+                }
+            }
+
+            $userSequence = RequisitionWorkflow::sequenceForStageId($stageId, $pipelineId);
 
             if ($userSequence !== null && $currentSequence >= $userSequence) {
                 return true;
@@ -181,5 +237,69 @@ final class RequisitionVisibility
         }
 
         return false;
+    }
+
+    public static function userCanViewOperationalBudget(User $user): bool
+    {
+        if (self::userCanViewAll($user)) {
+            return true;
+        }
+
+        if (self::userIsPurchaseOfficer($user)) {
+            return true;
+        }
+
+        return RequisitionWorkflow::assignedStageIdsForUser($user)->isNotEmpty();
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    private static function expandedAssignedStageIds(User $user): Collection
+    {
+        $assignedStageIds = RequisitionWorkflow::assignedStageIdsForUser($user);
+        $expanded = collect();
+
+        foreach ($assignedStageIds as $stageId) {
+            $stageId = (int) $stageId;
+            $expanded->push($stageId);
+
+            foreach (RequisitionWorkflow::purchaseStageIds() as $purchaseStageId) {
+                if (RequisitionWorkflow::stagesArePurchaseEquivalent($stageId, $purchaseStageId)) {
+                    $expanded->push($purchaseStageId);
+                }
+            }
+        }
+
+        return $expanded->unique()->values();
+    }
+
+    private static function requisitionIsAtPurchaseStage(Requisition $requisition): bool
+    {
+        if (!$requisition->stage_id) {
+            return false;
+        }
+
+        return in_array(
+            (int) $requisition->stage_id,
+            RequisitionWorkflow::purchaseStageIds(
+                RequisitionWorkflow::pipelineIdFor($requisition)
+            ),
+            true
+        );
+    }
+
+    private static function currentStageSequence(
+        Requisition $requisition,
+        int $pipelineId
+    ): ?int {
+        if ($requisition->current_stage_sequence !== null) {
+            return (int) $requisition->current_stage_sequence;
+        }
+
+        return RequisitionWorkflow::sequenceForStageId(
+            (int) $requisition->stage_id,
+            $pipelineId
+        );
     }
 }

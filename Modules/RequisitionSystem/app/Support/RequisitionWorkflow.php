@@ -23,6 +23,13 @@ final class RequisitionWorkflow
 
     public const BUDGET_OFFICER_STAGE_SEQUENCE = 3;
 
+    /** @var list<string> */
+    private const PURCHASE_STAGE_NAMES = [
+        'Purchase Approval',
+        'Purchase Officer Approval',
+        'Purchase Officer',
+    ];
+
     public static function defaultPipelineId(): int
     {
         return (int) (Pipeline::query()
@@ -155,19 +162,70 @@ final class RequisitionWorkflow
             ->map(fn ($stageId) => (int) $stageId);
     }
 
+    /**
+     * @return list<int>
+     */
+    public static function purchaseStageIds(?int $pipelineId = null): array
+    {
+        $pipelineId ??= self::defaultPipelineId();
+        $fromNames = Stage::query()
+            ->whereIn('name', self::PURCHASE_STAGE_NAMES)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $mappedId = self::roleStageMapping($pipelineId)['purchase-officer'] ?? null;
+
+        if ($mappedId !== null) {
+            $fromNames[] = (int) $mappedId;
+        }
+
+        return array_values(array_unique($fromNames));
+    }
+
+    public static function stagesArePurchaseEquivalent(int $firstStageId, int $secondStageId): bool
+    {
+        if ($firstStageId === $secondStageId) {
+            return true;
+        }
+
+        $purchaseStageIds = self::purchaseStageIds();
+
+        return in_array($firstStageId, $purchaseStageIds, true)
+            && in_array($secondStageId, $purchaseStageIds, true);
+    }
+
     public static function matchingUserStageId(Requisition $requisition, User $user): ?int
     {
         if (!$requisition->stage_id) {
             return null;
         }
 
+        $currentStageId = (int) $requisition->stage_id;
         $assignedStageIds = self::assignedStageIdsForUser($user);
 
-        if (!$assignedStageIds->contains((int) $requisition->stage_id)) {
-            return null;
+        if ($assignedStageIds->contains($currentStageId)) {
+            return $currentStageId;
         }
 
-        return (int) $requisition->stage_id;
+        foreach ($assignedStageIds as $assignedStageId) {
+            if (self::stagesArePurchaseEquivalent((int) $assignedStageId, $currentStageId)) {
+                return $currentStageId;
+            }
+        }
+
+        $pipelineId = self::pipelineIdFor($requisition);
+        $purchaseStageId = self::roleStageMapping($pipelineId)['purchase-officer'] ?? null;
+
+        if (
+            $purchaseStageId !== null
+            && (int) $purchaseStageId === $currentStageId
+            && $user->hasAnyRole(['purchase-officer'])
+        ) {
+            return $currentStageId;
+        }
+
+        return null;
     }
 
     public static function userCanActAtCurrentStage(Requisition $requisition, User $user): bool

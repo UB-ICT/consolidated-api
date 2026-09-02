@@ -98,4 +98,66 @@ trait GuardsRequisitionEditing
             ], 422));
         }
     }
+
+    protected function countCompleteLineItems(Requisition $requisition): int
+    {
+        return $requisition->items()
+            ->whereNotNull('chart_of_account_id')
+            ->where(function ($query) {
+                $query->where('total', '>', 0)
+                    ->orWhere('unit_cost', '>', 0);
+            })
+            ->count();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $pricedItems
+     */
+    protected function countCompletePricedItems(array $pricedItems): int
+    {
+        return collect($pricedItems)
+            ->filter(function (array $item) {
+                if (empty($item['chart_of_account_id'])) {
+                    return false;
+                }
+
+                return (float) ($item['total'] ?? 0) > 0
+                    || (float) ($item['unit_cost'] ?? 0) > 0;
+            })
+            ->count();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $pricedItems
+     */
+    protected function wouldWipeExistingLineItems(
+        Requisition $requisition,
+        array $pricedItems
+    ): bool {
+        $existingComplete = $this->countCompleteLineItems($requisition);
+
+        if ($existingComplete === 0) {
+            return false;
+        }
+
+        return $this->countCompletePricedItems($pricedItems) < $existingComplete;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function mapPersistedItemsForPricing(Requisition $requisition): array
+    {
+        return $requisition->items()
+            ->get()
+            ->map(fn ($item) => [
+                'chart_of_account_id' => $item->chart_of_account_id,
+                'quantity' => $item->quantity,
+                'unit_cost' => $item->unit_cost,
+                'gst_applicable' => (bool) $item->gst_applicable,
+                'comments' => $item->comments,
+            ])
+            ->values()
+            ->all();
+    }
 }

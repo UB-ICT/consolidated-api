@@ -3,6 +3,7 @@
 namespace Modules\RequisitionSystem\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,7 @@ use Modules\RequisitionSystem\Mail\PurchaseOrderToSupplierMail;
 use Modules\RequisitionSystem\Services\RequisitionExportService;
 use Modules\RequisitionSystem\Services\RequisitionLogService;
 use Modules\RequisitionSystem\Services\RequisitionNotificationService;
+use Modules\RequisitionSystem\Services\RequisitionUpdateLogService;
 use Modules\RequisitionSystem\Support\GuardsRequisitionApproval;
 use Modules\RequisitionSystem\Support\GuardsRequisitionCancellation;
 use Modules\RequisitionSystem\Support\GuardsRequisitionClosure;
@@ -66,6 +68,7 @@ class RequisitionController extends Controller
 
     public function __construct(
         private readonly RequisitionLogService $logService,
+        private readonly RequisitionUpdateLogService $updateLogService,
         private readonly RequisitionNotificationService $notificationService,
         private readonly RequisitionExportService $exportService,
     ) {}
@@ -155,6 +158,15 @@ class RequisitionController extends Controller
             return $requisition;
         });
 
+        $this->updateLogService->recordFormCreation(
+            $requisition->refresh(),
+            $user,
+            $validated,
+            $requisition->items()->with('chartOfAccount')->get(),
+            $shouldSubmit,
+            $requisition->tags()->pluck('tags.id')->map(fn ($id) => (int) $id)->all()
+        );
+
         if ($shouldSubmit) {
             $this->logService->recordSubmission($requisition, $user);
             $this->notificationService->notifyCurrentStageReviewers(
@@ -201,7 +213,9 @@ class RequisitionController extends Controller
 
         $before = $requisition->replicate();
         $before->setRelation('status', $requisition->status);
-        $previousItems = $requisition->items()->get();
+        $before->loadMissing('suppliers');
+        $previousItems = $requisition->items()->with('chartOfAccount')->get();
+        $previousTagIds = $requisition->tags()->pluck('tags.id')->map(fn ($id) => (int) $id)->all();
         $activityComment = $validated['activity_comment'] ?? null;
         unset($validated['activity_comment']);
 
@@ -217,6 +231,19 @@ class RequisitionController extends Controller
         });
 
         $requisition->load('status');
+
+        $this->updateLogService->recordFormUpdate(
+            $before,
+            $requisition->refresh(),
+            $user,
+            $previousItems,
+            $requisition->items()->with('chartOfAccount')->get(),
+            $validated,
+            $shouldSubmit,
+            $activityComment,
+            $previousTagIds,
+            $requisition->tags()->pluck('tags.id')->map(fn ($id) => (int) $id)->all()
+        );
 
         // Draft autosaves are frequent; only write activity history on submit
         // (approvals / cancel / close / PO actions still log elsewhere).
@@ -777,17 +804,43 @@ class RequisitionController extends Controller
             $items = [];
         }
 
-        $pricing = RequisitionLinePricing::calculate(
-            $items,
-            (string) ($data['discount_type'] ?? RequisitionLinePricing::DISCOUNT_NONE),
-            (float) ($data['discount_value'] ?? 0)
-        );
+        $replaceLineItems = true;
+
+        if ($requisition) {
+            $pricing = RequisitionLinePricing::calculate(
+                $items,
+                (string) ($data['discount_type'] ?? RequisitionLinePricing::DISCOUNT_NONE),
+                (float) ($data['discount_value'] ?? 0)
+            );
+
+            if ($this->wouldWipeExistingLineItems($requisition, $pricing['items'])) {
+                if ($shouldSubmit) {
+                    throw new HttpResponseException(response()->json([
+                        'success' => false,
+                        'message' => 'Line items cannot be removed or cleared while this requisition is in progress.',
+                    ], 422));
+                }
+
+                $replaceLineItems = false;
+                $pricing = RequisitionLinePricing::calculate(
+                    $this->mapPersistedItemsForPricing($requisition),
+                    (string) ($data['discount_type'] ?? $requisition->discount_type ?? RequisitionLinePricing::DISCOUNT_NONE),
+                    (float) ($data['discount_value'] ?? $requisition->discount_value ?? 0)
+                );
+            }
+        } else {
+            $pricing = RequisitionLinePricing::calculate(
+                $items,
+                (string) ($data['discount_type'] ?? RequisitionLinePricing::DISCOUNT_NONE),
+                (float) ($data['discount_value'] ?? 0)
+            );
+        }
 
         $data['discount_type'] = $pricing['discount_type'];
         $data['discount_value'] = $pricing['discount_value'];
         $data['discount_amount'] = $pricing['discount_amount'];
         $data['total'] = $pricing['total'];
-        $pricedItems = $pricing['items'];
+        $pricedItems = $replaceLineItems ? $pricing['items'] : [];
 
         $data['quote_waiver_reason'] = RequisitionSupplierQuoteRules::resolveStoredWaiverReason(
             is_array($suppliers) ? $suppliers : [],
@@ -850,28 +903,33 @@ class RequisitionController extends Controller
 
         if ($requisition) {
             $requisition->update($data);
-            $requisition->items()->delete();
+
+            if ($replaceLineItems) {
+                $requisition->items()->delete();
+            }
         } else {
             $requisition = Requisition::create($data);
         }
 
-        foreach ($pricedItems as $item) {
-            $accountId = $item['chart_of_account_id'] ?? null;
+        if ($replaceLineItems) {
+            foreach ($pricedItems as $item) {
+                $accountId = $item['chart_of_account_id'] ?? null;
 
-            Item::create([
-                'chart_of_account_id' => $accountId !== null && $accountId !== ''
-                    ? (int) $accountId
-                    : null,
-                'quantity' => round((float) ($item['quantity'] ?? 0), 4),
-                'unit_cost' => $item['unit_cost'] ?? 0,
-                'subtotal' => $item['subtotal'] ?? 0,
-                'discount_amount' => $item['discount_amount'] ?? 0,
-                'gst_applicable' => (bool) ($item['gst_applicable'] ?? false),
-                'gst_amount' => $item['gst_amount'] ?? 0,
-                'total' => $item['total'] ?? 0,
-                'comments' => $item['comments'] ?? null,
-                'requisition_id' => $requisition->id,
-            ]);
+                Item::create([
+                    'chart_of_account_id' => $accountId !== null && $accountId !== ''
+                        ? (int) $accountId
+                        : null,
+                    'quantity' => round((float) ($item['quantity'] ?? 0), 4),
+                    'unit_cost' => $item['unit_cost'] ?? 0,
+                    'subtotal' => $item['subtotal'] ?? 0,
+                    'discount_amount' => $item['discount_amount'] ?? 0,
+                    'gst_applicable' => (bool) ($item['gst_applicable'] ?? false),
+                    'gst_amount' => $item['gst_amount'] ?? 0,
+                    'total' => $item['total'] ?? 0,
+                    'comments' => $item['comments'] ?? null,
+                    'requisition_id' => $requisition->id,
+                ]);
+            }
         }
 
         if ($skippedDirectorApproval && $submitter && $pipelineId) {

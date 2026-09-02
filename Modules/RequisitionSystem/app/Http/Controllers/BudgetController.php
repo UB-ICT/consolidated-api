@@ -22,6 +22,7 @@ use Modules\RequisitionSystem\Services\BudgetLogService;
 use Modules\RequisitionSystem\Support\BudgetLogAction;
 use Modules\RequisitionSystem\Support\BudgetWorkflow;
 use Modules\RequisitionSystem\Support\GuardsBudgetAccess;
+use Modules\RequisitionSystem\Support\RequisitionVisibility;
 use RuntimeException;
 
 class BudgetController extends Controller
@@ -109,6 +110,7 @@ class BudgetController extends Controller
         if (
             !$this->userIsBudgetFinanceEditor($user)
             && !$user->costCenters()->where('cost_centers.id', $costCenterId)->exists()
+            && !RequisitionVisibility::userCanViewOperationalBudget($user)
         ) {
             return response()->json([
                 'success' => false,
